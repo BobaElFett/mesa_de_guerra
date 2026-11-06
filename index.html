@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mesa de Guerra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&display=swap">
+<style>
+  :root {
+    --panel: rgba(18, 20, 26, .84); --ink: #eceef3; --dim: #a4abb8; --line: rgba(255,255,255,.12);
+    --legion: #3d6fd8; --swarm: #a24fc4; --gold: #e2b84f; --bad: #e0675a;
+  }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #17191e; font-family: "Segoe UI", system-ui, sans-serif; color: var(--ink); }
+  #app { position: fixed; inset: 0; }
+  canvas { display: block; }
+  [hidden] { display: none !important; }
+  .panel { position: fixed; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; font-size: 13px; line-height: 1.5; user-select: none; z-index: 2; }
+  .title { font-family: "Rajdhani", "Segoe UI", sans-serif; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+  kbd { background: rgba(255,255,255,.13); border-radius: 3px; padding: 0 5px; font-family: inherit; font-size: 12px; }
+  .dim { color: var(--dim); }
+  button { font: inherit; font-size: 13px; color: var(--ink); background: rgba(255,255,255,.08); border: 1px solid var(--line); border-radius: 4px; padding: 4px 10px; cursor: pointer; }
+  button:hover:not(:disabled) { background: rgba(255,255,255,.16); }
+  button:disabled { opacity: .4; cursor: default; }
+  button.on { border-color: var(--gold); color: var(--gold); }
+  button.primary { background: rgba(226,184,79,.18); border-color: rgba(226,184,79,.6); }
+
+  #help { left: 12px; top: 12px; width: 270px; padding: 10px 14px; }
+  #help h1 { font-size: 20px; margin: 0; color: var(--gold); }
+  #help .sub { font-size: 12px; color: var(--dim); margin: -2px 0 6px; }
+  #help h2 { font-size: 11px; margin: 8px 0 2px; text-transform: uppercase; letter-spacing: .08em; color: var(--dim); }
+  #help ul { margin: 0; padding-left: 16px; }
+  #help-toggle { position: absolute; right: 10px; top: 10px; font-size: 11px; padding: 1px 7px; }
+  #help.folded > :not(h1):not(#help-toggle) { display: none; }
+
+  #turn { left: 50%; top: 12px; transform: translateX(-50%); padding: 6px 8px 6px 16px; display: flex; gap: 14px; align-items: center; font-size: 15px; }
+  #turn-text b { font-family: "Rajdhani", sans-serif; font-size: 17px; letter-spacing: .04em; }
+
+  #tools { right: 12px; top: 12px; padding: 6px; display: flex; gap: 6px; }
+
+  #dice { right: 12px; bottom: 12px; width: 300px; padding: 10px 12px; }
+  #dice .row { display: flex; gap: 6px; align-items: center; }
+  #dice-count { min-width: 24px; text-align: center; font-weight: 600; }
+  #roll { margin-left: auto; }
+  #dice-result { margin-top: 8px; min-height: 40px; }
+  .dice { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px; }
+  .die { width: 22px; height: 22px; border-radius: 4px; background: #e8e2d4; color: #1c1d22; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; }
+  .die.six { background: var(--gold); }
+  .die.one { background: #6b6f78; color: #eceef3; }
+  #dice-history { margin: 6px 0 0; padding: 6px 0 0 16px; border-top: 1px solid var(--line); font-size: 12px; }
+  #dice-history:empty { display: none; }
+
+  #measure { position: fixed; z-index: 3; pointer-events: none; background: rgba(18,20,26,.9); border: 1px solid var(--gold); color: var(--gold); border-radius: 4px; padding: 1px 7px; font-weight: 700; font-size: 14px; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<div id="help" class="panel">
+  <h1 class="title">Mesa de Guerra</h1>
+  <button id="help-toggle">Ocultar</button>
+  <div class="sub">Fase 0 · cimientos (v0.1)</div>
+  <h2>Cámara</h2>
+  <ul>
+    <li><kbd>WASD</kbd> o botón central: desplazar</li>
+    <li><kbd>Q</kbd> <kbd>E</kbd> o botón derecho: girar</li>
+    <li>Rueda: acercar y alejar</li>
+    <li><kbd>V</kbd> vista cenital · <kbd>Inicio</kbd> vista inicial</li>
+  </ul>
+  <h2>Mesa</h2>
+  <ul>
+    <li>Arrastra una miniatura para moverla (muestra las pulgadas)</li>
+    <li><kbd>R</kbd> girar la miniatura bajo el ratón</li>
+    <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> deshacer · <kbd>Ctrl</kbd>+<kbd>Y</kbd> rehacer</li>
+    <li><kbd>Espacio</kbd> tirar dados · <kbd>+</kbd> <kbd>−</kbd> cuántos</li>
+    <li><kbd>Intro</kbd> pasar turno · <kbd>G</kbd> rejilla</li>
+  </ul>
+  <h2>Guardado</h2>
+  <div class="dim">La mesa se guarda sola en este navegador.</div>
+</div>
+
+<div id="turn" class="panel">
+  <span id="turn-text"></span>
+  <button id="end-turn" class="primary">Pasar turno</button>
+</div>
+
+<div id="tools" class="panel">
+  <button id="undo" title="Ctrl+Z">Deshacer</button>
+  <button id="redo" title="Ctrl+Y">Rehacer</button>
+  <button id="grid" class="on" title="G">Rejilla</button>
+  <button id="topdown" title="V">Cenital</button>
+  <button id="new">Nueva mesa</button>
+</div>
+
+<div id="dice" class="panel">
+  <div class="row">
+    <span class="title" style="font-size:15px">Dados</span>
+    <button id="dice-minus">−</button><span id="dice-count">5</span><button id="dice-plus">+</button>
+    <button id="roll" class="primary">Tirar 5D6</button>
+  </div>
+  <div id="dice-result"></div>
+  <ul id="dice-history"></ul>
+</div>
+
+<div id="measure" hidden></div>
+
+<script>
+  document.getElementById("help-toggle").addEventListener("click", (e) => {
+    const h = document.getElementById("help");
+    h.classList.toggle("folded");
+    e.target.textContent = h.classList.contains("folded") ? "Ayuda" : "Ocultar";
+  });
+</script>
+<!--BUNDLE-->
+</body>
+</html>
