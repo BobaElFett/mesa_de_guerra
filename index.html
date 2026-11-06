@@ -50,6 +50,8 @@
   #dice-history { margin: 6px 0 0; padding: 6px 0 0 16px; border-top: 1px solid var(--line); font-size: 12px; }
   #dice-history:empty { display: none; }
 
+  #sel { left: 12px; bottom: 12px; padding: 8px 12px; font-size: 13px; }
+  #selbox { position: fixed; z-index: 3; pointer-events: none; border: 1px solid var(--gold); background: rgba(226,184,79,.1); }
   #measure { position: fixed; z-index: 3; pointer-events: none; background: rgba(18,20,26,.9); border: 1px solid var(--gold); color: var(--gold); border-radius: 4px; padding: 1px 7px; font-weight: 700; font-size: 14px; }
 </style>
 </head>
@@ -59,7 +61,7 @@
 <div id="help" class="panel">
   <h1 class="title">Mesa de Guerra</h1>
   <button id="help-toggle">Ocultar</button>
-  <div class="sub">Fase 0 · cimientos (v0.1)</div>
+  <div class="sub">Fase 1 · mesa sandbox (v0.2)</div>
   <h2>Cámara</h2>
   <ul>
     <li><kbd>WASD</kbd> o botón central: desplazar</li>
@@ -69,8 +71,10 @@
   </ul>
   <h2>Mesa</h2>
   <ul>
-    <li>Arrastra una miniatura para moverla (muestra las pulgadas)</li>
-    <li><kbd>R</kbd> girar la miniatura bajo el ratón</li>
+    <li>Clic: seleccionar · <kbd>Mayús</kbd>+clic: añadir o quitar</li>
+    <li>Arrastra en el tapete: recuadro de selección</li>
+    <li>Arrastra una miniatura: mueve la selección (muestra las pulgadas)</li>
+    <li><kbd>R</kbd> girar la selección · <kbd>Ctrl</kbd>+<kbd>A</kbd> todo tu bando</li>
     <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> deshacer · <kbd>Ctrl</kbd>+<kbd>Y</kbd> rehacer</li>
     <li><kbd>Espacio</kbd> tirar dados · <kbd>+</kbd> <kbd>−</kbd> cuántos</li>
     <li><kbd>Intro</kbd> pasar turno · <kbd>G</kbd> rejilla</li>
@@ -102,6 +106,8 @@
   <ul id="dice-history"></ul>
 </div>
 
+<div id="sel" class="panel" hidden></div>
+<div id="selbox" hidden></div>
 <div id="measure" hidden></div>
 
 <script>

@@ -6,7 +6,7 @@ import { BOARD } from "./core/state";
 import { TableCamera } from "./camera/tableCamera";
 import { Table } from "./world/table";
 import { PiecesView } from "./view/piecesView";
-import { DragControls } from "./input/dragControls";
+import { PieceControls } from "./input/pieceControls";
 import { Hud } from "./ui/hud";
 
 // --- Renderer y escena ---------------------------------------------------
@@ -50,7 +50,7 @@ const pieces = new PiecesView();
 scene.add(pieces.group);
 
 const cam = new TableCamera(renderer.domElement);
-const drag = new DragControls(renderer.domElement, cam.camera, pieces, bus);
+const controls = new PieceControls(renderer.domElement, cam.camera, pieces, bus);
 
 let gridOn = true;
 const hud = new Hud(bus, {
@@ -58,11 +58,13 @@ const hud = new Hud(bus, {
   toggleTopDown: () => { cam.topDown = !cam.topDown; return cam.topDown; },
   newTable: () => { bus.reset(freshSeed()); cam.reset(); },
 });
-drag.onDragInfo = (inches, x, y) => hud.showMeasure(inches, x, y);
+controls.onDragInfo = (inches, x, y) => hud.showMeasure(inches, x, y);
+controls.onSelectionChange = () => hud.renderSelection(bus.state, controls.selected);
 
 function refresh() {
   pieces.sync(bus.state);
   hud.render(bus.state);
+  hud.renderSelection(bus.state, controls.selected);
   writeTable(bus.serialize());
 }
 bus.onChange(refresh);
@@ -81,11 +83,6 @@ window.addEventListener("keydown", (e) => {
   if (e.code === "Equal" || e.code === "NumpadAdd") hud.rollMore(1);
   if (e.code === "Minus" || e.code === "NumpadSubtract") hud.rollMore(-1);
   if (e.code === "Enter") bus.dispatch({ type: "endTurn" });
-  // R: girar 45° la miniatura bajo el ratón (Mayús: al revés)
-  if (e.code === "KeyR" && drag.active) {
-    const p = pieces.pieceOf(drag.active);
-    if (p) bus.dispatch({ type: "rotate", id: p.id, rot: p.rot + (e.shiftKey ? -1 : 1) * Math.PI / 4 });
-  }
 });
 
 // --- Bucle ---------------------------------------------------------------
@@ -101,9 +98,9 @@ renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 0.1);
   cam.update(dt);
   pieces.update(dt);
-  pieces.highlight(drag.active);
+  pieces.highlight(controls.selected, controls.hovered);
   renderer.render(scene, cam.camera);
 });
 
 // Para pruebas desde la consola
-(window as unknown as { mesa: unknown }).mesa = { bus, cam, pieces };
+(window as unknown as { mesa: unknown }).mesa = { bus, cam, pieces, controls };

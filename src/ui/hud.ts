@@ -23,7 +23,7 @@ export class Hud {
     $("topdown").addEventListener("click", () => $("topdown").classList.toggle("on", actions.toggleTopDown()));
     $("new").addEventListener("click", () => {
       const now = performance.now();
-      if (now - this.confirmNew < 3000) {
+      if (this.confirmNew > 0 && now - this.confirmNew < 3000) {
         this.confirmNew = 0;
         $("new").textContent = "Nueva mesa";
         actions.newTable();
@@ -61,6 +61,21 @@ export class Hud {
     $("dice-result").innerHTML = last ? rollHtml(last, true) : `<span class="dim">Sin tiradas todavía</span>`;
     $("dice-history").innerHTML = s.rolls.slice(-6, -1).reverse()
       .map((r) => `<li>${rollHtml(r, false)}</li>`).join("");
+  }
+
+  /** Resumen de la selección, abajo a la izquierda. */
+  renderSelection(s: GameState, selected: Set<string>) {
+    const el = $("sel");
+    if (!selected.size) { el.hidden = true; return; }
+    const by = new Map<string, number>();
+    for (const p of s.pieces) if (selected.has(p.id)) by.set(p.faction, (by.get(p.faction) ?? 0) + 1);
+    const parts = [...by].map(([f, n]) => {
+      const F = FACTIONS[f as keyof typeof FACTIONS];
+      return `<b style="color:${F.color}">${n}</b> ${F.name}`;
+    });
+    el.innerHTML = `${selected.size === 1 ? "1 miniatura seleccionada" : `${selected.size} miniaturas seleccionadas`} · ${parts.join(" · ")}`
+      + `<div class="dim">Arrastra para mover · <kbd>R</kbd> girar · <kbd>Esc</kbd> soltar</div>`;
+    el.hidden = false;
   }
 
   /** Distancia recorrida junto al cursor mientras se arrastra una miniatura. */

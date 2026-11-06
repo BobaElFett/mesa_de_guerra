@@ -8,6 +8,9 @@ export const DEPLOY_DEPTH = 10;                   // zona de despliegue desde ca
 export type Faction = "legion" | "swarm";
 export type ModelKind = "legionario" | "garra";
 
+/** Radio de la peana en pulgadas: 32 mm para la Legión, 25 mm para las Garras. */
+export const BASE_RADIUS: Record<ModelKind, number> = { legionario: 0.63, garra: 0.49 };
+
 export const FACTIONS: Record<Faction, { name: string; of: string; color: string }> = {
   legion: { name: "Legión Astral", of: "de la Legión Astral", color: "#3d6fd8" },
   swarm: { name: "El Enjambre", of: "del Enjambre", color: "#a24fc4" },

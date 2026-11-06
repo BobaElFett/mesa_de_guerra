@@ -8,8 +8,12 @@ import { rollDice } from "./rng";
 export type Command =
   | { type: "move"; id: string; x: number; z: number }
   | { type: "rotate"; id: string; rot: number }
+  /** Mover (y girar) varias miniaturas a la vez: un solo paso de deshacer. */
+  | { type: "moveMany"; moves: PieceMove[] }
   | { type: "roll"; count: number; sides: number }
   | { type: "endTurn" };
+
+export interface PieceMove { id: string; x: number; z: number; rot?: number }
 
 const MAX_ROLLS = 30;
 
@@ -27,6 +31,16 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
     case "rotate": {
       const p = s.pieces.find((q) => q.id === cmd.id);
       if (p) p.rot = cmd.rot;
+      break;
+    }
+    case "moveMany": {
+      for (const m of cmd.moves) {
+        const p = s.pieces.find((q) => q.id === m.id);
+        if (!p) continue;
+        p.x = clamp(m.x, -BOARD.w / 2, BOARD.w / 2);
+        p.z = clamp(m.z, -BOARD.d / 2, BOARD.d / 2);
+        if (m.rot !== undefined) p.rot = m.rot;
+      }
       break;
     }
     case "roll": {

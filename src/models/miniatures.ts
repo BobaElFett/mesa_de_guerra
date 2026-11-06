@@ -1,12 +1,12 @@
 import * as THREE from "three";
 import { box, place, build, Part } from "./lowpoly";
-import { ModelKind } from "../core/state";
+import { ModelKind, BASE_RADIUS } from "../core/state";
 
 // Miniaturas provisionales de la fase 0 (las definitivas llegan en la fase 1, issue #11).
 // Escala: 1 = 1 pulgada. Peanas de 32 mm (r 0,63") para la Legión y 25 mm (r 0,49") para las Garras.
 // La miniatura mira hacia +z.
 
-export const BASE_RADIUS: Record<ModelKind, number> = { legionario: 0.63, garra: 0.49 };
+export { BASE_RADIUS };
 
 const LEG = {
   armor: "#2f56a8", trim: "#d6a83c", dark: "#24272d", visor: "#8fe4ff", base: "#2b2d31", rim: "#3d6fd8",

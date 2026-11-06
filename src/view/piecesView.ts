@@ -7,22 +7,18 @@ import { makeMiniature, BASE_RADIUS } from "../models/miniatures";
 
 interface Entry { group: THREE.Group; piece: Piece }
 
+const RING_SELECTED = "#f2d36b";
+const RING_HOVER = "#e8e4d4";
+
 export class PiecesView {
   readonly group = new THREE.Group();
   private entries = new Map<string, Entry>();
-  /** Miniatura que el jugador arrastra: la vista no la mueve hacia el estado. */
-  dragging: string | null = null;
-  private ring: THREE.Mesh;
-
-  constructor() {
-    this.ring = new THREE.Mesh(
-      new THREE.RingGeometry(1, 1.16, 32),
-      new THREE.MeshBasicMaterial({ color: "#f2e7a1", transparent: true, opacity: 0.9, depthWrite: false }),
-    );
-    this.ring.rotation.x = -Math.PI / 2;
-    this.ring.visible = false;
-    this.group.add(this.ring);
-  }
+  /** Miniaturas que el jugador arrastra: la vista no las mueve hacia el estado. */
+  readonly dragging = new Set<string>();
+  private rings: THREE.Mesh[] = [];
+  private ringGeo = new THREE.RingGeometry(1, 1.14, 32);
+  private matSel = new THREE.MeshBasicMaterial({ color: RING_SELECTED, transparent: true, opacity: 0.95, depthWrite: false });
+  private matHover = new THREE.MeshBasicMaterial({ color: RING_HOVER, transparent: true, opacity: 0.55, depthWrite: false });
 
   sync(state: GameState) {
     const seen = new Set<string>();
@@ -48,7 +44,7 @@ export class PiecesView {
   update(dt: number) {
     const k = Math.min(1, dt * 12);
     for (const [id, e] of this.entries) {
-      if (id === this.dragging) continue;
+      if (this.dragging.has(id)) continue;
       const g = e.group;
       g.position.x += (e.piece.x - g.position.x) * k;
       g.position.z += (e.piece.z - g.position.z) * k;
@@ -62,17 +58,34 @@ export class PiecesView {
     return [...this.entries.values()].map((e) => e.group);
   }
 
+  ids(): string[] { return [...this.entries.keys()]; }
   groupOf(id: string): THREE.Group | null { return this.entries.get(id)?.group ?? null; }
   pieceOf(id: string): Piece | null { return this.entries.get(id)?.piece ?? null; }
 
-  /** Anillo de resaltado bajo una miniatura (o ninguno). */
-  highlight(id: string | null) {
-    const e = id ? this.entries.get(id) : null;
-    this.ring.visible = !!e;
-    if (!e) return;
-    const r = BASE_RADIUS[e.piece.model] + 0.08;
-    this.ring.scale.setScalar(r);
-    this.ring.position.set(e.group.position.x, 0.02, e.group.position.z);
+  /** Anillos bajo las miniaturas seleccionadas (dorados) y la del ratón (tenue). */
+  highlight(selected: Iterable<string>, hovered: string | null) {
+    let n = 0;
+    const put = (id: string, mat: THREE.Material) => {
+      const e = this.entries.get(id);
+      if (!e) return;
+      let ring = this.rings.at(n);
+      if (!ring) {
+        ring = new THREE.Mesh(this.ringGeo, mat);
+        ring.rotation.x = -Math.PI / 2;
+        ring.renderOrder = 1;
+        this.group.add(ring);
+        this.rings.push(ring);
+      }
+      ring.material = mat;
+      ring.visible = true;
+      ring.scale.setScalar(BASE_RADIUS[e.piece.model] + 0.08);
+      ring.position.set(e.group.position.x, 0.02, e.group.position.z);
+      n++;
+    };
+    const sel = new Set(selected);
+    for (const id of sel) put(id, this.matSel);
+    if (hovered && !sel.has(hovered)) put(hovered, this.matHover);
+    for (let i = n; i < this.rings.length; i++) this.rings[i].visible = false;
   }
 }
 

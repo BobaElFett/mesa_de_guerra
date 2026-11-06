@@ -9,11 +9,19 @@ Plan completo (visión, facciones, roadmap y backlog): documento *Mesa de Guerra
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor.
 
+## Novedades 0.2 · fase 1 (selección y grupos, #6 y #7)
+- **Seleccionar:** clic en una miniatura; **Mayús+clic** añade o quita; arrastrar sobre el tapete traza un **recuadro de selección** (con Mayús, añade). **Ctrl+A** selecciona todo el bando que juega. **Esc** suelta la selección. Las seleccionadas llevan un anillo dorado y la que está bajo el ratón, uno tenue; abajo a la izquierda se ve cuántas hay de cada bando.
+- **Mover en grupo:** al arrastrar una miniatura seleccionada se mueve toda la selección conservando la formación, sin salirse del tapete; la medida muestra las pulgadas recorridas.
+- **Girar en grupo:** **R** (o Mayús+R) gira 45° la selección alrededor de su centro: cambian la orientación y la formación.
+- **Sin solapes:** al soltar o girar, cada peana movida va al hueco libre más cercano a donde cayó; las que no se movían no se tocan. Es determinista (igual en cualquier navegador).
+- **Una orden por gesto:** mover o girar un grupo es una sola orden `moveMany`, así que un Ctrl+Z lo deshace entero. Las mesas guardadas con la v0.1 se siguen cargando.
+- Corregido: en los 3 primeros segundos tras abrir el juego, un solo clic en *Nueva mesa* borraba la mesa sin pedir confirmación.
+
 ## Novedades 0.1 · fase 0 (cimientos)
 - **Mesa:** tablero de madera con patas, tapete de 60" × 44" (1 unidad = 1 pulgada), rejilla de 1" y de 6" (tecla **G**), zonas de despliegue de 10" tintadas en el color de cada bando y sala en penumbra con un foco cálido y sombras.
 - **Cámara de mesa** (adaptada de Señorío): WASD o botón central para desplazar, Q/E o botón derecho para girar, rueda de 8" a 120"; cerca se ve a la altura de las miniaturas y lejos desde arriba. **V**: vista cenital. **Inicio**: vista inicial.
 - **Miniaturas provisionales:** 5 legionarios (peana de 32 mm) y 10 Garras del Enjambre (peana de 25 mm), cada una fusionada en una malla por color.
-- **Mover:** arrastrar con el botón izquierdo; junto al cursor se ven las pulgadas recorridas. **R** gira 45° la miniatura bajo el ratón (Mayús+R al revés). Esc cancela el arrastre.
+- **Mover:** arrastrar con el botón izquierdo; junto al cursor se ven las pulgadas recorridas. **R** gira 45° la miniatura bajo el ratón. Esc cancela el arrastre.
 - **Estado y órdenes:** toda acción (mover, girar, tirar dados, pasar turno) es una orden que se aplica al estado de la partida. **Ctrl+Z** deshace y **Ctrl+Y** rehace, sin límite.
 - **Dados con semilla:** el generador vive dentro del estado, así que deshacer y rehacer una tirada da los mismos dados (y en el futuro dos navegadores verán lo mismo). **Espacio** tira, **+**/**−** cambian cuántos; los resultados salen ordenados y agrupados («2×6 1×5…»), con las cinco tiradas anteriores debajo.
 - **Turnos:** ronda y bando activo arriba; **Intro** o *Pasar turno*.
@@ -40,15 +48,16 @@ src/
   core/state.ts           estado de la partida, tablero y despliegue inicial
   core/commands.ts        órdenes, applyCommand y CommandBus (deshacer/rehacer)
   core/rng.ts             generador aleatorio con semilla y dados
+  core/placement.ts       colocación sin solapes (hueco libre más cercano)
   core/save.ts            guardado en el navegador
   camera/tableCamera.ts   cámara de mesa
   world/table.ts          mesa, tapete, rejilla, zonas de despliegue y sala
   models/lowpoly.ts       ayudantes low poly (caja, colocar, fusionar por color)
   models/miniatures.ts    miniaturas provisionales de la Legión y el Enjambre
   view/piecesView.ts      dibujo de las miniaturas y resaltado
-  input/dragControls.ts   coger, arrastrar y soltar miniaturas
+  input/pieceControls.ts  selección, recuadro, arrastre y giro en grupo
   ui/hud.ts               turno, herramientas y dados
 ```
 
-## Siguiente: fase 1 (mesa sandbox)
-Peanas con selección múltiple, cinta métrica, dados en 3D sobre la mesa, escenografía, modelos definitivos de la Escuadra de Asalto Táctico y las Garras Menores, y guardar y cargar mesas con nombre.
+## Siguiente en la fase 1 (mesa sandbox)
+Cinta métrica (#8), dados en 3D sobre la mesa (#9), escenografía (#10), modelos definitivos de la Escuadra de Asalto Táctico y las Garras Menores (#11), y guardar y cargar mesas con nombre (#12).
