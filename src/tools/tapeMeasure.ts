@@ -67,7 +67,7 @@ export class TapeMeasure {
   }
 
   private end(): End | null {
-    const id = this.picker.piece();
+    const id = this.picker.piece(true);
     if (id) {
       const g = this.view.groupOf(id)!;
       return { x: g.position.x, z: g.position.z, pieceId: id };

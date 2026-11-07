@@ -52,6 +52,10 @@
   #dice-history { margin: 6px 0 0; padding: 6px 0 0 16px; border-top: 1px solid var(--line); font-size: 12px; }
   #dice-history:empty { display: none; }
 
+  #terrain-panel { right: 12px; top: 60px; width: 230px; padding: 10px 12px; }
+  #terrain-add { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 8px 0; }
+  #terrain-add button, #terrain-delete { font-size: 12px; padding: 4px 6px; }
+  #terrain-delete { width: 100%; }
   #sel { left: 12px; bottom: 12px; padding: 8px 12px; font-size: 13px; }
   #selbox { position: fixed; z-index: 3; pointer-events: none; border: 1px solid var(--gold); background: rgba(226,184,79,.1); }
   #tape-label { position: fixed; z-index: 3; pointer-events: none; transform: translate(-50%, -150%); background: #f0c94a; color: #1c1d22; border-radius: 4px; padding: 1px 8px; font-weight: 700; font-size: 15px; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,.4); }
@@ -65,7 +69,7 @@
 <div id="help" class="panel">
   <h1 class="title">Mesa de Guerra</h1>
   <button id="help-toggle">Ocultar</button>
-  <div class="sub">Fase 1 · mesa sandbox (v0.4)</div>
+  <div class="sub">Fase 1 · mesa sandbox (v0.5)</div>
   <h2>Cámara</h2>
   <ul>
     <li><kbd>WASD</kbd> o botón central: desplazar</li>
@@ -79,6 +83,7 @@
     <li>Arrastra en el tapete: recuadro de selección</li>
     <li>Arrastra una miniatura: mueve la selección (muestra las pulgadas)</li>
     <li><kbd>R</kbd> girar la selección · <kbd>Ctrl</kbd>+<kbd>A</kbd> todo tu bando</li>
+    <li><kbd>T</kbd> editar escenografía (añadir, mover, girar, borrar)</li>
     <li><kbd>M</kbd> cinta métrica: arrastra para medir (de peana a peana mide borde a borde)</li>
     <li><kbd>C</kbd> círculos de alcance alrededor de la selección (3"–24")</li>
     <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> deshacer · <kbd>Ctrl</kbd>+<kbd>Y</kbd> rehacer</li>
@@ -97,6 +102,7 @@
 <div id="tools" class="panel">
   <button id="undo" title="Ctrl+Z">Deshacer</button>
   <button id="redo" title="Ctrl+Y">Rehacer</button>
+  <button id="terrain-edit" title="T: desbloquea la escenografía para moverla, añadirla o borrarla">Escenografía</button>
   <button id="tape" title="M">Cinta</button>
   <button id="range" title="C: cambia el alcance alrededor de la selección">Alcance</button>
   <button id="grid" class="on" title="G">Rejilla</button>
@@ -121,6 +127,12 @@
   <ul id="dice-history"></ul>
 </div>
 
+<div id="terrain-panel" class="panel" hidden>
+  <div class="title" style="font-size:15px">Escenografía</div>
+  <div class="dim" style="font-size:12px">Desbloqueada: arrastra para mover, <kbd>R</kbd> girar, <kbd>Supr</kbd> borrar. <kbd>T</kbd> la vuelve a fijar.</div>
+  <div id="terrain-add"></div>
+  <button id="terrain-delete">Borrar selección</button>
+</div>
 <div id="sel" class="panel" hidden></div>
 <div id="selbox" hidden></div>
 <div id="measure" hidden></div>

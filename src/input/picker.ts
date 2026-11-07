@@ -17,9 +17,9 @@ export class Picker {
     this.ray.setFromCamera(this.ndc, this.camera);
   }
 
-  /** Id de la miniatura bajo el ratón, o null. */
-  piece(): string | null {
-    const hits = this.ray.intersectObjects(this.view.pickables(), true);
+  /** Id de lo que hay bajo el ratón (miniatura, o escenografía si está desbloqueada), o null. */
+  piece(minisOnly = false): string | null {
+    const hits = this.ray.intersectObjects(this.view.pickables(minisOnly), true);
     for (const h of hits) {
       let o: THREE.Object3D | null = h.object;
       while (o && o.userData.pieceId === undefined) o = o.parent;

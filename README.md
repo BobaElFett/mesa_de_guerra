@@ -9,6 +9,14 @@ Plan completo (visión, facciones, roadmap y backlog): documento *Mesa de Guerra
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor.
 
+## Novedades 0.5 · fase 1 (escenografía, #10)
+- **Seis piezas low poly:** ruina (6"×4"), ruina grande de dos alturas (8"×6"), contenedores (4"×3"), cráter (5"), búnker (6"×4") y barricada (4"×1"). Los muros son rotos, con ventanas y cascotes, y siempre salen iguales.
+- **Mapa de ejemplo:** cada mesa nueva trae 11 piezas en disposición simétrica (búnker en el centro y cinco piezas por bando), así ninguno de los dos lados tiene ventaja. Las mesas guardadas con versiones anteriores lo reciben al cargarse.
+- **Bloqueada por defecto:** la escenografía no se coge al hacer clic, para poder seleccionar y medir las miniaturas que hay dentro o detrás. **T** o *Escenografía* la desbloquea y abre el panel.
+- **Editar:** desbloqueada, se selecciona, se arrastra y se gira (**R**) como las miniaturas, y se borra con **Supr**. El panel añade cualquier pieza en el centro de la vista. La selección se marca con un rectángulo dorado.
+- Todo son órdenes (`addTerrain`, `removeTerrain` y `moveMany`, que ahora también mueve escenografía): se deshace, se guarda y se reproduce igual en cualquier navegador.
+- Las miniaturas se pueden poner dentro de las ruinas; todavía no se suben a los pisos altos ni encima del búnker.
+
 ## Novedades 0.4 · fase 1 (dados en 3D, #9)
 - **Bandeja de dados** en un estante a la derecha de la mesa (fondo de fieltro, paredes de madera). **B** o *Ver bandeja* lleva la cámara allí.
 - **Dados en 3D:** cada tirada se lanza en la bandeja; los dados ruedan, chocan entre sí y con las paredes, y se asientan planos sin quedar unos encima de otros. Hasta 40 dados de 16 mm con sus puntos.
@@ -71,7 +79,8 @@ src/
   world/table.ts          mesa, tapete, rejilla, zonas de despliegue, bandeja y sala
   models/lowpoly.ts       ayudantes low poly (caja, colocar, fusionar por color)
   models/miniatures.ts    miniaturas provisionales de la Legión y el Enjambre
-  view/piecesView.ts      dibujo de las miniaturas y resaltado
+  models/terrain.ts       escenografía: ruinas, contenedores, cráter, búnker y barricada
+  view/piecesView.ts      dibujo de miniaturas y escenografía, y resaltado
   input/pieceControls.ts  selección, recuadro, arrastre y giro en grupo
   input/picker.ts         rayo del ratón: miniatura y punto del tapete
   tools/tapeMeasure.ts    cinta métrica
@@ -81,4 +90,4 @@ src/
 ```
 
 ## Siguiente en la fase 1 (mesa sandbox)
-Escenografía (#10), modelos definitivos de la Escuadra de Asalto Táctico y las Garras Menores (#11), y guardar y cargar mesas con nombre (#12).
+Modelos definitivos de la Escuadra de Asalto Táctico y las Garras Menores (#11), y guardar y cargar mesas con nombre (#12).

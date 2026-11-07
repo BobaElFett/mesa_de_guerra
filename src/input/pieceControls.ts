@@ -180,7 +180,7 @@ export class PieceControls {
   /** Gira la selección (o la miniatura bajo el ratón) alrededor de su centro. */
   rotate(angle: number) {
     const ids = this.selected.size ? [...this.selected] : this.hovered ? [this.hovered] : [];
-    const ps = ids.map((id) => this.view.pieceOf(id)).filter((p) => p !== null);
+    const ps = ids.map((id) => this.view.placedOf(id)).filter((p) => p !== null);
     if (!ps.length) return;
     const cx = ps.reduce((a, p) => a + p.x, 0) / ps.length;
     const cz = ps.reduce((a, p) => a + p.z, 0) / ps.length;
@@ -192,20 +192,35 @@ export class PieceControls {
     this.commit(moves, null);
   }
 
-  /** Separa las peanas que se pisen y envía una sola orden. */
+  /** Separa las peanas que se pisen y envía una sola orden (la escenografía no se separa). */
   private commit(moves: PieceMove[], start: Map<string, { x: number; z: number }> | null) {
-    const fixed = resolveOverlaps(this.bus.state.pieces, moves);
+    const minis = moves.filter((m) => this.view.pieceOf(m.id));
+    const rest = moves.filter((m) => !this.view.pieceOf(m.id)).map((m) => ({ ...m, x: round2(m.x), z: round2(m.z) }));
+    const fixed = [...resolveOverlaps(this.bus.state.pieces, minis), ...rest];
     const real = fixed.filter((m) => {
-      const p = this.view.pieceOf(m.id);
+      const p = this.view.placedOf(m.id);
       const from = start?.get(m.id) ?? p;
       return !from || Math.hypot(m.x - from.x, m.z - from.z) > 0.01 || (m.rot !== undefined && m.rot !== p?.rot);
     });
     if (real.length) this.bus.dispatch({ type: "moveMany", moves: real });
   }
 
+  /** Deja seleccionado solo `id` (p. ej. la escenografía recién puesta). */
+  selectOnly(id: string) {
+    this.selected.clear();
+    this.selected.add(id);
+    this.changed();
+  }
+
+  /** Quita de la selección lo que ya no se puede coger (p. ej. al bloquear la escenografía). */
+  prune(keep: (id: string) => boolean) {
+    for (const id of [...this.selected]) if (!keep(id)) this.selected.delete(id);
+    this.changed();
+  }
+
   // --- Utilidades --------------------------------------------------------
   private changed() {
-    for (const id of [...this.selected]) if (!this.view.pieceOf(id)) this.selected.delete(id);
+    for (const id of [...this.selected]) if (!this.view.placedOf(id)) this.selected.delete(id);
     this.onSelectionChange();
   }
 
@@ -222,3 +237,5 @@ export class PieceControls {
 function rect(ax: number, ay: number, bx: number, by: number) {
   return { x0: Math.min(ax, bx), y0: Math.min(ay, by), x1: Math.max(ax, bx), y1: Math.max(ay, by) };
 }
+
+function round2(v: number) { return Math.round(v * 100) / 100; }

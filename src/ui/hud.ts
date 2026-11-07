@@ -1,5 +1,5 @@
 import { CommandBus } from "../core/commands";
-import { FACTIONS, GameState, PLAYERS, RollRecord } from "../core/state";
+import { FACTIONS, GameState, PLAYERS, RollRecord, TERRAIN } from "../core/state";
 
 // Interfaz: turno, deshacer/rehacer, dados y medida al arrastrar.
 
@@ -73,7 +73,9 @@ export class Hud {
       const F = FACTIONS[f as keyof typeof FACTIONS];
       return `<b style="color:${F.color}">${n}</b> ${F.name}`;
     });
-    el.innerHTML = `${selected.size === 1 ? "1 miniatura seleccionada" : `${selected.size} miniaturas seleccionadas`} · ${parts.join(" · ")}`
+    const terr = s.terrain.filter((t) => selected.has(t.id));
+    if (terr.length) parts.push(`<b style="color:#c9c3b4">${terr.length}</b> ${terr.length === 1 ? TERRAIN[terr[0].kind].name.toLowerCase() : "piezas de escenografía"}`);
+    el.innerHTML = `${selected.size === 1 ? "1 seleccionada" : `${selected.size} seleccionadas`} · ${parts.join(" · ")}`
       + `<div class="dim">Arrastra para mover · <kbd>R</kbd> girar · <kbd>Esc</kbd> soltar</div>`;
     el.hidden = false;
   }

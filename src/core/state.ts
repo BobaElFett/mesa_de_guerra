@@ -25,6 +25,26 @@ export interface Piece {
   rot: number;      // radianes; 0 = mirando hacia +z
 }
 
+export type TerrainKind = "ruina" | "ruinaGrande" | "cajas" | "crater" | "bunker" | "barricada";
+
+/** Huella de cada pieza de escenografía (ancho en x × fondo en z, en pulgadas, sin girar). */
+export const TERRAIN: Record<TerrainKind, { name: string; w: number; d: number }> = {
+  ruina: { name: "Ruina", w: 6, d: 4 },
+  ruinaGrande: { name: "Ruina grande", w: 8, d: 6 },
+  cajas: { name: "Contenedores", w: 4, d: 3 },
+  crater: { name: "Cráter", w: 5, d: 5 },
+  bunker: { name: "Búnker", w: 6, d: 4 },
+  barricada: { name: "Barricada", w: 4, d: 1 },
+};
+
+export interface TerrainPiece {
+  id: string;
+  kind: TerrainKind;
+  x: number;
+  z: number;
+  rot: number;
+}
+
 export interface RollRecord {
   player: number;   // 0 o 1
   turn: number;
@@ -41,6 +61,8 @@ export interface GameState {
   turn: number;              // ronda de batalla, desde 1
   active: 0 | 1;             // jugador que mueve: 0 = Legión, 1 = Enjambre
   pieces: Piece[];
+  terrain: TerrainPiece[];
+  nextTerrainId: number;     // para dar ids nuevos (T1, T2…) sin repetir
   rolls: RollRecord[];       // últimas tiradas, la más reciente al final
 }
 
@@ -60,7 +82,25 @@ export function createInitialState(seed: number): GameState {
       x: ((i % 5) - 2) * 1.8 + row * 0.9, z: zSw + row * 1.8, rot: 0,
     });
   }
-  return { version: 1, seed, rng: seed, turn: 1, active: 0, pieces, rolls: [] };
+  const terrain = exampleMap();
+  return { version: 1, seed, rng: seed, turn: 1, active: 0, pieces, terrain, nextTerrainId: terrain.length + 1, rolls: [] };
+}
+
+/** Mapa de ejemplo, simétrico respecto al centro del tapete: cada bando tiene lo mismo. */
+function exampleMap(): TerrainPiece[] {
+  const half: [TerrainKind, number, number, number][] = [
+    ["ruina", -14, -4, 0],
+    ["ruinaGrande", -22, 7, Math.PI / 2],
+    ["cajas", -6, 8, 0.3],
+    ["crater", -6, -9.5, 0],
+    ["barricada", -17, 13, 0],
+  ];
+  const out: TerrainPiece[] = [{ id: "T1", kind: "bunker", x: 0, z: 0, rot: 0 }];
+  for (const [kind, x, z, rot] of half) {
+    out.push({ id: `T${out.length + 1}`, kind, x, z, rot });
+    out.push({ id: `T${out.length + 1}`, kind, x: -x, z: -z, rot: rot + Math.PI });
+  }
+  return out;
 }
 
 export function cloneState(s: GameState): GameState {

@@ -14,6 +14,7 @@ import { RANGES } from "./core/measure";
 import { DiceTray } from "./view/dice";
 import { TRAY } from "./world/table";
 import { Command } from "./core/commands";
+import { TERRAIN, TerrainKind, BOARD as B } from "./core/state";
 import { Hud } from "./ui/hud";
 
 // --- Renderer y escena ---------------------------------------------------
@@ -110,6 +111,34 @@ $btn("tray-reroll").addEventListener("click", () => {
 $btn("tray-clear").addEventListener("click", () => { tray.remove(); renderTray(); });
 $btn("tray-look").addEventListener("click", () => cam.focus(TRAY.x, TRAY.z, 24));
 
+// Escenografía: bloqueada por defecto (se cogen las miniaturas que hay detrás); T la desbloquea
+const terrainBtn = $btn("terrain-edit"), terrainPanel = document.getElementById("terrain-panel")!;
+function setTerrainEdit(on: boolean) {
+  pieces.terrainLocked = !on;
+  terrainBtn.classList.toggle("on", on);
+  terrainPanel.hidden = !on;
+  if (!on) controls.prune((id) => !!pieces.pieceOf(id));
+}
+terrainBtn.addEventListener("click", () => setTerrainEdit(pieces.terrainLocked));
+for (const kind of Object.keys(TERRAIN) as TerrainKind[]) {
+  const b = document.createElement("button");
+  b.textContent = TERRAIN[kind].name;
+  b.title = `${TERRAIN[kind].w}" × ${TERRAIN[kind].d}"`;
+  b.addEventListener("click", () => {
+    const id = `T${bus.state.nextTerrainId}`;
+    const x = Math.round(Math.max(-B.w / 2 + 3, Math.min(B.w / 2 - 3, cam.target.x)));
+    const z = Math.round(Math.max(-B.d / 2 + 3, Math.min(B.d / 2 - 3, cam.target.z)));
+    bus.dispatch({ type: "addTerrain", kind, x, z, rot: 0 });
+    controls.selectOnly(id);
+  });
+  document.getElementById("terrain-add")!.appendChild(b);
+}
+function deleteSelectedTerrain() {
+  const ids = [...controls.selected].filter((id) => pieces.terrainOf(id));
+  if (ids.length) bus.dispatch({ type: "removeTerrain", ids });
+}
+$btn("terrain-delete").addEventListener("click", deleteSelectedTerrain);
+
 function refresh(_s?: unknown, cmd?: Command | null) {
   const last = bus.state.rolls.at(-1);
   if (cmd?.type === "roll") tray.show(last, true);
@@ -117,6 +146,7 @@ function refresh(_s?: unknown, cmd?: Command | null) {
   else tray.show(last, false);
   renderTray();
   pieces.sync(bus.state);
+  controls.prune((id) => !!pieces.placedOf(id));
   hud.render(bus.state);
   hud.renderSelection(bus.state, controls.selected);
   writeTable(bus.serialize());
@@ -141,6 +171,8 @@ window.addEventListener("keydown", (e) => {
   if (e.code === "KeyC") cycleRange(e.shiftKey ? -1 : 1);
   if (e.code === "Escape") tape.escape();
   if (e.code === "KeyB") cam.focus(TRAY.x, TRAY.z, 24);
+  if (e.code === "KeyT") setTerrainEdit(pieces.terrainLocked);
+  if ((e.code === "Delete" || e.code === "Backspace") && !pieces.terrainLocked) { e.preventDefault(); deleteSelectedTerrain(); }
 });
 
 // --- Bucle ---------------------------------------------------------------

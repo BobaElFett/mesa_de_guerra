@@ -1,4 +1,4 @@
-import { GameState, BOARD, cloneState, createInitialState } from "./state";
+import { GameState, BOARD, cloneState, createInitialState, TerrainKind, TERRAIN } from "./state";
 import { rollDice } from "./rng";
 
 // Toda acción sobre la mesa es una orden. El estado se obtiene aplicando las órdenes
@@ -11,6 +11,9 @@ export type Command =
   /** Mover (y girar) varias miniaturas a la vez: un solo paso de deshacer. */
   | { type: "moveMany"; moves: PieceMove[] }
   | { type: "roll"; count: number; sides: number }
+  /** Poner una pieza de escenografía (recibe el id T<n> siguiente). */
+  | { type: "addTerrain"; kind: TerrainKind; x: number; z: number; rot: number }
+  | { type: "removeTerrain"; ids: string[] }
   /** Volver a tirar algunos dados de la última tirada (por índice). */
   | { type: "reroll"; indices: number[] }
   | { type: "endTurn" };
@@ -37,7 +40,7 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
     }
     case "moveMany": {
       for (const m of cmd.moves) {
-        const p = s.pieces.find((q) => q.id === m.id);
+        const p = s.pieces.find((q) => q.id === m.id) ?? s.terrain.find((q) => q.id === m.id);
         if (!p) continue;
         p.x = clamp(m.x, -BOARD.w / 2, BOARD.w / 2);
         p.z = clamp(m.z, -BOARD.d / 2, BOARD.d / 2);
@@ -52,6 +55,20 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
       s.rng = rng;
       s.rolls.push({ player: s.active, turn: s.turn, sides, results });
       if (s.rolls.length > MAX_ROLLS) s.rolls.splice(0, s.rolls.length - MAX_ROLLS);
+      break;
+    }
+    case "addTerrain": {
+      if (!(cmd.kind in TERRAIN)) break;
+      s.terrain.push({
+        id: `T${s.nextTerrainId}`, kind: cmd.kind,
+        x: clamp(cmd.x, -BOARD.w / 2, BOARD.w / 2), z: clamp(cmd.z, -BOARD.d / 2, BOARD.d / 2), rot: cmd.rot,
+      });
+      s.nextTerrainId += 1;
+      break;
+    }
+    case "removeTerrain": {
+      const gone = new Set(cmd.ids);
+      s.terrain = s.terrain.filter((t) => !gone.has(t.id));
       break;
     }
     case "reroll": {
