@@ -1,3 +1,5 @@
+import type { DatasheetId } from "../rules/datasheets";
+
 // Estado de la partida: todo lo que hay en la mesa, serializable a JSON.
 // La vista Three.js solo lo lee; nada lo cambia salvo applyCommand (commands.ts).
 // Unidades: 1 = 1 pulgada. Origen en el centro del tapete, +z hacia el jugador 1 (Legión).
@@ -27,6 +29,19 @@ export interface Piece {
   pose?: number;
   /** Sargento de la escuadra / alfa del enjambre. */
   leader?: boolean;
+  /** Unidad a la que pertenece (ver GameState.units). */
+  unit?: string;
+  /** Heridas perdidas; la miniatura cae cuando llegan a su H. */
+  damage?: number;
+}
+
+/** Una unidad del reglamento: varias miniaturas con la misma hoja de datos. */
+export interface Unit {
+  id: string;
+  datasheet: DatasheetId;
+  faction: Faction;
+  /** Miniaturas con las que empezó (para la moral: «por debajo de la mitad»). */
+  startingModels: number;
 }
 
 export type TerrainKind = "ruina" | "ruinaGrande" | "cajas" | "crater" | "bunker" | "barricada";
@@ -65,6 +80,7 @@ export interface GameState {
   turn: number;              // ronda de batalla, desde 1
   active: 0 | 1;             // jugador que mueve: 0 = Legión, 1 = Enjambre
   pieces: Piece[];
+  units: Unit[];
   terrain: TerrainPiece[];
   nextTerrainId: number;     // para dar ids nuevos (T1, T2…) sin repetir
   rolls: RollRecord[];       // últimas tiradas, la más reciente al final
@@ -77,17 +93,21 @@ export function createInitialState(seed: number): GameState {
   const pieces: Piece[] = [];
   const zLeg = BOARD.d / 2 - 5, zSw = -BOARD.d / 2 + 5;
   for (let i = 0; i < 5; i++) {
-    pieces.push({ id: `L${i + 1}`, faction: "legion", model: "legionario", x: (i - 2) * 2, z: zLeg, rot: Math.PI, pose: [1, 2, 0, 0, 1][i], leader: i === 2 });
+    pieces.push({ id: `L${i + 1}`, faction: "legion", model: "legionario", x: (i - 2) * 2, z: zLeg, rot: Math.PI, pose: [1, 2, 0, 0, 1][i], leader: i === 2, unit: "U1" });
   }
   for (let i = 0; i < 10; i++) {
     const row = i < 5 ? 0 : 1;
     pieces.push({
       id: `E${i + 1}`, faction: "swarm", model: "garra",
-      x: ((i % 5) - 2) * 1.8 + row * 0.9, z: zSw + row * 1.8, rot: 0, pose: (i * 2) % 3, leader: i === 2,
+      x: ((i % 5) - 2) * 1.8 + row * 0.9, z: zSw + row * 1.8, rot: 0, pose: (i * 2) % 3, leader: i === 2, unit: "U2",
     });
   }
   const terrain = exampleMap();
-  return { version: 1, seed, rng: seed, turn: 1, active: 0, pieces, terrain, nextTerrainId: terrain.length + 1, rolls: [] };
+  const units: Unit[] = [
+    { id: "U1", datasheet: "asalto", faction: "legion", startingModels: 5 },
+    { id: "U2", datasheet: "garras", faction: "swarm", startingModels: 10 },
+  ];
+  return { version: 1, seed, rng: seed, turn: 1, active: 0, pieces, units, terrain, nextTerrainId: terrain.length + 1, rolls: [] };
 }
 
 /** Mapa de ejemplo, simétrico respecto al centro del tapete: cada bando tiene lo mismo. */

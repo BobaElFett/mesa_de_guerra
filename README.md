@@ -9,6 +9,14 @@ Plan completo (visión, facciones, roadmap y backlog): documento *Mesa de Guerra
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor.
 
+## Novedades 0.8 · fase 2 (hojas de datos y secuencia de ataque, #16 y #17)
+- **Reglamento v0.1** en la pestaña *Reglamento* del documento del proyecto: atributos M, R, Sv, Inv, H, L y CO; armas con alcance, A, HP, F, FP y D; habilidades de arma; turno de cinco fases; moral y sinapsis; ejércitos de 500 puntos.
+- **Hojas de datos en el código** (`rules/datasheets.ts`): las 8 unidades (Capitán, Escuadra de Asalto Táctico, Escuadra de Fuego Pesado, Andador de Combate, Tirano Sináptico, Garras Menores, Escupidores y Guerreros Nodo), sus 16 armas, sus habilidades y sus puntos.
+- **Unidades en el estado:** cada miniatura pertenece a una unidad (la Escuadra de Asalto Táctico U1 y las Garras Menores U2 en la mesa inicial) y lleva el daño recibido.
+- **Secuencia de ataque** (`rules/attack.ts`), pura y con dados del RNG del estado: impactar (críticos con 6, 1 siempre falla, modificadores ±1), herir con la tabla F contra R, salvar con FP, cobertura e invulnerable, y repartir el daño empezando por la miniatura herida (el sobrante se pierde). Habilidades: Pesada, Ráfaga, Sostenida, Letal, Devastadora, Explosiva, Torrente y Blindado, además de repetir los 1 (Al mando).
+- **Pruebas:** `npm test` ejecuta 17 pruebas (tabla de herir, salvaciones, la secuencia con dados fijos, cada habilidad, reparto del daño, una prueba estadística de 10 000 disparos, determinismo, puntos, colocación sin solapes y deshacer).
+- Todavía no hay cambios visibles en la mesa: esto es la base de las fases de disparo y combate.
+
 ## Novedades 0.7 · fase 1 (guardar y cargar mesas, #12) — fase 1 completa
 - **Mesas con nombre:** el botón **Mesas** abre la biblioteca. Pon un nombre y *Guardar*; si el nombre ya existe, se sustituye esa mesa. Cada mesa guardada muestra la ronda, de quién es el turno, cuántas órdenes lleva y cuándo se guardó.
 - **Ctrl+S:** guarda al momento con el nombre actual (aviso arriba); si la mesa aún no tiene nombre, abre el diálogo.
@@ -73,6 +81,7 @@ npm install
 npm run dev      # recompila dist/index.html al guardar
 npm run build    # build final minificado
 npm run check    # comprobación de tipos
+npm test         # pruebas de reglas y del núcleo
 ```
 En la consola del navegador, `mesa.bus` da acceso al estado y a las órdenes para probar.
 
@@ -102,6 +111,8 @@ src/
   tools/tapeMeasure.ts    cinta métrica
   view/rangeRings.ts      círculos de alcance alrededor de la selección
   view/dice.ts            dados 3D: modelo, simulación, bandeja, marcar y ordenar
+  rules/datasheets.ts     hojas de datos, armas, habilidades y puntos
+  rules/attack.ts         secuencia de ataque: impactar, herir, salvar, daño
   ui/hud.ts               turno, herramientas y dados
   ui/tablesDialog.ts      diálogo Mesas: guardar, cargar, borrar, exportar, importar
 ```
