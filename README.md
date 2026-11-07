@@ -9,6 +9,14 @@ Plan completo (visión, facciones, roadmap y backlog): documento *Mesa de Guerra
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor.
 
+## Novedades 0.7 · fase 1 (guardar y cargar mesas, #12) — fase 1 completa
+- **Mesas con nombre:** el botón **Mesas** abre la biblioteca. Pon un nombre y *Guardar*; si el nombre ya existe, se sustituye esa mesa. Cada mesa guardada muestra la ronda, de quién es el turno, cuántas órdenes lleva y cuándo se guardó.
+- **Ctrl+S:** guarda al momento con el nombre actual (aviso arriba); si la mesa aún no tiene nombre, abre el diálogo.
+- **Cargar y borrar** piden un segundo clic, para no perder la mesa actual por accidente. El nombre de la mesa actual se ve en el panel del turno; *Nueva mesa* empieza una sin nombre.
+- **Exportar e importar:** cualquier mesa (o la actual) se descarga como `nombre.mesa.json`. *Importar archivo…* la añade a la biblioteca (con «(2)» si el nombre ya está) y la carga. Los archivos que no son JSON, no son de Mesa de Guerra o están dañados se rechazan con un mensaje, sin tocar la mesa actual.
+- Un archivo guarda la semilla y la lista de órdenes, así que pesa pocos KB y reproduce la partida exacta, dados incluidos.
+- Con el diálogo abierto, los atajos de la mesa (Espacio, WASD, R…) no actúan.
+
 ## Novedades 0.6 · fase 1 (modelos definitivos, #11)
 - **Legionario de la Escuadra de Asalto Táctico:** hombreras grandes con ribete dorado y emblema, pecho con águila, mochila con toberas, rodilleras, casco con rejilla y visor luminoso, y bólter con cargador y mira. Tres poses: *apuntando*, *en guardia* (rifle cruzado) y *avanzando* (zancada, rifle bajo).
 - **Sargento:** casco rojo con cresta y laurel, pistola al frente, espada sierra en alto y un estandarte pequeño en la mochila. La peana lleva el borde dorado.
@@ -82,7 +90,7 @@ src/
   core/rng.ts             generador aleatorio con semilla y dados
   core/placement.ts       colocación sin solapes (hueco libre más cercano)
   core/measure.ts         medida borde a borde y alcances
-  core/save.ts            guardado en el navegador
+  core/save.ts            guardado automático, biblioteca de mesas y archivos .json
   camera/tableCamera.ts   cámara de mesa
   world/table.ts          mesa, tapete, rejilla, zonas de despliegue, bandeja y sala
   models/lowpoly.ts       ayudantes low poly (caja, hueso entre dos puntos, púa, fusionar por color)
@@ -95,7 +103,8 @@ src/
   view/rangeRings.ts      círculos de alcance alrededor de la selección
   view/dice.ts            dados 3D: modelo, simulación, bandeja, marcar y ordenar
   ui/hud.ts               turno, herramientas y dados
+  ui/tablesDialog.ts      diálogo Mesas: guardar, cargar, borrar, exportar, importar
 ```
 
-## Siguiente en la fase 1 (mesa sandbox)
-Guardar y cargar mesas con nombre (#12). Después, la fase 2: reglas núcleo.
+## Siguiente: fase 2 (reglas núcleo)
+Hojas de datos de las unidades y las seis fases del turno (mando, movimiento, disparo, carga, combate y moral) con tiradas automáticas, hasta poder jugar una partida completa entre la Legión y el Enjambre en modo reglas.

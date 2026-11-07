@@ -4,6 +4,7 @@ import { BOARD, PLAYERS } from "../core/state";
 import { resolveOverlaps } from "../core/placement";
 import { PiecesView } from "../view/piecesView";
 import { Picker } from "./picker";
+import { modal } from "../ui/modal";
 
 // Selección y movimiento de miniaturas con el botón izquierdo.
 //  - Clic en una miniatura: seleccionarla · Mayús+clic: añadirla o quitarla
@@ -151,7 +152,7 @@ export class PieceControls {
   }
 
   private key(e: KeyboardEvent) {
-    if ((e.target as HTMLElement)?.tagName === "INPUT") return;
+    if ((e.target as HTMLElement)?.tagName === "INPUT" || modal.open) return;
     const mod = e.ctrlKey || e.metaKey;
     if (mod && e.code === "KeyA") {
       e.preventDefault();

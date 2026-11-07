@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { BOARD } from "../core/state";
+import { modal } from "../ui/modal";
 
 /**
  * Cámara de mesa (adaptada de la RtsCamera de Señorío).
@@ -56,7 +57,7 @@ export class TableCamera {
 
   private bindInput() {
     window.addEventListener("keydown", (e) => {
-      if ((e.target as HTMLElement)?.tagName === "INPUT") return;
+      if ((e.target as HTMLElement)?.tagName === "INPUT" || modal.open) return;
       if (e.ctrlKey || e.metaKey) return;
       this.keys.add(e.code);
       if (e.code === "KeyV") this.topDown = !this.topDown;

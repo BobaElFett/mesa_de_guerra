@@ -16,6 +16,8 @@ import { TRAY } from "./world/table";
 import { Command } from "./core/commands";
 import { TERRAIN, TerrainKind, BOARD as B } from "./core/state";
 import { Hud } from "./ui/hud";
+import { TablesDialog } from "./ui/tablesDialog";
+import { modal } from "./ui/modal";
 
 // --- Renderer y escena ---------------------------------------------------
 const app = document.getElementById("app")!;
@@ -82,8 +84,10 @@ let gridOn = true;
 const hud = new Hud(bus, {
   toggleGrid: () => { gridOn = !gridOn; table.setGridVisible(gridOn); return gridOn; },
   toggleTopDown: () => { cam.topDown = !cam.topDown; return cam.topDown; },
-  newTable: () => { bus.reset(freshSeed()); cam.reset(); },
+  newTable: () => { bus.reset(freshSeed()); cam.reset(); tables.setName(""); },
 });
+const tables = new TablesDialog(bus);
+tables.onLoaded = () => { cam.reset(); tape.clear(); };
 controls.onDragInfo = (inches, x, y) => hud.showMeasure(inches, x, y);
 controls.onSelectionChange = () => hud.renderSelection(bus.state, controls.selected);
 
@@ -156,7 +160,7 @@ refresh();
 
 // --- Teclado -------------------------------------------------------------
 window.addEventListener("keydown", (e) => {
-  if ((e.target as HTMLElement)?.tagName === "INPUT") return;
+  if ((e.target as HTMLElement)?.tagName === "INPUT" || modal.open) return;
   const mod = e.ctrlKey || e.metaKey;
   if (mod && e.code === "KeyZ" && !e.shiftKey) { e.preventDefault(); bus.undo(); return; }
   if (mod && (e.code === "KeyY" || (e.code === "KeyZ" && e.shiftKey))) { e.preventDefault(); bus.redo(); return; }
@@ -196,4 +200,4 @@ renderer.setAnimationLoop(() => {
 });
 
 // Para pruebas desde la consola
-(window as unknown as { mesa: unknown }).mesa = { bus, cam, pieces, controls, tape, ranges, tray };
+(window as unknown as { mesa: unknown }).mesa = { bus, cam, pieces, controls, tape, ranges, tray, tables };

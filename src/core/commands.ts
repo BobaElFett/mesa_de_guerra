@@ -128,6 +128,16 @@ export class CommandBus {
     this.emit(null);
   }
 
+  /** Sustituye la mesa por una guardada (no se puede deshacer). */
+  load(saved: SavedTable) {
+    this.seed = saved.seed;
+    this.initial = createInitialState(saved.seed);
+    this.log = saved.log.slice();
+    this.cursor = Math.min(saved.cursor, this.log.length);
+    this.state = this.replay();
+    this.emit(null);
+  }
+
   static restore(saved: SavedTable): CommandBus {
     const bus = new CommandBus(saved.seed);
     bus.log = saved.log.slice();

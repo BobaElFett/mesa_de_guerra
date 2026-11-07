@@ -60,6 +60,23 @@
   #selbox { position: fixed; z-index: 3; pointer-events: none; border: 1px solid var(--gold); background: rgba(226,184,79,.1); }
   #tape-label { position: fixed; z-index: 3; pointer-events: none; transform: translate(-50%, -150%); background: #f0c94a; color: #1c1d22; border-radius: 4px; padding: 1px 8px; font-weight: 700; font-size: 15px; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,.4); }
   #tape-label span { font-weight: 500; font-size: 12px; }
+  #table-title { font-size: 13px; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #tables-backdrop { position: fixed; inset: 0; z-index: 10; background: rgba(8,9,12,.55); display: flex; align-items: center; justify-content: center; }
+  #tables { position: relative; width: min(560px, 92vw); max-height: 82vh; overflow: auto; padding: 14px 16px; font-size: 14px; }
+  #tables .row { display: flex; gap: 8px; align-items: center; }
+  .t-save { margin-top: 12px; }
+  #table-name { flex: 1; font: inherit; color: var(--ink); background: rgba(255,255,255,.06); border: 1px solid var(--line); border-radius: 4px; padding: 6px 8px; }
+  #table-name:focus { outline: none; border-color: var(--gold); }
+  #tables-msg { min-height: 20px; margin: 6px 0 2px; font-size: 13px; }
+  #tables-msg.error { color: var(--bad); }
+  #tables-list { list-style: none; margin: 6px 0; padding: 0; border-top: 1px solid var(--line); }
+  #tables-list li { padding: 8px 0; border-bottom: 1px solid var(--line); }
+  .t-name { font-weight: 600; }
+  .t-meta { font-size: 12px; }
+  .t-actions { display: flex; gap: 6px; margin-top: 5px; }
+  .t-actions button { font-size: 12px; padding: 2px 8px; }
+  .t-files { margin-top: 10px; flex-wrap: wrap; }
+  #toast { position: fixed; z-index: 11; left: 50%; top: 64px; transform: translateX(-50%); background: rgba(18,20,26,.92); border: 1px solid var(--gold); color: var(--gold); border-radius: 5px; padding: 5px 14px; font-weight: 600; }
   #measure { position: fixed; z-index: 3; pointer-events: none; background: rgba(18,20,26,.9); border: 1px solid var(--gold); color: var(--gold); border-radius: 4px; padding: 1px 7px; font-weight: 700; font-size: 14px; }
 </style>
 </head>
@@ -69,7 +86,7 @@
 <div id="help" class="panel">
   <h1 class="title">Mesa de Guerra</h1>
   <button id="help-toggle">Ocultar</button>
-  <div class="sub">Fase 1 · mesa sandbox (v0.6)</div>
+  <div class="sub">Fase 1 · mesa sandbox (v0.7)</div>
   <h2>Cámara</h2>
   <ul>
     <li><kbd>WASD</kbd> o botón central: desplazar</li>
@@ -91,15 +108,17 @@
     <li><kbd>Intro</kbd> pasar turno · <kbd>G</kbd> rejilla</li>
   </ul>
   <h2>Guardado</h2>
-  <div class="dim">La mesa se guarda sola en este navegador.</div>
+  <div class="dim">La mesa se guarda sola en este navegador. <b>Mesas</b> (o <kbd>Ctrl</kbd>+<kbd>S</kbd>) la guarda con nombre, carga otras y exporta o importa archivos.</div>
 </div>
 
 <div id="turn" class="panel">
+  <span id="table-title" class="dim"></span>
   <span id="turn-text"></span>
   <button id="end-turn" class="primary">Pasar turno</button>
 </div>
 
 <div id="tools" class="panel">
+  <button id="tables-open" title="Ctrl+S guarda con el nombre actual">Mesas</button>
   <button id="undo" title="Ctrl+Z">Deshacer</button>
   <button id="redo" title="Ctrl+Y">Rehacer</button>
   <button id="terrain-edit" title="T: desbloquea la escenografía para moverla, añadirla o borrarla">Escenografía</button>
@@ -135,6 +154,24 @@
 </div>
 <div id="sel" class="panel" hidden></div>
 <div id="selbox" hidden></div>
+<div id="tables-backdrop" hidden>
+  <div id="tables" class="panel" role="dialog" aria-label="Mesas">
+    <div class="row"><span class="title" style="font-size:18px">Mesas</span><button id="tables-close" style="margin-left:auto">Cerrar</button></div>
+    <div class="row t-save">
+      <input id="table-name" maxlength="60" placeholder="Nombre de la mesa actual" autocomplete="off">
+      <button id="table-save" class="primary">Guardar</button>
+    </div>
+    <div id="tables-msg" class="dim"></div>
+    <ul id="tables-list"></ul>
+    <div class="row t-files">
+      <button id="table-export">Exportar la actual a archivo</button>
+      <button id="table-import-btn">Importar archivo…</button>
+      <input id="table-import" type="file" accept=".json,application/json" hidden>
+    </div>
+    <div class="dim" style="font-size:12px; margin-top:6px">Las mesas se guardan en este navegador. Para llevarlas a otro ordenador, expórtalas a archivo. Un mismo nombre sobrescribe la mesa guardada.</div>
+  </div>
+</div>
+<div id="toast" hidden></div>
 <div id="measure" hidden></div>
 <div id="tape-label" hidden></div>
 
