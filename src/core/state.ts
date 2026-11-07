@@ -1,4 +1,5 @@
 import type { DatasheetId } from "../rules/datasheets";
+import type { Phase } from "../rules/turn";
 
 // Estado de la partida: todo lo que hay en la mesa, serializable a JSON.
 // La vista Three.js solo lo lee; nada lo cambia salvo applyCommand (commands.ts).
@@ -79,6 +80,10 @@ export interface GameState {
   rng: number;               // estado actual del generador
   turn: number;              // ronda de batalla, desde 1
   active: 0 | 1;             // jugador que mueve: 0 = Legión, 1 = Enjambre
+  phase: Phase;              // fase del turno del jugador activo
+  cp: [number, number];      // puntos de mando de cada jugador
+  rulesMode: boolean;        // true: modo reglas (el juego guía las fases); false: mesa libre
+  gameOver: boolean;         // se acabó la ronda 5
   pieces: Piece[];
   units: Unit[];
   terrain: TerrainPiece[];
@@ -107,7 +112,10 @@ export function createInitialState(seed: number): GameState {
     { id: "U1", datasheet: "asalto", faction: "legion", startingModels: 5 },
     { id: "U2", datasheet: "garras", faction: "swarm", startingModels: 10 },
   ];
-  return { version: 1, seed, rng: seed, turn: 1, active: 0, pieces, units, terrain, nextTerrainId: terrain.length + 1, rolls: [] };
+  return {
+    version: 1, seed, rng: seed, turn: 1, active: 0, phase: "mando", cp: [1, 1], rulesMode: false, gameOver: false,
+    pieces, units, terrain, nextTerrainId: terrain.length + 1, rolls: [],
+  };
 }
 
 /** Mapa de ejemplo, simétrico respecto al centro del tapete: cada bando tiene lo mismo. */

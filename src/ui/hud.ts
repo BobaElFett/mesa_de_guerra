@@ -1,5 +1,6 @@
 import { CommandBus } from "../core/commands";
 import { FACTIONS, GameState, PLAYERS, RollRecord, TERRAIN } from "../core/state";
+import { PHASES, PHASE_INFO, MAX_ROUNDS } from "../rules/turn";
 
 // Interfaz: turno, deshacer/rehacer, dados y medida al arrastrar.
 
@@ -18,7 +19,8 @@ export class Hud {
   constructor(private bus: CommandBus, private actions: HudActions) {
     $("undo").addEventListener("click", () => bus.undo());
     $("redo").addEventListener("click", () => bus.redo());
-    $("end-turn").addEventListener("click", () => bus.dispatch({ type: "endTurn" }));
+    $("end-turn").addEventListener("click", () => this.advance());
+    $("mode").addEventListener("click", () => bus.dispatch({ type: "setRulesMode", on: !bus.state.rulesMode }));
     $("grid").addEventListener("click", () => $("grid").classList.toggle("on", actions.toggleGrid()));
     $("topdown").addEventListener("click", () => $("topdown").classList.toggle("on", actions.toggleTopDown()));
     $("new").addEventListener("click", () => {
@@ -51,9 +53,29 @@ export class Hud {
   rollMore(delta: number) { this.setCount(this.diceCount + delta); }
   rollNow() { this.bus.dispatch({ type: "roll", count: this.diceCount, sides: 6 }); }
 
+  /** Intro / botón: siguiente fase en modo reglas; siguiente turno en mesa libre. */
+  advance() {
+    this.bus.dispatch(this.bus.state.rulesMode ? { type: "nextPhase" } : { type: "endTurn" });
+  }
+
   render(s: GameState) {
     const f = FACTIONS[PLAYERS[s.active]];
-    $("turn-text").innerHTML = `Ronda ${s.turn} · Turno ${f.of.replace(/(Legión Astral|Enjambre)/, `<b style="color:${f.color}">$1</b>`)}`;
+    const who = f.of.replace(/(Legión Astral|Enjambre)/, `<b style="color:${f.color}">$1</b>`);
+    const rounds = s.rulesMode ? `${s.turn}/${MAX_ROUNDS}` : `${s.turn}`;
+    $("turn-text").innerHTML = s.gameOver ? `<b>Fin de la partida</b> · 5 rondas jugadas` : `Ronda ${rounds} · Turno ${who}`;
+    $("mode").textContent = s.rulesMode ? "Modo reglas" : "Mesa libre";
+    $("mode").classList.toggle("on", s.rulesMode);
+    const btn = $<HTMLButtonElement>("end-turn");
+    btn.textContent = s.rulesMode ? (s.phase === "combate" ? "Terminar turno" : "Siguiente fase") : "Pasar turno";
+    btn.disabled = s.gameOver;
+    const phases = $("phases");
+    phases.hidden = !s.rulesMode;
+    if (s.rulesMode) {
+      phases.innerHTML = PHASES.map((p) => `<span class="ph${p === s.phase && !s.gameOver ? " now" : ""}">${PHASE_INFO[p].name}</span>`).join("")
+        + `<span class="cp" title="Puntos de mando">PM <b style="color:${FACTIONS.legion.color}">${s.cp[0]}</b> · <b style="color:${FACTIONS.swarm.color}">${s.cp[1]}</b></span>`;
+      $("phase-hint").textContent = s.gameOver ? "Partida terminada. Deshacer (Ctrl+Z) vuelve atrás; Nueva mesa empieza otra." : PHASE_INFO[s.phase].hint;
+    }
+    $("phase-hint").hidden = !s.rulesMode;
     ($("undo") as HTMLButtonElement).disabled = !this.bus.canUndo;
     ($("redo") as HTMLButtonElement).disabled = !this.bus.canRedo;
 
@@ -64,7 +86,7 @@ export class Hud {
   }
 
   /** Resumen de la selección, abajo a la izquierda. */
-  renderSelection(s: GameState, selected: Set<string>) {
+  renderSelection(s: GameState, selected: Set<string>, incoherent: Set<string> = new Set()) {
     const el = $("sel");
     if (!selected.size) { el.hidden = true; return; }
     const by = new Map<string, number>();
@@ -76,6 +98,7 @@ export class Hud {
     const terr = s.terrain.filter((t) => selected.has(t.id));
     if (terr.length) parts.push(`<b style="color:#c9c3b4">${terr.length}</b> ${terr.length === 1 ? TERRAIN[terr[0].kind].name.toLowerCase() : "piezas de escenografía"}`);
     el.innerHTML = `${selected.size === 1 ? "1 seleccionada" : `${selected.size} seleccionadas`} · ${parts.join(" · ")}`
+      + (incoherent.size ? `<div class="warn">${incoherent.size} fuera de coherencia (más de 2" de su unidad)</div>` : "")
       + `<div class="dim">Arrastra para mover · <kbd>R</kbd> girar · <kbd>Esc</kbd> soltar</div>`;
     el.hidden = false;
   }

@@ -9,6 +9,13 @@ Plan completo (visión, facciones, roadmap y backlog): documento *Mesa de Guerra
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor.
 
+## Novedades 0.9 · fase 2 (visión, coherencia y fases del turno, #18 y #19)
+- **Modo reglas** (botón *Mesa libre* / *Modo reglas*): el panel del turno muestra las cinco fases (Mando, Movimiento, Disparo, Carga, Combate) con la actual resaltada, los PM de cada bando y una línea que explica qué se hace en esa fase. **Intro** o *Siguiente fase* avanza; tras el combate pasa al otro bando. Cada fase de mando da 1 PM a los dos. Tras la ronda 5 la partida termina.
+- En **mesa libre** todo sigue como antes: *Pasar turno* y sin límite de rondas. Las fases aún no limitan nada; eso llega con las fases de movimiento, disparo y combate.
+- **Visión en la cinta:** al medir de una miniatura a otra enemiga, la etiqueta dice *visible*, *en cobertura* o *sin visión*. Ruinas, contenedores y búnker tapan la vista (salvo estando dentro); cráteres y barricadas no la tapan, pero dan cobertura. Se comprueban tres líneas por pareja (centro y bordes): si alguna pasa, hay visión; si alguna cruza escenografía, hay cobertura.
+- **Coherencia:** al seleccionar una miniatura, las de su unidad que están a más de 2" de las demás (de dos, con 6 o más miniaturas) se marcan en rojo y el panel de selección lo avisa.
+- Código: `rules/geometry.ts` (coherencia, trabamiento a 1", huellas de escenografía, visión y cobertura) y `rules/turn.ts` (fases, PM y rondas), con 9 pruebas nuevas (26 en total). Órdenes nuevas: `nextPhase`, `setRulesMode` y `spendCP`.
+
 ## Novedades 0.8 · fase 2 (hojas de datos y secuencia de ataque, #16 y #17)
 - **Reglamento v0.1** en la pestaña *Reglamento* del documento del proyecto: atributos M, R, Sv, Inv, H, L y CO; armas con alcance, A, HP, F, FP y D; habilidades de arma; turno de cinco fases; moral y sinapsis; ejércitos de 500 puntos.
 - **Hojas de datos en el código** (`rules/datasheets.ts`): las 8 unidades (Capitán, Escuadra de Asalto Táctico, Escuadra de Fuego Pesado, Andador de Combate, Tirano Sináptico, Garras Menores, Escupidores y Guerreros Nodo), sus 16 armas, sus habilidades y sus puntos.
@@ -113,6 +120,8 @@ src/
   view/dice.ts            dados 3D: modelo, simulación, bandeja, marcar y ordenar
   rules/datasheets.ts     hojas de datos, armas, habilidades y puntos
   rules/attack.ts         secuencia de ataque: impactar, herir, salvar, daño
+  rules/geometry.ts       coherencia, trabamiento, visión y cobertura
+  rules/turn.ts           fases del turno, puntos de mando y rondas
   ui/hud.ts               turno, herramientas y dados
   ui/tablesDialog.ts      diálogo Mesas: guardar, cargar, borrar, exportar, importar
 ```

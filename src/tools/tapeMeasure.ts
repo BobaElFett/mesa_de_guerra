@@ -4,6 +4,8 @@ import { BASE_RADIUS } from "../core/state";
 import { measure, inchesText, Spot, Measurement } from "../core/measure";
 import { PiecesView } from "../view/piecesView";
 import { Picker } from "../input/picker";
+import { sight, Sight } from "../rules/geometry";
+import { TerrainPiece } from "../core/state";
 
 // Cinta métrica (tecla M): con la herramienta activa, clic y arrastre mide en pulgadas.
 // Si un extremo cae en una miniatura, se mide desde el borde de su peana y la cinta la sigue
@@ -15,6 +17,8 @@ const TAPE_W = 0.16;
 const YELLOW = "#f0c94a", INK = "#2a2418";
 
 interface End { x: number; z: number; pieceId: string | null }
+
+const SIGHT_TEXT: Record<Sight, string> = { visible: "visible", cobertura: "en cobertura", oculta: "sin visión" };
 
 export class TapeMeasure {
   readonly group = new THREE.Group();
@@ -29,6 +33,9 @@ export class TapeMeasure {
   private matTape = new THREE.MeshBasicMaterial({ color: YELLOW, depthTest: false, transparent: true, opacity: 0.95 });
   private matInk = new THREE.MeshBasicMaterial({ color: INK, depthTest: false, transparent: true });
   private matCap = new THREE.MeshBasicMaterial({ color: YELLOW, depthTest: false, transparent: true, opacity: 0.8, side: THREE.DoubleSide });
+
+  /** Escenografía actual, para decir si hay visión entre las dos miniaturas. */
+  terrain: () => TerrainPiece[] = () => [];
 
   constructor(private dom: HTMLElement, private picker: Picker, private view: PiecesView) {
     this.label = document.getElementById("tape-label")!;
@@ -129,10 +136,21 @@ export class TapeMeasure {
     const s = this.picker.toScreen(mx, TAPE_Y, mz);
     if (!s) { this.label.hidden = true; return; }
     const both = this.a?.pieceId && this.b?.pieceId;
-    this.label.innerHTML = `${inchesText(m.inches)}${both ? `<span> borde a borde</span>` : ""}`;
+    let extra = both ? `<span> borde a borde</span>` : "";
+    const vis = this.sightNow();
+    if (vis) extra += `<span class="sight ${vis}"> · ${SIGHT_TEXT[vis]}</span>`;
+    this.label.innerHTML = `${inchesText(m.inches)}${extra}`;
     this.label.style.left = `${s.x}px`;
     this.label.style.top = `${s.y}px`;
     this.label.hidden = false;
+  }
+
+  /** Visión de la miniatura de un extremo a la del otro, si son de bandos distintos. */
+  sightNow(): Sight | null {
+    const pa = this.a?.pieceId ? this.view.pieceOf(this.a.pieceId) : null;
+    const pb = this.b?.pieceId ? this.view.pieceOf(this.b.pieceId) : null;
+    if (!pa || !pb || pa.faction === pb.faction) return null;
+    return sight(this.spot(this.a!), this.spot(this.b!), this.terrain());
   }
 
   private rebuild(m: Measurement | null) {

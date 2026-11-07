@@ -11,6 +11,7 @@ import { Picker } from "./input/picker";
 import { TapeMeasure } from "./tools/tapeMeasure";
 import { RangeRings } from "./view/rangeRings";
 import { RANGES } from "./core/measure";
+import { outOfCoherency } from "./rules/geometry";
 import { DiceTray } from "./view/dice";
 import { TRAY } from "./world/table";
 import { Command } from "./core/commands";
@@ -86,10 +87,20 @@ const hud = new Hud(bus, {
   toggleTopDown: () => { cam.topDown = !cam.topDown; return cam.topDown; },
   newTable: () => { bus.reset(freshSeed()); cam.reset(); tables.setName(""); },
 });
+tape.terrain = () => bus.state.terrain;
+
+/** Miniaturas fuera de coherencia en las unidades que tienen algo seleccionado. */
+function coherencyWarnings(): Set<string> {
+  const units = new Set(bus.state.pieces.filter((p) => controls.selected.has(p.id) && p.unit).map((p) => p.unit!));
+  const out = new Set<string>();
+  for (const u of units) for (const id of outOfCoherency(bus.state.pieces.filter((p) => p.unit === u))) out.add(id);
+  return out;
+}
+
 const tables = new TablesDialog(bus);
 tables.onLoaded = () => { cam.reset(); tape.clear(); };
 controls.onDragInfo = (inches, x, y) => hud.showMeasure(inches, x, y);
-controls.onSelectionChange = () => hud.renderSelection(bus.state, controls.selected);
+controls.onSelectionChange = () => hud.renderSelection(bus.state, controls.selected, coherencyWarnings());
 
 // Bandeja de dados: clic en un dado lo marca para repetir (antes que seleccionar o medir)
 const tray = new DiceTray();
@@ -152,7 +163,7 @@ function refresh(_s?: unknown, cmd?: Command | null) {
   pieces.sync(bus.state);
   controls.prune((id) => !!pieces.placedOf(id));
   hud.render(bus.state);
-  hud.renderSelection(bus.state, controls.selected);
+  hud.renderSelection(bus.state, controls.selected, coherencyWarnings());
   writeTable(bus.serialize());
 }
 bus.onChange(refresh);
@@ -170,7 +181,7 @@ window.addEventListener("keydown", (e) => {
   if (e.code === "Space") { e.preventDefault(); hud.rollNow(); }
   if (e.code === "Equal" || e.code === "NumpadAdd") hud.rollMore(1);
   if (e.code === "Minus" || e.code === "NumpadSubtract") hud.rollMore(-1);
-  if (e.code === "Enter") bus.dispatch({ type: "endTurn" });
+  if (e.code === "Enter") hud.advance();
   if (e.code === "KeyM") tape.toggle();
   if (e.code === "KeyC") cycleRange(e.shiftKey ? -1 : 1);
   if (e.code === "Escape") tape.escape();
@@ -192,7 +203,7 @@ renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 0.1);
   cam.update(dt);
   pieces.update(dt);
-  pieces.highlight(controls.selected, controls.hovered);
+  pieces.highlight(controls.selected, controls.hovered, controls.selected.size ? coherencyWarnings() : undefined);
   ranges.update(pieces, controls.selected);
   tape.update();
   tray.update(dt);

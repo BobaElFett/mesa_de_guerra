@@ -14,6 +14,7 @@ export interface Placed { id: string; x: number; z: number; rot: number }
 
 const RING_SELECTED = "#f2d36b";
 const RING_HOVER = "#e8e4d4";
+const RING_WARN = "#e0675a";
 
 export class PiecesView {
   readonly group = new THREE.Group();
@@ -27,6 +28,7 @@ export class PiecesView {
   private frameGeos = new Map<string, THREE.BufferGeometry>();
   private matSel = new THREE.MeshBasicMaterial({ color: RING_SELECTED, transparent: true, opacity: 0.95, depthWrite: false });
   private matHover = new THREE.MeshBasicMaterial({ color: RING_HOVER, transparent: true, opacity: 0.55, depthWrite: false });
+  private matWarn = new THREE.MeshBasicMaterial({ color: RING_WARN, transparent: true, opacity: 0.95, depthWrite: false });
 
   sync(state: GameState) {
     const seen = new Set<string>();
@@ -92,7 +94,7 @@ export class PiecesView {
   }
 
   /** Anillos bajo las miniaturas y marcos bajo la escenografía: dorado = seleccionado, tenue = ratón. */
-  highlight(selected: Iterable<string>, hovered: string | null) {
+  highlight(selected: Iterable<string>, hovered: string | null, warn: Set<string> = new Set()) {
     let n = 0;
     const put = (id: string, mat: THREE.Material) => {
       const e = this.entries.get(id);
@@ -120,8 +122,9 @@ export class PiecesView {
       n++;
     };
     const sel = new Set(selected);
-    for (const id of sel) put(id, this.matSel);
-    if (hovered && !sel.has(hovered)) put(hovered, this.matHover);
+    for (const id of sel) put(id, warn.has(id) ? this.matWarn : this.matSel);
+    for (const id of warn) if (!sel.has(id)) put(id, this.matWarn);
+    if (hovered && !sel.has(hovered) && !warn.has(hovered)) put(hovered, this.matHover);
     for (let i = n; i < this.marks.length; i++) this.marks[i].visible = false;
   }
 

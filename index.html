@@ -33,7 +33,13 @@
   #help-toggle { position: absolute; right: 10px; top: 10px; font-size: 11px; padding: 1px 7px; }
   #help.folded > :not(h1):not(#help-toggle) { display: none; }
 
-  #turn { left: 50%; bottom: 12px; transform: translateX(-50%); padding: 6px 8px 6px 16px; display: flex; gap: 14px; align-items: center; font-size: 15px; }
+  #turn { left: 50%; bottom: 12px; transform: translateX(-50%); padding: 6px 8px 6px 16px; font-size: 15px; max-width: 560px; }
+  .turn-row { display: flex; gap: 14px; align-items: center; justify-content: center; }
+  #phases { display: flex; gap: 4px; align-items: center; justify-content: center; margin: 6px 0 2px; font-size: 12px; }
+  #phases .ph { padding: 1px 8px; border-radius: 10px; border: 1px solid var(--line); color: var(--dim); }
+  #phases .ph.now { color: #1c1d22; background: var(--gold); border-color: var(--gold); font-weight: 700; }
+  #phases .cp { margin-left: 10px; color: var(--dim); }
+  #phase-hint { font-size: 12px; text-align: center; padding-bottom: 2px; }
   #turn-text b { font-family: "Rajdhani", sans-serif; font-size: 17px; letter-spacing: .04em; }
 
   #tools { right: 12px; top: 12px; padding: 6px; display: flex; gap: 6px; }
@@ -60,6 +66,10 @@
   #selbox { position: fixed; z-index: 3; pointer-events: none; border: 1px solid var(--gold); background: rgba(226,184,79,.1); }
   #tape-label { position: fixed; z-index: 3; pointer-events: none; transform: translate(-50%, -150%); background: #f0c94a; color: #1c1d22; border-radius: 4px; padding: 1px 8px; font-weight: 700; font-size: 15px; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,.4); }
   #tape-label span { font-weight: 500; font-size: 12px; }
+  #tape-label .sight { font-weight: 700; }
+  #tape-label .sight.cobertura { color: #6b4a10; }
+  #tape-label .sight.oculta { color: #8a1d14; }
+  .warn { color: var(--bad); font-weight: 600; }
   #table-title { font-size: 13px; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   #tables-backdrop { position: fixed; inset: 0; z-index: 10; background: rgba(8,9,12,.55); display: flex; align-items: center; justify-content: center; }
   #tables { position: relative; width: min(560px, 92vw); max-height: 82vh; overflow: auto; padding: 14px 16px; font-size: 14px; }
@@ -86,7 +96,7 @@
 <div id="help" class="panel">
   <h1 class="title">Mesa de Guerra</h1>
   <button id="help-toggle">Ocultar</button>
-  <div class="sub">Fase 2 · reglas (v0.8)</div>
+  <div class="sub">Fase 2 · reglas (v0.9)</div>
   <h2>Cámara</h2>
   <ul>
     <li><kbd>WASD</kbd> o botón central: desplazar</li>
@@ -105,19 +115,24 @@
     <li><kbd>C</kbd> círculos de alcance alrededor de la selección (3"–24")</li>
     <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> deshacer · <kbd>Ctrl</kbd>+<kbd>Y</kbd> rehacer</li>
     <li><kbd>Espacio</kbd> tirar dados · <kbd>+</kbd> <kbd>−</kbd> cuántos · <kbd>B</kbd> ver la bandeja</li>
-    <li><kbd>Intro</kbd> pasar turno · <kbd>G</kbd> rejilla</li>
+    <li><kbd>Intro</kbd> pasar turno (en modo reglas: siguiente fase) · <kbd>G</kbd> rejilla</li>
   </ul>
   <h2>Guardado</h2>
   <div class="dim">La mesa se guarda sola en este navegador. <b>Mesas</b> (o <kbd>Ctrl</kbd>+<kbd>S</kbd>) la guarda con nombre, carga otras y exporta o importa archivos.</div>
 </div>
 
 <div id="turn" class="panel">
-  <span id="table-title" class="dim"></span>
-  <span id="turn-text"></span>
-  <button id="end-turn" class="primary">Pasar turno</button>
+  <div class="turn-row">
+    <span id="table-title" class="dim"></span>
+    <span id="turn-text"></span>
+    <button id="end-turn" class="primary" title="Intro">Pasar turno</button>
+  </div>
+  <div id="phases" hidden></div>
+  <div id="phase-hint" class="dim" hidden></div>
 </div>
 
 <div id="tools" class="panel">
+  <button id="mode" title="Mesa libre: todo se mueve a mano. Modo reglas: el juego guía las fases.">Mesa libre</button>
   <button id="tables-open" title="Ctrl+S guarda con el nombre actual">Mesas</button>
   <button id="undo" title="Ctrl+Z">Deshacer</button>
   <button id="redo" title="Ctrl+Y">Rehacer</button>

@@ -1,5 +1,6 @@
 import { GameState, BOARD, cloneState, createInitialState, TerrainKind, TERRAIN } from "./state";
 import { rollDice } from "./rng";
+import { advancePhase, endTurn } from "../rules/turn";
 
 // Toda acción sobre la mesa es una orden. El estado se obtiene aplicando las órdenes
 // en orden desde la mesa inicial: así hay deshacer, guardado y, más adelante, juego en línea
@@ -16,7 +17,12 @@ export type Command =
   | { type: "removeTerrain"; ids: string[] }
   /** Volver a tirar algunos dados de la última tirada (por índice). */
   | { type: "reroll"; indices: number[] }
-  | { type: "endTurn" };
+  | { type: "endTurn" }
+  /** Modo reglas: pasa a la fase siguiente (y al otro jugador tras el combate). */
+  | { type: "nextPhase" }
+  | { type: "setRulesMode"; on: boolean }
+  /** Gastar puntos de mando (p. ej. 1 PM para repetir una tirada). */
+  | { type: "spendCP"; player: 0 | 1; amount: number };
 
 export interface PieceMove { id: string; x: number; z: number; rot?: number }
 
@@ -83,8 +89,20 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
       break;
     }
     case "endTurn": {
-      if (s.active === 1) s.turn += 1;
-      s.active = s.active === 0 ? 1 : 0;
+      endTurn(s);
+      break;
+    }
+    case "nextPhase": {
+      advancePhase(s);
+      break;
+    }
+    case "setRulesMode": {
+      s.rulesMode = !!cmd.on;
+      break;
+    }
+    case "spendCP": {
+      const n = Math.max(0, Math.round(cmd.amount));
+      if (s.cp[cmd.player] >= n) s.cp[cmd.player] -= n;
       break;
     }
   }
