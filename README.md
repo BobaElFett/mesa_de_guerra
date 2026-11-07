@@ -9,6 +9,14 @@ Plan completo (visión, facciones, roadmap y backlog): documento *Mesa de Guerra
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor.
 
+## Novedades 0.6 · fase 1 (modelos definitivos, #11)
+- **Legionario de la Escuadra de Asalto Táctico:** hombreras grandes con ribete dorado y emblema, pecho con águila, mochila con toberas, rodilleras, casco con rejilla y visor luminoso, y bólter con cargador y mira. Tres poses: *apuntando*, *en guardia* (rifle cruzado) y *avanzando* (zancada, rifle bajo).
+- **Sargento:** casco rojo con cresta y laurel, pistola al frente, espada sierra en alto y un estandarte pequeño en la mochila. La peana lleva el borde dorado.
+- **Garra Menor del Enjambre:** patas digitígradas, placas de quitina en el lomo, cola segmentada, cabeza alargada con cresta, mandíbulas y ojos que brillan, guadañas curvas y bracitos con garras. Tres poses: *acechando*, *lanzándose* y *erguida*.
+- **Alfa del enjambre:** un 15 % más grande, quitina más oscura, cresta alta, espinas de hueso en el lomo y sacos que brillan en violeta.
+- Peanas con superficie de tierra y piedrecitas. Cada pieza guarda su `pose` y si es `leader`; en la mesa inicial cada escuadra mezcla las tres poses y lleva su líder en el centro.
+- Los modelos se construyen por articulaciones (nuevos ayudantes `segment` y `spike`): una pose es otro juego de puntos. Las miniaturas iguales comparten geometría.
+
 ## Novedades 0.5 · fase 1 (escenografía, #10)
 - **Seis piezas low poly:** ruina (6"×4"), ruina grande de dos alturas (8"×6"), contenedores (4"×3"), cráter (5"), búnker (6"×4") y barricada (4"×1"). Los muros son rotos, con ventanas y cascotes, y siempre salen iguales.
 - **Mapa de ejemplo:** cada mesa nueva trae 11 piezas en disposición simétrica (búnker en el centro y cinco piezas por bando), así ninguno de los dos lados tiene ventaja. Las mesas guardadas con versiones anteriores lo reciben al cargarse.
@@ -77,8 +85,8 @@ src/
   core/save.ts            guardado en el navegador
   camera/tableCamera.ts   cámara de mesa
   world/table.ts          mesa, tapete, rejilla, zonas de despliegue, bandeja y sala
-  models/lowpoly.ts       ayudantes low poly (caja, colocar, fusionar por color)
-  models/miniatures.ts    miniaturas provisionales de la Legión y el Enjambre
+  models/lowpoly.ts       ayudantes low poly (caja, hueso entre dos puntos, púa, fusionar por color)
+  models/miniatures.ts    legionario, sargento, Garra y alfa, con 3 poses cada uno
   models/terrain.ts       escenografía: ruinas, contenedores, cráter, búnker y barricada
   view/piecesView.ts      dibujo de miniaturas y escenografía, y resaltado
   input/pieceControls.ts  selección, recuadro, arrastre y giro en grupo
@@ -90,4 +98,4 @@ src/
 ```
 
 ## Siguiente en la fase 1 (mesa sandbox)
-Modelos definitivos de la Escuadra de Asalto Táctico y las Garras Menores (#11), y guardar y cargar mesas con nombre (#12).
+Guardar y cargar mesas con nombre (#12). Después, la fase 2: reglas núcleo.

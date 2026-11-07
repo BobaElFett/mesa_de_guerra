@@ -23,6 +23,10 @@ export interface Piece {
   x: number;
   z: number;
   rot: number;      // radianes; 0 = mirando hacia +z
+  /** Variante de pose del modelo (0–2). */
+  pose?: number;
+  /** Sargento de la escuadra / alfa del enjambre. */
+  leader?: boolean;
 }
 
 export type TerrainKind = "ruina" | "ruinaGrande" | "cajas" | "crater" | "bunker" | "barricada";
@@ -73,13 +77,13 @@ export function createInitialState(seed: number): GameState {
   const pieces: Piece[] = [];
   const zLeg = BOARD.d / 2 - 5, zSw = -BOARD.d / 2 + 5;
   for (let i = 0; i < 5; i++) {
-    pieces.push({ id: `L${i + 1}`, faction: "legion", model: "legionario", x: (i - 2) * 2, z: zLeg, rot: Math.PI });
+    pieces.push({ id: `L${i + 1}`, faction: "legion", model: "legionario", x: (i - 2) * 2, z: zLeg, rot: Math.PI, pose: [1, 2, 0, 0, 1][i], leader: i === 2 });
   }
   for (let i = 0; i < 10; i++) {
     const row = i < 5 ? 0 : 1;
     pieces.push({
       id: `E${i + 1}`, faction: "swarm", model: "garra",
-      x: ((i % 5) - 2) * 1.8 + row * 0.9, z: zSw + row * 1.8, rot: 0,
+      x: ((i % 5) - 2) * 1.8 + row * 0.9, z: zSw + row * 1.8, rot: 0, pose: (i * 2) % 3, leader: i === 2,
     });
   }
   const terrain = exampleMap();

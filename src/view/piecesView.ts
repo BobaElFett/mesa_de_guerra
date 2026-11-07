@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { GameState, Piece, TerrainPiece, TERRAIN } from "../core/state";
-import { makeMiniature, BASE_RADIUS } from "../models/miniatures";
+import { miniatureFor, BASE_RADIUS } from "../models/miniatures";
 import { makeTerrain } from "../models/terrain";
 
 // Dibuja las miniaturas y la escenografía a partir del estado. Las posiciones se suavizan
@@ -45,7 +45,7 @@ export class PiecesView {
       e.item = item;
     };
     for (const t of state.terrain) upsert(t.id, { kind: "terrain", terrain: t }, () => shadowed(makeTerrain(t.kind)), t);
-    for (const p of state.pieces) upsert(p.id, { kind: "mini", piece: p }, () => makeMiniature(p.model), p);
+    for (const p of state.pieces) upsert(p.id, { kind: "mini", piece: p }, () => miniatureFor(p), p);
     for (const [id, e] of this.entries) {
       if (!seen.has(id)) { this.group.remove(e.group); this.entries.delete(id); }
     }
