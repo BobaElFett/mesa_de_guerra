@@ -3,6 +3,7 @@ import { CommandBus, PieceMove } from "../core/commands";
 import { BOARD, PLAYERS } from "../core/state";
 import { resolveOverlaps } from "../core/placement";
 import { PiecesView } from "../view/piecesView";
+import { Picker } from "./picker";
 
 // Selección y movimiento de miniaturas con el botón izquierdo.
 //  - Clic en una miniatura: seleccionarla · Mayús+clic: añadirla o quitarla
@@ -28,16 +29,15 @@ export class PieceControls {
   /** Distancia que lleva la miniatura que más se ha movido (pulgadas), o null si no se arrastra. */
   onDragInfo: (inches: number | null, clientX: number, clientY: number) => void = () => {};
 
+  /** Mientras devuelva true (p. ej. con la cinta métrica), el botón izquierdo no es nuestro. */
+  blocked: () => boolean = () => false;
+
   private g: Gesture = { kind: "none" };
-  private ray = new THREE.Raycaster();
-  private ndc = new THREE.Vector2();
-  private plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
-  private hit = new THREE.Vector3();
   private box: HTMLElement;
 
   constructor(
     private dom: HTMLElement,
-    private camera: THREE.PerspectiveCamera,
+    private picker: Picker,
     private view: PiecesView,
     private bus: CommandBus,
   ) {
@@ -50,7 +50,7 @@ export class PieceControls {
 
   // --- Entrada -----------------------------------------------------------
   private down(e: PointerEvent) {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || this.blocked()) return;
     this.setRay(e);
     const id = this.pick();
     const p = this.tablePoint();
@@ -85,8 +85,8 @@ export class PieceControls {
     this.setRay(e);
     const g = this.g;
     if (g.kind === "none") {
-      this.hovered = this.pick();
-      this.dom.style.cursor = this.hovered ? "grab" : "default";
+      this.hovered = this.blocked() ? null : this.pick();
+      if (!this.blocked()) this.dom.style.cursor = this.hovered ? "grab" : "default";
       return;
     }
     if (g.kind === "box") {
@@ -162,7 +162,7 @@ export class PieceControls {
       return;
     }
     if (mod) return;
-    if (e.code === "Escape") {
+    if (e.code === "Escape" && !this.blocked()) {
       if (this.g.kind === "piece" && this.g.dragging) {
         this.view.dragging.clear();
         this.onDragInfo(null, 0, 0);
@@ -173,7 +173,7 @@ export class PieceControls {
       this.box.hidden = true;
       this.g = { kind: "none" };
     }
-    if (e.code === "KeyR" && this.g.kind === "none") this.rotate(e.shiftKey ? -Math.PI / 4 : Math.PI / 4);
+    if (e.code === "KeyR" && this.g.kind === "none" && !this.blocked()) this.rotate(e.shiftKey ? -Math.PI / 4 : Math.PI / 4);
   }
 
   // --- Acciones ----------------------------------------------------------
@@ -209,33 +209,13 @@ export class PieceControls {
     this.onSelectionChange();
   }
 
-  private setRay(e: PointerEvent) {
-    const r = this.dom.getBoundingClientRect();
-    this.ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
-    this.ray.setFromCamera(this.ndc, this.camera);
-  }
-
-  private pick(): string | null {
-    const hits = this.ray.intersectObjects(this.view.pickables(), true);
-    for (const h of hits) {
-      let o: THREE.Object3D | null = h.object;
-      while (o && o.userData.pieceId === undefined) o = o.parent;
-      if (o) return o.userData.pieceId as string;
-    }
-    return null;
-  }
-
-  private tablePoint(): THREE.Vector3 | null {
-    return this.ray.ray.intersectPlane(this.plane, this.hit);
-  }
+  private setRay(e: PointerEvent) { this.picker.set(e); }
+  private pick(): string | null { return this.picker.piece(); }
+  private tablePoint(): THREE.Vector3 | null { return this.picker.table(); }
 
   private toScreen(id: string): { x: number; y: number } | null {
     const gr = this.view.groupOf(id);
-    if (!gr) return null;
-    const v = new THREE.Vector3(gr.position.x, 0.5, gr.position.z).project(this.camera);
-    if (v.z > 1) return null;
-    const r = this.dom.getBoundingClientRect();
-    return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height };
+    return gr ? this.picker.toScreen(gr.position.x, 0.5, gr.position.z) : null;
   }
 }
 

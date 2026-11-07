@@ -7,6 +7,10 @@ import { TableCamera } from "./camera/tableCamera";
 import { Table } from "./world/table";
 import { PiecesView } from "./view/piecesView";
 import { PieceControls } from "./input/pieceControls";
+import { Picker } from "./input/picker";
+import { TapeMeasure } from "./tools/tapeMeasure";
+import { RangeRings } from "./view/rangeRings";
+import { RANGES } from "./core/measure";
 import { Hud } from "./ui/hud";
 
 // --- Renderer y escena ---------------------------------------------------
@@ -50,7 +54,25 @@ const pieces = new PiecesView();
 scene.add(pieces.group);
 
 const cam = new TableCamera(renderer.domElement);
-const controls = new PieceControls(renderer.domElement, cam.camera, pieces, bus);
+const picker = new Picker(renderer.domElement, cam.camera, pieces);
+const tape = new TapeMeasure(renderer.domElement, picker, pieces);
+scene.add(tape.group);
+const controls = new PieceControls(renderer.domElement, picker, pieces, bus);
+controls.blocked = () => tape.active;
+const ranges = new RangeRings();
+scene.add(ranges.group);
+
+// Herramientas: cinta métrica (M) y círculos de alcance (C)
+const tapeBtn = document.getElementById("tape")!, rangeBtn = document.getElementById("range")!;
+tape.onActiveChange = (on) => tapeBtn.classList.toggle("on", on);
+tapeBtn.addEventListener("click", () => tape.toggle());
+function cycleRange(dir = 1) {
+  const i = RANGES.indexOf(ranges.range as (typeof RANGES)[number]);
+  ranges.range = RANGES[(i + dir + RANGES.length) % RANGES.length];
+  rangeBtn.textContent = ranges.range ? `Alcance ${ranges.range}"` : "Alcance";
+  rangeBtn.classList.toggle("on", ranges.range > 0);
+}
+rangeBtn.addEventListener("click", () => cycleRange());
 
 let gridOn = true;
 const hud = new Hud(bus, {
@@ -83,6 +105,9 @@ window.addEventListener("keydown", (e) => {
   if (e.code === "Equal" || e.code === "NumpadAdd") hud.rollMore(1);
   if (e.code === "Minus" || e.code === "NumpadSubtract") hud.rollMore(-1);
   if (e.code === "Enter") bus.dispatch({ type: "endTurn" });
+  if (e.code === "KeyM") tape.toggle();
+  if (e.code === "KeyC") cycleRange(e.shiftKey ? -1 : 1);
+  if (e.code === "Escape") tape.escape();
 });
 
 // --- Bucle ---------------------------------------------------------------
@@ -99,8 +124,10 @@ renderer.setAnimationLoop(() => {
   cam.update(dt);
   pieces.update(dt);
   pieces.highlight(controls.selected, controls.hovered);
+  ranges.update(pieces, controls.selected);
+  tape.update();
   renderer.render(scene, cam.camera);
 });
 
 // Para pruebas desde la consola
-(window as unknown as { mesa: unknown }).mesa = { bus, cam, pieces, controls };
+(window as unknown as { mesa: unknown }).mesa = { bus, cam, pieces, controls, tape, ranges };

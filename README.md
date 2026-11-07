@@ -9,6 +9,14 @@ Plan completo (visión, facciones, roadmap y backlog): documento *Mesa de Guerra
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor.
 
+## Novedades 0.3 · fase 1 (cinta métrica, #8)
+- **Cinta métrica** (tecla **M** o botón *Cinta*): clic y arrastre sobre la mesa mide en pulgadas. Si un extremo está en una miniatura, mide desde el borde de su peana; de peana a peana mide **borde a borde**, como en el tablero real. La cinta es amarilla, con una marca por pulgada y otra más larga cada 6", y se ve a través de las miniaturas.
+- La medida **sigue a las miniaturas** si se mueven (o al deshacer) y se queda en la mesa hasta medir otra vez, un clic sin arrastrar, o **Esc** (el segundo Esc cierra la herramienta). Con la cinta activa, el clic izquierdo no selecciona ni mueve miniaturas.
+- **Círculos de alcance** (tecla **C**, Mayús+C hacia atrás, o botón *Alcance*): alrededor de cada miniatura seleccionada, a 3", 6", 12", 18" o 24" del borde de su peana.
+- Medir no es una orden: no se guarda ni se deshace.
+- El panel del turno pasa abajo al centro, para que no lo tape la barra de herramientas.
+- Código: `core/measure.ts` (medida borde a borde, pura, para las reglas de la fase 2), `input/picker.ts` (rayo compartido), `tools/tapeMeasure.ts` y `view/rangeRings.ts`.
+
 ## Novedades 0.2 · fase 1 (selección y grupos, #6 y #7)
 - **Seleccionar:** clic en una miniatura; **Mayús+clic** añade o quita; arrastrar sobre el tapete traza un **recuadro de selección** (con Mayús, añade). **Ctrl+A** selecciona todo el bando que juega. **Esc** suelta la selección. Las seleccionadas llevan un anillo dorado y la que está bajo el ratón, uno tenue; abajo a la izquierda se ve cuántas hay de cada bando.
 - **Mover en grupo:** al arrastrar una miniatura seleccionada se mueve toda la selección conservando la formación, sin salirse del tapete; la medida muestra las pulgadas recorridas.
@@ -49,6 +57,7 @@ src/
   core/commands.ts        órdenes, applyCommand y CommandBus (deshacer/rehacer)
   core/rng.ts             generador aleatorio con semilla y dados
   core/placement.ts       colocación sin solapes (hueco libre más cercano)
+  core/measure.ts         medida borde a borde y alcances
   core/save.ts            guardado en el navegador
   camera/tableCamera.ts   cámara de mesa
   world/table.ts          mesa, tapete, rejilla, zonas de despliegue y sala
@@ -56,8 +65,11 @@ src/
   models/miniatures.ts    miniaturas provisionales de la Legión y el Enjambre
   view/piecesView.ts      dibujo de las miniaturas y resaltado
   input/pieceControls.ts  selección, recuadro, arrastre y giro en grupo
+  input/picker.ts         rayo del ratón: miniatura y punto del tapete
+  tools/tapeMeasure.ts    cinta métrica
+  view/rangeRings.ts      círculos de alcance alrededor de la selección
   ui/hud.ts               turno, herramientas y dados
 ```
 
 ## Siguiente en la fase 1 (mesa sandbox)
-Cinta métrica (#8), dados en 3D sobre la mesa (#9), escenografía (#10), modelos definitivos de la Escuadra de Asalto Táctico y las Garras Menores (#11), y guardar y cargar mesas con nombre (#12).
+Dados en 3D sobre la mesa (#9), escenografía (#10), modelos definitivos de la Escuadra de Asalto Táctico y las Garras Menores (#11), y guardar y cargar mesas con nombre (#12).
