@@ -28,6 +28,11 @@ export class Picker {
     return null;
   }
 
+  /** Objetos de la lista que corta el rayo, del más cercano al más lejano. */
+  intersect(objects: THREE.Object3D[]): THREE.Intersection[] {
+    return this.ray.intersectObjects(objects, true);
+  }
+
   /** Punto del tapete bajo el ratón (se reutiliza el mismo vector), o null. */
   table(): THREE.Vector3 | null {
     return this.ray.ray.intersectPlane(this.plane, this.hit);

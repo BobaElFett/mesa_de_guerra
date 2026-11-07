@@ -38,7 +38,9 @@
 
   #tools { right: 12px; top: 12px; padding: 6px; display: flex; gap: 6px; }
 
-  #dice { right: 12px; bottom: 12px; width: 300px; padding: 10px 12px; }
+  #dice { right: 12px; bottom: 12px; width: 330px; padding: 10px 12px; }
+  .tray-row { margin-top: 6px; flex-wrap: wrap; }
+  .tray-row button { font-size: 12px; padding: 3px 8px; }
   #dice .row { display: flex; gap: 6px; align-items: center; }
   #dice-count { min-width: 24px; text-align: center; font-weight: 600; }
   #roll { margin-left: auto; }
@@ -63,7 +65,7 @@
 <div id="help" class="panel">
   <h1 class="title">Mesa de Guerra</h1>
   <button id="help-toggle">Ocultar</button>
-  <div class="sub">Fase 1 · mesa sandbox (v0.3)</div>
+  <div class="sub">Fase 1 · mesa sandbox (v0.4)</div>
   <h2>Cámara</h2>
   <ul>
     <li><kbd>WASD</kbd> o botón central: desplazar</li>
@@ -80,7 +82,7 @@
     <li><kbd>M</kbd> cinta métrica: arrastra para medir (de peana a peana mide borde a borde)</li>
     <li><kbd>C</kbd> círculos de alcance alrededor de la selección (3"–24")</li>
     <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> deshacer · <kbd>Ctrl</kbd>+<kbd>Y</kbd> rehacer</li>
-    <li><kbd>Espacio</kbd> tirar dados · <kbd>+</kbd> <kbd>−</kbd> cuántos</li>
+    <li><kbd>Espacio</kbd> tirar dados · <kbd>+</kbd> <kbd>−</kbd> cuántos · <kbd>B</kbd> ver la bandeja</li>
     <li><kbd>Intro</kbd> pasar turno · <kbd>G</kbd> rejilla</li>
   </ul>
   <h2>Guardado</h2>
@@ -109,6 +111,13 @@
     <button id="roll" class="primary">Tirar 5D6</button>
   </div>
   <div id="dice-result"></div>
+  <div class="row tray-row">
+    <button id="tray-sort" title="En filas por resultado">Ordenar</button>
+    <button id="tray-ones" title="Marca todos los 1">Marcar unos</button>
+    <button id="tray-reroll" disabled>Repetir marcados</button>
+    <button id="tray-clear" title="Quita los dados de la bandeja">Retirar</button>
+  </div>
+  <div class="row tray-row"><span class="dim" style="font-size:12px">Clic en un dado de la bandeja para marcarlo</span><button id="tray-look" title="B" style="margin-left:auto">Ver bandeja</button></div>
   <ul id="dice-history"></ul>
 </div>
 

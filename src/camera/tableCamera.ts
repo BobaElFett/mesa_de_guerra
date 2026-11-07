@@ -36,6 +36,13 @@ export class TableCamera {
     this.topDown = false;
   }
 
+  /** Acerca la cámara a un punto (p. ej. la bandeja de dados). */
+  focus(x: number, z: number, distance: number) {
+    this.target.set(x, 0, z);
+    this.targetDistance = THREE.MathUtils.clamp(distance, this.minDistance, this.maxDistance);
+    this.topDown = false;
+  }
+
   /** Mira desde el lado de un jugador (0 = Legión, +z; 1 = Enjambre, −z). */
   sideOf(player: 0 | 1) {
     this.yaw = player === 0 ? 0 : Math.PI;
@@ -107,7 +114,7 @@ export class TableCamera {
     const sin = Math.sin(this.yaw), cos = Math.cos(this.yaw);
     this.target.x += (mx * cos + mz * sin) * speed * dt;
     this.target.z += (-mx * sin + mz * cos) * speed * dt;
-    this.target.x = THREE.MathUtils.clamp(this.target.x, -BOARD.w / 2 - 4, BOARD.w / 2 + 4);
+    this.target.x = THREE.MathUtils.clamp(this.target.x, -BOARD.w / 2 - 4, BOARD.w / 2 + 18);
     this.target.z = THREE.MathUtils.clamp(this.target.z, -BOARD.d / 2 - 4, BOARD.d / 2 + 4);
 
     // Cerca se ve de lado, a la altura de las miniaturas; lejos, más desde arriba

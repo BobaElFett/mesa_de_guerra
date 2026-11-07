@@ -9,6 +9,14 @@ Plan completo (visión, facciones, roadmap y backlog): documento *Mesa de Guerra
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor.
 
+## Novedades 0.4 · fase 1 (dados en 3D, #9)
+- **Bandeja de dados** en un estante a la derecha de la mesa (fondo de fieltro, paredes de madera). **B** o *Ver bandeja* lleva la cámara allí.
+- **Dados en 3D:** cada tirada se lanza en la bandeja; los dados ruedan, chocan entre sí y con las paredes, y se asientan planos sin quedar unos encima de otros. Hasta 40 dados de 16 mm con sus puntos.
+- **El resultado lo manda el estado:** primero se deciden los dados con la semilla y después se simula el lanzamiento; al acabar, el dibujo de cada dado se gira para que la cara de arriba sea su resultado. La animación nunca contradice al panel.
+- **Marcar y repetir:** clic en un dado de la bandeja lo marca (dorado); *Marcar unos* marca todos los 1. *Repetir N* vuelve a tirar solo los marcados, que se lanzan otra vez mientras los demás se quedan quietos. Es una orden nueva (`reroll`), con su deshacer, y el panel indica cuántos se han repetido.
+- **Ordenar** coloca los dados en filas por resultado, de 6 a 1. **Retirar** los quita de la bandeja (la tirada sigue en el registro).
+- Al deshacer, rehacer o cargar, los dados aparecen ya quietos, sin animación.
+
 ## Novedades 0.3 · fase 1 (cinta métrica, #8)
 - **Cinta métrica** (tecla **M** o botón *Cinta*): clic y arrastre sobre la mesa mide en pulgadas. Si un extremo está en una miniatura, mide desde el borde de su peana; de peana a peana mide **borde a borde**, como en el tablero real. La cinta es amarilla, con una marca por pulgada y otra más larga cada 6", y se ve a través de las miniaturas.
 - La medida **sigue a las miniaturas** si se mueven (o al deshacer) y se queda en la mesa hasta medir otra vez, un clic sin arrastrar, o **Esc** (el segundo Esc cierra la herramienta). Con la cinta activa, el clic izquierdo no selecciona ni mueve miniaturas.
@@ -60,7 +68,7 @@ src/
   core/measure.ts         medida borde a borde y alcances
   core/save.ts            guardado en el navegador
   camera/tableCamera.ts   cámara de mesa
-  world/table.ts          mesa, tapete, rejilla, zonas de despliegue y sala
+  world/table.ts          mesa, tapete, rejilla, zonas de despliegue, bandeja y sala
   models/lowpoly.ts       ayudantes low poly (caja, colocar, fusionar por color)
   models/miniatures.ts    miniaturas provisionales de la Legión y el Enjambre
   view/piecesView.ts      dibujo de las miniaturas y resaltado
@@ -68,8 +76,9 @@ src/
   input/picker.ts         rayo del ratón: miniatura y punto del tapete
   tools/tapeMeasure.ts    cinta métrica
   view/rangeRings.ts      círculos de alcance alrededor de la selección
+  view/dice.ts            dados 3D: modelo, simulación, bandeja, marcar y ordenar
   ui/hud.ts               turno, herramientas y dados
 ```
 
 ## Siguiente en la fase 1 (mesa sandbox)
-Dados en 3D sobre la mesa (#9), escenografía (#10), modelos definitivos de la Escuadra de Asalto Táctico y las Garras Menores (#11), y guardar y cargar mesas con nombre (#12).
+Escenografía (#10), modelos definitivos de la Escuadra de Asalto Táctico y las Garras Menores (#11), y guardar y cargar mesas con nombre (#12).

@@ -11,6 +11,8 @@ export type Command =
   /** Mover (y girar) varias miniaturas a la vez: un solo paso de deshacer. */
   | { type: "moveMany"; moves: PieceMove[] }
   | { type: "roll"; count: number; sides: number }
+  /** Volver a tirar algunos dados de la última tirada (por índice). */
+  | { type: "reroll"; indices: number[] }
   | { type: "endTurn" };
 
 export interface PieceMove { id: string; x: number; z: number; rot?: number }
@@ -50,6 +52,17 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
       s.rng = rng;
       s.rolls.push({ player: s.active, turn: s.turn, sides, results });
       if (s.rolls.length > MAX_ROLLS) s.rolls.splice(0, s.rolls.length - MAX_ROLLS);
+      break;
+    }
+    case "reroll": {
+      const r = s.rolls.at(-1);
+      if (!r) break;
+      const idx = [...new Set(cmd.indices)].filter((i) => Number.isInteger(i) && i >= 0 && i < r.results.length).sort((a, b) => a - b);
+      if (!idx.length) break;
+      const [vals, rng] = rollDice(s.rng, idx.length, r.sides);
+      s.rng = rng;
+      idx.forEach((i, k) => { r.results[i] = vals[k]; });
+      r.rerolled = [...new Set([...(r.rerolled ?? []), ...idx])].sort((a, b) => a - b);
       break;
     }
     case "endTurn": {

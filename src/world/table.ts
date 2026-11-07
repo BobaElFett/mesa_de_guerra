@@ -5,7 +5,11 @@ import { BOARD, DEPLOY_DEPTH, FACTIONS } from "../core/state";
 // La mesa: tablero de madera, tapete de batalla de 60" × 44", rejilla, zonas de despliegue
 // y la sala alrededor. La superficie del tapete está en y = 0.
 
-const WOOD = "#6b4a30", WOOD_DARK = "#4a3221", FLOOR = "#2a2421";
+const WOOD = "#6b4a30", WOOD_DARK = "#4a3221", FLOOR = "#2a2421", FELT = "#5a2a2e";
+const TOP = -0.12;   // altura del tablero de madera
+
+/** Bandeja de dados, en un estante a la derecha de la mesa. Medidas interiores. */
+export const TRAY = { x: 42, z: 0, w: 10.6, d: 14.6, floorY: TOP + 0.25, wall: 0.9 } as const;
 
 export class Table {
   readonly group = new THREE.Group();
@@ -14,7 +18,8 @@ export class Table {
 
   constructor() {
     // Tablero, marco y patas
-    const frameW = BOARD.w + 8, frameD = BOARD.d + 8, top = -0.12;
+    const frameW = BOARD.w + 8, frameD = BOARD.d + 8, top = TOP;
+    const shelfX0 = frameW / 2, shelfW = 16, shelfD = 20;
     const wood = build([
       box(frameW, 1.6, frameD, WOOD, 0, top - 1.6, 0),
       box(frameW + 0.6, 0.5, 0.8, WOOD_DARK, 0, top - 0.2, frameD / 2 + 0.1),
@@ -23,6 +28,10 @@ export class Table {
       box(0.8, 0.5, frameD + 0.6, WOOD_DARK, -frameW / 2 - 0.1, top - 0.2, 0),
       ...[[-1, -1], [1, -1], [-1, 1], [1, 1]].map(([sx, sz]) =>
         box(3, 28, 3, WOOD_DARK, sx * (frameW / 2 - 3), top - 29.6, sz * (frameD / 2 - 3))),
+      // Estante lateral para la bandeja de dados
+      box(shelfW, 1.4, shelfD, WOOD, shelfX0 + shelfW / 2, top - 1.4, 0),
+      box(2, 28, 2, WOOD_DARK, shelfX0 + shelfW - 2, top - 29.4, shelfD / 2 - 2),
+      box(2, 28, 2, WOOD_DARK, shelfX0 + shelfW - 2, top - 29.4, -shelfD / 2 + 2),
     ]);
     this.group.add(wood);
 
@@ -68,6 +77,17 @@ export class Table {
     this.grid = new THREE.Group();
     this.grid.add(gridLines(1, 0.06), gridLines(6, 0.2));
     this.group.add(this.grid);
+
+    // Bandeja de dados: fondo de fieltro y paredes de madera oscura
+    const t = TRAY, wt = 0.4;
+    const tray = build([
+      box(t.w, 0.25, t.d, FELT, t.x, top, t.z),
+      box(t.w + 2 * wt, t.wall, wt, WOOD_DARK, t.x, top, t.z - t.d / 2 - wt / 2),
+      box(t.w + 2 * wt, t.wall, wt, WOOD_DARK, t.x, top, t.z + t.d / 2 + wt / 2),
+      box(wt, t.wall, t.d, WOOD_DARK, t.x - t.w / 2 - wt / 2, top, t.z),
+      box(wt, t.wall, t.d, WOOD_DARK, t.x + t.w / 2 + wt / 2, top, t.z),
+    ]);
+    this.group.add(tray);
 
     // Suelo de la sala
     const floor = new THREE.Mesh(new THREE.PlaneGeometry(600, 600), new THREE.MeshStandardMaterial({ color: FLOOR, roughness: 1 }));

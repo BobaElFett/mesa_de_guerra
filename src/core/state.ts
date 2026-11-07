@@ -30,6 +30,8 @@ export interface RollRecord {
   turn: number;
   sides: number;
   results: number[];
+  /** Índices de los dados que se han vuelto a tirar. */
+  rerolled?: number[];
 }
 
 export interface GameState {

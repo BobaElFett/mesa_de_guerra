@@ -11,6 +11,9 @@ import { Picker } from "./input/picker";
 import { TapeMeasure } from "./tools/tapeMeasure";
 import { RangeRings } from "./view/rangeRings";
 import { RANGES } from "./core/measure";
+import { DiceTray } from "./view/dice";
+import { TRAY } from "./world/table";
+import { Command } from "./core/commands";
 import { Hud } from "./ui/hud";
 
 // --- Renderer y escena ---------------------------------------------------
@@ -34,7 +37,7 @@ key.position.set(-26, 70, 34);
 key.castShadow = true;
 key.shadow.mapSize.set(4096, 4096);
 const sc = key.shadow.camera;
-sc.left = -BOARD.w / 2 - 8; sc.right = BOARD.w / 2 + 8;
+sc.left = -BOARD.w / 2 - 8; sc.right = BOARD.w / 2 + 22;
 sc.bottom = -BOARD.d / 2 - 8; sc.top = BOARD.d / 2 + 8;
 sc.near = 10; sc.far = 200;
 key.shadow.bias = -0.0012;
@@ -83,7 +86,36 @@ const hud = new Hud(bus, {
 controls.onDragInfo = (inches, x, y) => hud.showMeasure(inches, x, y);
 controls.onSelectionChange = () => hud.renderSelection(bus.state, controls.selected);
 
-function refresh() {
+// Bandeja de dados: clic en un dado lo marca para repetir (antes que seleccionar o medir)
+const tray = new DiceTray();
+scene.add(tray.group);
+renderer.domElement.addEventListener("pointerdown", (e) => {
+  if (e.button !== 0 || tape.active) return;
+  picker.set(e);
+  if (tray.toggleAt(picker.intersect(tray.pickables()))) e.stopImmediatePropagation();
+}, true);
+const $btn = (id: string) => document.getElementById(id) as HTMLButtonElement;
+function renderTray() {
+  const n = tray.marked.size;
+  $btn("tray-reroll").disabled = n === 0;
+  $btn("tray-reroll").textContent = n ? `Repetir ${n}` : "Repetir marcados";
+  for (const id of ["tray-sort", "tray-ones", "tray-clear"]) $btn(id).disabled = tray.count === 0;
+}
+tray.onMarkedChange = renderTray;
+$btn("tray-sort").addEventListener("click", () => tray.sort());
+$btn("tray-ones").addEventListener("click", () => tray.markAtMost(1));
+$btn("tray-reroll").addEventListener("click", () => {
+  if (tray.marked.size) bus.dispatch({ type: "reroll", indices: [...tray.marked] });
+});
+$btn("tray-clear").addEventListener("click", () => { tray.remove(); renderTray(); });
+$btn("tray-look").addEventListener("click", () => cam.focus(TRAY.x, TRAY.z, 24));
+
+function refresh(_s?: unknown, cmd?: Command | null) {
+  const last = bus.state.rolls.at(-1);
+  if (cmd?.type === "roll") tray.show(last, true);
+  else if (cmd?.type === "reroll") tray.show(last, true, cmd.indices);
+  else tray.show(last, false);
+  renderTray();
   pieces.sync(bus.state);
   hud.render(bus.state);
   hud.renderSelection(bus.state, controls.selected);
@@ -108,6 +140,7 @@ window.addEventListener("keydown", (e) => {
   if (e.code === "KeyM") tape.toggle();
   if (e.code === "KeyC") cycleRange(e.shiftKey ? -1 : 1);
   if (e.code === "Escape") tape.escape();
+  if (e.code === "KeyB") cam.focus(TRAY.x, TRAY.z, 24);
 });
 
 // --- Bucle ---------------------------------------------------------------
@@ -126,8 +159,9 @@ renderer.setAnimationLoop(() => {
   pieces.highlight(controls.selected, controls.hovered);
   ranges.update(pieces, controls.selected);
   tape.update();
+  tray.update(dt);
   renderer.render(scene, cam.camera);
 });
 
 // Para pruebas desde la consola
-(window as unknown as { mesa: unknown }).mesa = { bus, cam, pieces, controls, tape, ranges };
+(window as unknown as { mesa: unknown }).mesa = { bus, cam, pieces, controls, tape, ranges, tray };

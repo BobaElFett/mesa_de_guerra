@@ -98,7 +98,8 @@ function rollHtml(r: RollRecord, big: boolean): string {
     const n = r.results.filter((x) => x === v).length;
     if (n) counts.push(`${n}×${v}`);
   }
-  const who = `<span style="color:${f.color}">${f.name}</span> · ronda ${r.turn}`;
+  const re = r.rerolled?.length ? ` · ${r.rerolled.length} repetido${r.rerolled.length > 1 ? "s" : ""}` : "";
+  const who = `<span style="color:${f.color}">${f.name}</span> · ronda ${r.turn}${re}`;
   return big
     ? `<div class="dice">${dice}</div><div class="dim">${counts.join("  ")} — ${who}</div>`
     : `<span class="dim">${r.results.length}D${r.sides}:</span> ${counts.join("  ")}`;
