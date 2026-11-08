@@ -9,6 +9,14 @@ Plan completo (visión, facciones, roadmap y backlog): documento *Mesa de Guerra
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor.
 
+## Novedades 0.11 · fase 2 (fase de disparo, #21)
+- **Disparar:** en la fase de disparo, la ficha de la unidad lista sus armas a distancia con su perfil (24" A2 3+ F4 FP−1 D1…) y, para cada una, un botón por unidad enemiga con la distancia, si está en cobertura y cuántas miniaturas llegan. Al pasar el ratón por el botón, la unidad objetivo se marca en naranja.
+- **Quién dispara:** solo las miniaturas que llevan el arma, ven alguna miniatura objetivo (ruinas, contenedores y búnker tapan) y la tienen al alcance. El sargento dispara su pistola por separado.
+- **Restricciones:** cada arma dispara una vez por fase; tras avanzar solo armas de Asalto; tras retirarse, nada; una unidad trabada solo dispara pistolas a quien la traba; no se puede disparar a una unidad trabada con las tuyas. Cada botón deshabilitado dice por qué.
+- **Resolución:** la orden `shoot` resuelve impactar → herir → salvar → daño con los dados de la semilla, dentro del estado: se puede deshacer y rehacer y sale siempre igual. Cobertura si ninguna miniatura tiradora ve el objetivo sin escenografía de por medio; el daño va primero a las heridas y luego a las más cercanas.
+- **Paso a paso:** un informe arriba enseña cada tirada (impactar, herir, salvar) con sus dados en fichas (verdes los éxitos) mientras ruedan en la bandeja; *Ver bandeja* lleva la cámara allí y *Saltar* va al final. Las bajas se quedan en la mesa hasta las salvaciones y luego caen.
+- Código: `rules/shooting.ts` (opciones, alcance, visión, cobertura y resolución), `view/shotPlayer.ts` (reproducción) y el registro de ataques `combatLog` en el estado. 6 pruebas nuevas (39 en total).
+
 ## Novedades 0.10 · fase 2 (fase de movimiento, #20)
 - **Unidad entera:** en modo reglas, un clic selecciona toda la unidad y aparece su ficha (atributos y miniaturas vivas). **Alt+clic** selecciona una sola miniatura para recolocarla dentro de la formación.
 - **Fase de movimiento:** la unidad elige en su ficha **Mover** (hasta M), **Avanzar** (M + D6; el dado sale de la semilla, se ve en la bandeja y se puede deshacer) o **Retirarse** (solo si está trabada). Arrastrarla sin elegir es un movimiento normal.
@@ -133,7 +141,9 @@ src/
   rules/geometry.ts       coherencia, trabamiento, visión y cobertura
   rules/turn.ts           fases del turno, puntos de mando y rondas
   rules/movement.ts       fase de movimiento: mover, avanzar, retirarse y límites
+  rules/shooting.ts       fase de disparo: armas, objetivos, restricciones y resolución
   input/rulesGate.ts      lo que el modo reglas permite mover en cada fase
+  view/shotPlayer.ts      reproduce un ataque paso a paso con informe y dados
   ui/hud.ts               turno, herramientas y dados
   ui/tablesDialog.ts      diálogo Mesas: guardar, cargar, borrar, exportar, importar
 ```

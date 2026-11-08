@@ -72,6 +72,8 @@ export class DiceTray {
   private geos = dieGeometries();
   private matBody = new THREE.MeshStandardMaterial({ color: "#ece6d8", flatShading: true, roughness: 0.55 });
   private matMarked = new THREE.MeshStandardMaterial({ color: "#f0c94a", flatShading: true, roughness: 0.55, emissive: new THREE.Color("#5a4410") });
+  private matGood = new THREE.MeshStandardMaterial({ color: "#9fd27a", flatShading: true, roughness: 0.55, emissive: new THREE.Color("#1f3a10") });
+  private good: (v: number) => boolean = () => false;
   private matPips = new THREE.MeshStandardMaterial({ color: "#1d1e24", roughness: 0.8 });
   private shownKey = "";
   private t = 0;
@@ -240,7 +242,15 @@ export class DiceTray {
   }
 
   private applyMarks() {
-    this.dice.forEach((d, i) => { d.body.material = this.marked.has(i) ? this.matMarked : this.matBody; });
+    this.dice.forEach((d, i) => {
+      d.body.material = this.marked.has(i) ? this.matMarked : this.good(d.value) ? this.matGood : this.matBody;
+    });
+  }
+
+  /** Pinta de verde los dados que cumplen `pred` (los éxitos de un paso del ataque); null para quitarlo. */
+  setGood(pred: ((v: number) => boolean) | null) {
+    this.good = pred ?? (() => false);
+    this.applyMarks();
   }
 }
 

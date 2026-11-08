@@ -16,6 +16,7 @@ import { createRulesGate } from "./input/rulesGate";
 import { CircleSet } from "./view/rangeRings";
 import { allowance, originOf, movedSoFar } from "./rules/movement";
 import { toast } from "./ui/tablesDialog";
+import { ShotPlayer } from "./view/shotPlayer";
 import { DiceTray } from "./view/dice";
 import { TRAY } from "./world/table";
 import { Command } from "./core/commands";
@@ -189,13 +190,31 @@ function deleteSelectedTerrain() {
 }
 $btn("terrain-delete").addEventListener("click", deleteSelectedTerrain);
 
+// Disparos: los dados ruedan paso a paso y las bajas caen al terminar
+const shots = new ShotPlayer(tray, document.getElementById("report")!);
+shots.onDone = () => pieces.release(bus.state);
+shots.onLookTray = () => cam.focus(TRAY.x, TRAY.z, 24);
+let logLen = bus.state.combatLog.length;
+let targetHover: string | null = null;
+hud.onShoot = (unit, weapon, target) => bus.dispatch({ type: "shoot", unit, weapon, target });
+hud.onTargetHover = (u) => { targetHover = u; };
+
 function refresh(_s?: unknown, cmd?: Command | null) {
   const last = bus.state.rolls.at(-1);
-  if (cmd?.type === "roll") tray.show(last, true);
-  else if (cmd?.type === "reroll") tray.show(last, true, cmd.indices);
-  else tray.show(last, false);
+  const log = bus.state.combatLog;
+  const newAttack = cmd?.type === "shoot" && log.length > logLen ? log.at(-1)! : null;
+  logLen = log.length;
+  if (newAttack) {
+    pieces.hold(newAttack.result.slain);
+  } else {
+    if (shots.playing) shots.finish();
+    if (cmd?.type === "roll") tray.show(last, true);
+    else if (cmd?.type === "reroll") tray.show(last, true, cmd.indices);
+    else tray.show(last, false);
+  }
   renderTray();
   pieces.sync(bus.state);
+  if (newAttack) shots.play(newAttack, bus.state);
   controls.prune((id) => !!pieces.placedOf(id));
   hud.render(bus.state);
   hud.renderSelection(bus.state, controls.selected, coherencyWarnings());
@@ -238,7 +257,9 @@ renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 0.1);
   cam.update(dt);
   pieces.update(dt);
-  pieces.highlight(controls.selected, controls.hovered, controls.selected.size ? coherencyWarnings() : undefined);
+  const targets = targetHover ? new Set(bus.state.pieces.filter((p) => p.unit === targetHover).map((p) => p.id)) : undefined;
+  pieces.highlight(controls.selected, controls.hovered, controls.selected.size ? coherencyWarnings() : undefined, targets);
+  shots.update(dt);
   ranges.update(pieces, controls.selected);
   tape.update();
   updateMoveRings();
@@ -247,4 +268,4 @@ renderer.setAnimationLoop(() => {
 });
 
 // Para pruebas desde la consola
-(window as unknown as { mesa: unknown }).mesa = { bus, cam, pieces, controls, tape, ranges, tray, tables };
+(window as unknown as { mesa: unknown }).mesa = { bus, cam, pieces, controls, tape, ranges, tray, tables, shots };

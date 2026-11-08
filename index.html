@@ -72,6 +72,18 @@
   .warn { color: var(--bad); font-weight: 600; }
   .unit-card { margin: 6px 0; padding: 6px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); max-width: 360px; }
   .unit-card .stats { font-size: 12px; color: var(--dim); margin-bottom: 4px; }
+  .weapon { margin-top: 6px; font-size: 13px; }
+  .shoot-row { margin: 3px 0 0 8px; font-size: 12px; }
+  .shoot-row button { font-size: 12px; padding: 2px 8px; }
+  #report { left: 50%; top: 60px; transform: translateX(-50%); min-width: 380px; max-width: 560px; padding: 10px 14px; font-size: 13px; }
+  #report ul { margin: 6px 0; padding-left: 18px; }
+  #report .cov { color: var(--gold); }
+  #report .bad { color: var(--bad); }
+  #report .foot { font-size: 14px; margin-top: 4px; }
+  #report .acts { text-align: right; margin-top: 6px; }
+  #report .chips { display: flex; flex-wrap: wrap; gap: 2px; margin: 2px 0 4px; }
+  #report .chip { width: 16px; height: 16px; border-radius: 3px; background: #6b6f78; color: #eceef3; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+  #report .chip.ok { background: #9fd27a; color: #1c1d22; }
   .move-btns { display: flex; gap: 6px; margin: 6px 0 2px; }
   .move-btns button { font-size: 12px; padding: 3px 8px; }
   #measure .dim { color: var(--dim); font-weight: 500; font-size: 12px; }
@@ -101,7 +113,7 @@
 <div id="help" class="panel">
   <h1 class="title">Mesa de Guerra</h1>
   <button id="help-toggle">Ocultar</button>
-  <div class="sub">Fase 2 · reglas (v0.10)</div>
+  <div class="sub">Fase 2 · reglas (v0.11)</div>
   <h2>Cámara</h2>
   <ul>
     <li><kbd>WASD</kbd> o botón central: desplazar</li>
@@ -173,6 +185,7 @@
   <div id="terrain-add"></div>
   <button id="terrain-delete">Borrar selección</button>
 </div>
+<div id="report" class="panel" hidden></div>
 <div id="sel" class="panel" hidden></div>
 <div id="selbox" hidden></div>
 <div id="tables-backdrop" hidden>

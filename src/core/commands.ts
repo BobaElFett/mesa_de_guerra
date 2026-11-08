@@ -2,6 +2,7 @@ import { GameState, BOARD, cloneState, createInitialState, TerrainKind, TERRAIN 
 import { rollDice } from "./rng";
 import { advancePhase, endTurn } from "../rules/turn";
 import type { MoveKind } from "../rules/movement";
+import { applyShoot } from "../rules/shooting";
 
 // Toda acción sobre la mesa es una orden. El estado se obtiene aplicando las órdenes
 // en orden desde la mesa inicial: así hay deshacer, guardado y, más adelante, juego en línea
@@ -22,6 +23,8 @@ export type Command =
   /** Modo reglas: pasa a la fase siguiente (y al otro jugador tras el combate). */
   | { type: "nextPhase" }
   | { type: "setRulesMode"; on: boolean }
+  /** Fase de disparo: una unidad dispara un arma a una unidad enemiga. */
+  | { type: "shoot"; unit: string; weapon: string; target: string }
   /** Fase de movimiento: la unidad elige mover, avanzar (tira 1D6) o retirarse. */
   | { type: "declareMove"; unit: string; kind: MoveKind }
   /** Gastar puntos de mando (p. ej. 1 PM para repetir una tirada). */
@@ -109,6 +112,10 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
         s.rolls.push({ player: s.active, turn: s.turn, sides: 6, results: [d] });
       }
       s.turnLog.moves[cmd.unit] = move;
+      break;
+    }
+    case "shoot": {
+      applyShoot(s, cmd.unit, cmd.weapon, cmd.target);
       break;
     }
     case "setRulesMode": {

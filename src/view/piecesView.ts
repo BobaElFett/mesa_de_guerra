@@ -7,7 +7,7 @@ import { makeTerrain } from "../models/terrain";
 // hacia las del estado, así que al deshacer se ve cada cosa volver a su sitio.
 
 type Item = { kind: "mini"; piece: Piece } | { kind: "terrain"; terrain: TerrainPiece };
-interface Entry { group: THREE.Group; item: Item }
+interface Entry { group: THREE.Group; item: Item; dying?: number }
 
 /** Posición y giro de cualquier cosa de la mesa. */
 export interface Placed { id: string; x: number; z: number; rot: number }
@@ -21,6 +21,8 @@ export class PiecesView {
   private entries = new Map<string, Entry>();
   /** Lo que el jugador arrastra: la vista no lo mueve hacia el estado. */
   readonly dragging = new Set<string>();
+  /** Bajas que siguen en la mesa hasta que acaba la animación de los dados. */
+  private held = new Set<string>();
   /** Con la escenografía bloqueada no se puede coger (se coge lo que hay detrás). */
   terrainLocked = true;
   private marks: THREE.Mesh[] = [];
@@ -28,6 +30,7 @@ export class PiecesView {
   private frameGeos = new Map<string, THREE.BufferGeometry>();
   private matSel = new THREE.MeshBasicMaterial({ color: RING_SELECTED, transparent: true, opacity: 0.95, depthWrite: false });
   private matHover = new THREE.MeshBasicMaterial({ color: RING_HOVER, transparent: true, opacity: 0.55, depthWrite: false });
+  private matTarget = new THREE.MeshBasicMaterial({ color: "#ff9a3d", transparent: true, opacity: 0.95, depthWrite: false });
   private matWarn = new THREE.MeshBasicMaterial({ color: RING_WARN, transparent: true, opacity: 0.95, depthWrite: false });
 
   sync(state: GameState) {
@@ -49,13 +52,36 @@ export class PiecesView {
     for (const t of state.terrain) upsert(t.id, { kind: "terrain", terrain: t }, () => shadowed(makeTerrain(t.kind)), t);
     for (const p of state.pieces) upsert(p.id, { kind: "mini", piece: p }, () => miniatureFor(p), p);
     for (const [id, e] of this.entries) {
-      if (!seen.has(id)) { this.group.remove(e.group); this.entries.delete(id); }
+      if (seen.has(id)) { e.dying = undefined; e.group.scale.setScalar(1); continue; }
+      if (this.held.has(id)) continue;
+      if (e.dying === undefined) { this.group.remove(e.group); this.entries.delete(id); }
     }
+  }
+
+  /** Retiene estas bajas en la mesa (se quitarán al llamar a `release`). */
+  hold(ids: string[]) { for (const id of ids) this.held.add(id); }
+
+  /** Suelta las bajas retenidas: las que ya no están en el estado caen y desaparecen. */
+  release(state: GameState) {
+    const alive = new Set([...state.pieces.map((p) => p.id), ...state.terrain.map((t) => t.id)]);
+    for (const id of this.held) {
+      const e = this.entries.get(id);
+      if (e && !alive.has(id)) e.dying = 0;
+    }
+    this.held.clear();
   }
 
   update(dt: number) {
     const k = Math.min(1, dt * 12);
     for (const [id, e] of this.entries) {
+      if (e.dying !== undefined) {
+        // Baja: se inclina, se hunde y desaparece
+        e.dying += dt / 0.6;
+        e.group.rotation.z = Math.min(1, e.dying) * 1.3;
+        e.group.position.y = -Math.max(0, e.dying - 0.4) * 1.5;
+        if (e.dying >= 1) { this.group.remove(e.group); this.entries.delete(id); }
+        continue;
+      }
       if (this.dragging.has(id)) continue;
       const g = e.group, p = placedOf(e.item);
       g.position.x += (p.x - g.position.x) * k;
@@ -68,6 +94,7 @@ export class PiecesView {
   /** Grupos que se pueden coger con el ratón. `minisOnly` para la cinta métrica. */
   pickables(minisOnly = false): THREE.Object3D[] {
     return [...this.entries.values()]
+      .filter((e) => e.dying === undefined && !this.held.has(placedOf(e.item).id))
       .filter((e) => e.item.kind === "mini" || (!minisOnly && !this.terrainLocked))
       .map((e) => e.group);
   }
@@ -94,7 +121,7 @@ export class PiecesView {
   }
 
   /** Anillos bajo las miniaturas y marcos bajo la escenografía: dorado = seleccionado, tenue = ratón. */
-  highlight(selected: Iterable<string>, hovered: string | null, warn: Set<string> = new Set()) {
+  highlight(selected: Iterable<string>, hovered: string | null, warn: Set<string> = new Set(), targets: Set<string> = new Set()) {
     let n = 0;
     const put = (id: string, mat: THREE.Material) => {
       const e = this.entries.get(id);
@@ -124,6 +151,7 @@ export class PiecesView {
     const sel = new Set(selected);
     for (const id of sel) put(id, warn.has(id) ? this.matWarn : this.matSel);
     for (const id of warn) if (!sel.has(id)) put(id, this.matWarn);
+    for (const id of targets) if (!sel.has(id) && !warn.has(id)) put(id, this.matTarget);
     if (hovered && !sel.has(hovered) && !warn.has(hovered)) put(hovered, this.matHover);
     for (let i = n; i < this.marks.length; i++) this.marks[i].visible = false;
   }

@@ -3,6 +3,8 @@ import { FACTIONS, GameState, PLAYERS, RollRecord, TERRAIN } from "../core/state
 import { PHASES, PHASE_INFO, MAX_ROUNDS } from "../rules/turn";
 import { DATASHEETS } from "../rules/datasheets";
 import { allowance, isEngaged, movedSoFar, MoveKind } from "../rules/movement";
+import { shootingOptions } from "../rules/shooting";
+import { Weapon } from "../rules/datasheets";
 
 // Interfaz: turno, deshacer/rehacer, dados y medida al arrastrar.
 
@@ -38,10 +40,33 @@ function unitCard(s: GameState, selected: Set<string>): string {
     if (mv?.kind === "avanzar") html += `<div class="dim">Tras avanzar no dispara (salvo armas de Asalto) ni carga${ds.abilities.includes("rapidez") ? " (Rapidez: esta sí puede cargar)" : ""}.</div>`;
     if (mv?.kind === "retirarse") html += `<div class="dim">Tras retirarse no dispara ni carga este turno.</div>`;
   }
+  if (s.phase === "disparo" && unit.faction === PLAYERS[s.active] && !s.gameOver) {
+    const o = shootingOptions(s, uid);
+    if (o.blocked) html += `<div class="dim">${o.blocked}</div>`;
+    if (!o.weapons.length) html += `<div class="dim">Sin armas a distancia.</div>`;
+    for (const w of o.weapons) {
+      html += `<div class="weapon"><b>${w.weapon.name}</b> <span class="dim">${weaponLine(w.weapon)} · ${w.carriers.length} ${w.carriers.length === 1 ? "miniatura" : "miniaturas"}</span>`;
+      if (w.fired) html += `<div class="dim">Ya ha disparado.</div>`;
+      else if (w.blocked) html += `<div class="dim">${w.blocked}</div>`;
+      else for (const t of w.targets) {
+        const ok = !t.blocked;
+        const info = t.blocked ?? `${fmtIn(t.distance)}${t.cover ? " · en cobertura" : ""}${t.attackers.length < w.carriers.length ? ` · ${t.attackers.length} a tiro` : ""}`;
+        html += `<div class="shoot-row"><button data-shoot="${uid}|${w.weapon.id}|${t.unit}" data-target="${t.unit}"${ok ? "" : " disabled"}>Disparar a ${t.name}</button> <span class="dim">${info}</span></div>`;
+      }
+      html += `</div>`;
+    }
+  }
   return html + "</div>";
 }
 
 const fmtIn = (v: number) => `${v.toFixed(1).replace(".", ",")}"`;
+
+/** Perfil corto de un arma: 24" A2 3+ F4 FP−1 D1 (Asalto). */
+export function weaponLine(w: Weapon): string {
+  const ab = w.abilities.map((a) => ({ asalto: "Asalto", pesada: "Pesada", pistola: "Pistola", rafaga: `Ráfaga ${"x" in a ? a.x : ""}`,
+    sostenida: `Sostenida ${"x" in a ? a.x : ""}`, letal: "Letal", devastadora: "Devastadora", explosiva: "Explosiva", torrente: "Torrente" })[a.kind]);
+  return `${w.range === "CC" ? "CC" : `${w.range}"`} A${w.attacks} ${w.skill ? `${w.skill}+` : "—"} F${w.strength} FP${w.ap === 0 ? "0" : `−${-w.ap}`} D${w.damage}${ab.length ? ` (${ab.join(", ")})` : ""}`;
+}
 
 export interface HudActions {
   toggleGrid(): boolean;
@@ -61,7 +86,14 @@ export class Hud {
     $("sel").addEventListener("click", (e) => {
       const b = (e.target as HTMLElement).closest("button[data-move]") as HTMLButtonElement | null;
       if (b && !b.disabled) this.onDeclareMove(b.dataset.unit!, b.dataset.move as MoveKind);
+      const sh = (e.target as HTMLElement).closest("button[data-shoot]") as HTMLButtonElement | null;
+      if (sh && !sh.disabled) { const [u, w, t] = sh.dataset.shoot!.split("|"); this.onShoot(u, w, t); }
     });
+    $("sel").addEventListener("mouseover", (e) => {
+      const b = (e.target as HTMLElement).closest("button[data-target]") as HTMLButtonElement | null;
+      this.onTargetHover(b ? b.dataset.target! : null);
+    });
+    $("sel").addEventListener("mouseleave", () => this.onTargetHover(null));
     $("grid").addEventListener("click", () => $("grid").classList.toggle("on", actions.toggleGrid()));
     $("topdown").addEventListener("click", () => $("topdown").classList.toggle("on", actions.toggleTopDown()));
     $("new").addEventListener("click", () => {
@@ -129,6 +161,10 @@ export class Hud {
   /** Resumen de la selección, abajo a la izquierda. */
   /** El jugador elige cómo mueve una unidad (botones del panel de unidad). */
   onDeclareMove: (unit: string, kind: MoveKind) => void = () => {};
+  /** El jugador dispara un arma de una unidad a una unidad enemiga. */
+  onShoot: (unit: string, weapon: string, target: string) => void = () => {};
+  /** El ratón pasa por encima de un botón de objetivo (para resaltar esa unidad). */
+  onTargetHover: (unit: string | null) => void = () => {};
 
   renderSelection(s: GameState, selected: Set<string>, incoherent: Set<string> = new Set()) {
     const el = $("sel");

@@ -18,6 +18,8 @@ export interface UnitMove {
 export interface TurnLog {
   moves: Record<string, UnitMove>;
   origins: Record<string, [number, number]>;
+  /** Armas con las que ya ha disparado cada unidad este turno. */
+  shot?: Record<string, string[]>;
 }
 
 export const emptyTurnLog = (): TurnLog => ({ moves: {}, origins: {} });
