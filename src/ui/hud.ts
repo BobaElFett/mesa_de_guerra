@@ -5,6 +5,7 @@ import { DATASHEETS } from "../rules/datasheets";
 import { allowance, isEngaged, movedSoFar, MoveKind } from "../rules/movement";
 import { shootingOptions } from "../rules/shooting";
 import { chargeOptions, fightOptions, pendingChargers } from "../rules/melee";
+import { belowHalf, inSynapse } from "../rules/morale";
 import { Weapon, WEAPONS } from "../rules/datasheets";
 
 // Interfaz: turno, deshacer/rehacer, dados y medida al arrastrar.
@@ -22,7 +23,12 @@ function unitCard(s: GameState, selected: Set<string>): string {
   if (!unit) return "";
   const ds = DATASHEETS[unit.datasheet], P = ds.profile;
   const alive = s.pieces.filter((p) => p.unit === uid).length;
-  let html = `<div class="unit-card"><b>${ds.name}</b> <span class="dim">· ${alive}/${unit.startingModels} miniaturas</span>`
+  const badges = [
+    unit.shocked ? `<span class="badge bad">Desmoralizada</span>` : "",
+    belowHalf(s, uid) && !unit.shocked ? `<span class="badge warnb">Por debajo de la mitad</span>` : "",
+    unit.faction === "swarm" && inSynapse(s, uid) ? `<span class="badge syn">En sinapsis</span>` : "",
+  ].join("");
+  let html = `<div class="unit-card"><b>${ds.name}</b> <span class="dim">· ${alive}/${unit.startingModels} miniaturas</span>${badges ? `<div class="badges">${badges}</div>` : ""}`
     + `<div class="stats">M ${P.M}" · R ${P.T} · Sv ${P.Sv}+${P.Inv ? ` · Inv ${P.Inv}+` : ""} · H ${P.W} · L ${P.Ld}+ · CO ${P.OC}</div>`;
   if (s.phase === "movimiento" && unit.faction === PLAYERS[s.active] && !s.gameOver) {
     const mv = s.turnLog.moves[uid];

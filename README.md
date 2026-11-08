@@ -9,6 +9,14 @@ Plan completo (visión, facciones, roadmap y backlog): documento *Mesa de Guerra
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor.
 
+## Novedades 0.13 · fase 2 (moral y sinapsis, #23)
+- **Chequeos de moral automáticos:** al empezar la fase de mando de un bando (en modo reglas), cada unidad suya por debajo de la mitad (de miniaturas, o de heridas si es de una sola) tira 2D6 contra su L con los dados de la semilla. Un informe enseña cada chequeo.
+- **Desmoralizada:** si falla, queda desmoralizada hasta su siguiente fase de mando: CO 0 y sin PM. Se marca con un anillo rojo oscuro en la mesa y una etiqueta en su ficha.
+- **Sinapsis:** las unidades del Enjambre a 12" de una unidad Sináptica (Tirano Sináptico, Guerreros Nodo) superan el chequeo sin tirar; su ficha dice «En sinapsis».
+- La ficha marca también «Por debajo de la mitad».
+- **Retirar a mano (mesa libre):** Supr retira las miniaturas seleccionadas (se puede deshacer). En modo reglas las bajas solo las causan los ataques.
+- Código: `rules/morale.ts`, con 4 pruebas nuevas (48 en total).
+
 ## Novedades 0.12 · fase 2 (carga y combate, #22)
 - **Carga:** en la fase de carga, la ficha de la unidad ofrece *Cargar a…* cada unidad enemiga a 12" o menos, con la distancia y la tirada necesaria en 2D6. Los dados salen de la semilla y ruedan en la bandeja. Si el resultado alcanza para quedar a 1", cada miniatura avanza sola hasta el contacto de peana con la enemiga más cercana (sin solapes); si no, no se mueve. Un aviso dice la tirada y el resultado.
 - **Restricciones de carga:** una por unidad y turno; no si ya está trabada; no tras retirarse; no tras avanzar (salvo Rapidez, que tienen las Garras Menores).
@@ -151,6 +159,7 @@ src/
   rules/movement.ts       fase de movimiento: mover, avanzar, retirarse y límites
   rules/shooting.ts       fase de disparo: armas, objetivos, restricciones y resolución
   rules/melee.ts          fases de carga y combate
+  rules/morale.ts         moral, desmoralizadas y sinapsis
   input/rulesGate.ts      lo que el modo reglas permite mover en cada fase
   view/shotPlayer.ts      reproduce un ataque paso a paso con informe y dados
   ui/hud.ts               turno, herramientas y dados

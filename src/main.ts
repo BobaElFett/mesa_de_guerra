@@ -17,6 +17,7 @@ import { CircleSet } from "./view/rangeRings";
 import { allowance, originOf, movedSoFar } from "./rules/movement";
 import { toast } from "./ui/tablesDialog";
 import { ShotPlayer } from "./view/shotPlayer";
+import { DATASHEETS } from "./rules/datasheets";
 import { DiceTray } from "./view/dice";
 import { TRAY } from "./world/table";
 import { Command } from "./core/commands";
@@ -195,6 +196,7 @@ const shots = new ShotPlayer(tray, document.getElementById("report")!);
 shots.onDone = () => pieces.release(bus.state);
 shots.onLookTray = () => cam.focus(TRAY.x, TRAY.z, 24);
 let logLen = bus.state.combatLog.length;
+let moraleLen = bus.state.moraleLog.length;
 let targetHover: string | null = null;
 hud.onShoot = (unit, weapon, target) => bus.dispatch({ type: "shoot", unit, weapon, target });
 hud.onCharge = (unit, target) => {
@@ -221,6 +223,19 @@ function refresh(_s?: unknown, cmd?: Command | null) {
   renderTray();
   pieces.sync(bus.state);
   if (newAttacks.length) shots.playAll(newAttacks, bus.state);
+  // Chequeos de moral nuevos (al empezar una fase de mando)
+  const ml = bus.state.moraleLog;
+  if ((cmd?.type === "nextPhase" || cmd?.type === "endTurn") && ml.length > moraleLen) {
+    const rows = ml.slice(moraleLen).map((m) => {
+      const u = bus.state.units.find((x) => x.id === m.unit)!;
+      const name = DATASHEETS[u.datasheet].name;
+      return m.dice === null
+        ? `<li><b>${name}</b>: sinapsis → <b class="ok">supera</b></li>`
+        : `<li><b>${name}</b>: 2D6 = ${m.dice[0]} + ${m.dice[1]} = <b>${m.dice[0] + m.dice[1]}</b> (necesita ${m.need}) → ${m.passed ? `<b class="ok">supera</b>` : `<b class="bad">desmoralizada</b>`}</li>`;
+    }).join("");
+    shots.info(`<div><b>Chequeos de moral</b> <span class="dim">· unidades por debajo de la mitad</span></div><ul>${rows}</ul>`);
+  }
+  moraleLen = ml.length;
   controls.prune((id) => !!pieces.placedOf(id));
   hud.render(bus.state);
   hud.renderSelection(bus.state, controls.selected, coherencyWarnings());
@@ -247,7 +262,16 @@ window.addEventListener("keydown", (e) => {
   if (e.code === "Escape") tape.escape();
   if (e.code === "KeyB") cam.focus(TRAY.x, TRAY.z, 24);
   if (e.code === "KeyT") setTerrainEdit(pieces.terrainLocked);
-  if ((e.code === "Delete" || e.code === "Backspace") && !pieces.terrainLocked) { e.preventDefault(); deleteSelectedTerrain(); }
+  if (e.code === "Delete" || e.code === "Backspace") {
+    e.preventDefault();
+    if (!pieces.terrainLocked) deleteSelectedTerrain();
+    // Mesa libre: Supr retira las miniaturas seleccionadas (se puede deshacer)
+    const minis = [...controls.selected].filter((id) => pieces.pieceOf(id));
+    if (minis.length) {
+      if (bus.state.rulesMode) toast("En modo reglas las bajas las quitan los ataques. Para retirar a mano, cambia a Mesa libre.");
+      else { bus.dispatch({ type: "removePieces", ids: minis }); toast(`${minis.length} retirada${minis.length > 1 ? "s" : ""} (Ctrl+Z para deshacer)`); }
+    }
+  }
 });
 
 // --- Bucle ---------------------------------------------------------------
@@ -264,7 +288,8 @@ renderer.setAnimationLoop(() => {
   cam.update(dt);
   pieces.update(dt);
   const targets = targetHover ? new Set(bus.state.pieces.filter((p) => p.unit === targetHover).map((p) => p.id)) : undefined;
-  pieces.highlight(controls.selected, controls.hovered, controls.selected.size ? coherencyWarnings() : undefined, targets);
+  const shockedIds = bus.state.rulesMode ? new Set(bus.state.pieces.filter((p) => bus.state.units.find((u) => u.id === p.unit)?.shocked).map((p) => p.id)) : undefined;
+  pieces.highlight(controls.selected, controls.hovered, controls.selected.size ? coherencyWarnings() : undefined, targets, shockedIds);
   shots.update(dt);
   ranges.update(pieces, controls.selected);
   tape.update();

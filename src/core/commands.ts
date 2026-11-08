@@ -18,6 +18,8 @@ export type Command =
   /** Poner una pieza de escenografía (recibe el id T<n> siguiente). */
   | { type: "addTerrain"; kind: TerrainKind; x: number; z: number; rot: number }
   | { type: "removeTerrain"; ids: string[] }
+  /** Mesa libre: retirar miniaturas a mano (bajas, recolocar…). */
+  | { type: "removePieces"; ids: string[] }
   /** Volver a tirar algunos dados de la última tirada (por índice). */
   | { type: "reroll"; indices: number[] }
   | { type: "endTurn" }
@@ -83,6 +85,11 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
       s.nextTerrainId += 1;
       break;
     }
+    case "removePieces": {
+      const gone = new Set(cmd.ids);
+      s.pieces = s.pieces.filter((p) => !gone.has(p.id));
+      break;
+    }
     case "removeTerrain": {
       const gone = new Set(cmd.ids);
       s.terrain = s.terrain.filter((t) => !gone.has(t.id));
@@ -137,7 +144,7 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
     }
     case "spendCP": {
       const n = Math.max(0, Math.round(cmd.amount));
-      if (s.cp[cmd.player] >= n) s.cp[cmd.player] -= n;
+      if (s.cp[cmd.player] >= n) s.cp[cmd.player] -= n;   // (las desmoralizadas no reciben PM: lo comprueba quien gasta)
       break;
     }
   }

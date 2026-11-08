@@ -2,6 +2,7 @@ import type { DatasheetId } from "../rules/datasheets";
 import type { Phase } from "../rules/turn";
 import type { TurnLog } from "../rules/movement";
 import type { AttackLogEntry } from "../rules/shooting";
+import type { MoraleEntry } from "../rules/morale";
 
 // Estado de la partida: todo lo que hay en la mesa, serializable a JSON.
 // La vista Three.js solo lo lee; nada lo cambia salvo applyCommand (commands.ts).
@@ -45,6 +46,8 @@ export interface Unit {
   faction: Faction;
   /** Miniaturas con las que empezó (para la moral: «por debajo de la mitad»). */
   startingModels: number;
+  /** Desmoralizada hasta su siguiente fase de mando (CO 0, sin PM). */
+  shocked?: boolean;
 }
 
 export type TerrainKind = "ruina" | "ruinaGrande" | "cajas" | "crater" | "bunker" | "barricada";
@@ -88,6 +91,7 @@ export interface GameState {
   gameOver: boolean;         // se acabó la ronda 5
   turnLog: TurnLog;          // lo hecho en el turno en curso (tipo de movimiento, orígenes…)
   combatLog: AttackLogEntry[]; // ataques resueltos, el último al final
+  moraleLog: MoraleEntry[];  // chequeos de moral hechos
   pieces: Piece[];
   units: Unit[];
   terrain: TerrainPiece[];
@@ -118,7 +122,7 @@ export function createInitialState(seed: number): GameState {
   ];
   return {
     version: 1, seed, rng: seed, turn: 1, active: 0, phase: "mando", cp: [1, 1], rulesMode: false, gameOver: false,
-    turnLog: { moves: {}, origins: {} }, combatLog: [],
+    turnLog: { moves: {}, origins: {} }, combatLog: [], moraleLog: [],
     pieces, units, terrain, nextTerrainId: terrain.length + 1, rolls: [],
   };
 }

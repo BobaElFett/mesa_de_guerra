@@ -1,4 +1,5 @@
 import type { GameState } from "../core/state";
+import { runMoraleTests } from "./morale";
 
 // El turno del reglamento: cinco fases por jugador, dos jugadores por ronda, cinco rondas.
 
@@ -8,7 +9,7 @@ export const PHASES: Phase[] = ["mando", "movimiento", "disparo", "carga", "comb
 export const MAX_ROUNDS = 5;
 
 export const PHASE_INFO: Record<Phase, { name: string; hint: string }> = {
-  mando: { name: "Mando", hint: "Los dos bandos ganan 1 PM. Las unidades por debajo de la mitad chequean moral." },
+  mando: { name: "Mando", hint: "Los dos bandos ganan 1 PM. Las unidades por debajo de la mitad chequean moral (2D6 ≥ L); la sinapsis las salva." },
   movimiento: { name: "Movimiento", hint: "Mueve cada unidad hasta su M, avanza (M + D6) o retírate del combate." },
   disparo: { name: "Disparo", hint: "Cada unidad no trabada elige objetivos visibles al alcance y dispara." },
   carga: { name: "Carga", hint: "Una unidad a 12\" de un enemigo puede cargar: 2D6 para llegar a 1\"." },
@@ -19,6 +20,7 @@ export const PHASE_INFO: Record<Phase, { name: string; hint: string }> = {
 function enterCommand(s: GameState) {
   s.cp = [s.cp[0] + 1, s.cp[1] + 1];
   s.turnLog = { moves: {}, origins: {} };
+  if (s.rulesMode) runMoraleTests(s);
 }
 
 /** Al empezar la fase de movimiento se apunta dónde está cada miniatura del jugador activo. */

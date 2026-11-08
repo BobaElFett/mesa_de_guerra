@@ -112,6 +112,13 @@ export class ShotPlayer {
     this.next();
   }
 
+  /** Muestra un aviso en el panel del informe (si no se está reproduciendo un ataque). */
+  info(html: string) {
+    if (this.playing) return;
+    this.panel.innerHTML = `${html}<div class="acts"><button data-act="close">Cerrar</button></div>`;
+    this.panel.hidden = false;
+  }
+
   /** Salta al final: el informe completo y los dados del último paso (y los ataques en cola). */
   finish() {
     if (!this.playing) return;

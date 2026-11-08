@@ -79,7 +79,12 @@
   #report ul { margin: 6px 0; padding-left: 18px; }
   #report .cov { color: var(--gold); }
   #report .bad, .unit-card .bad { color: var(--bad); }
-  .unit-card .ok { color: #9fd27a; }
+  .unit-card .ok, #report .ok { color: #9fd27a; }
+  .badges { display: flex; gap: 4px; margin: 3px 0; }
+  .badge { font-size: 11px; font-weight: 700; padding: 0 6px; border-radius: 8px; border: 1px solid var(--line); }
+  .badge.bad { color: #fff; background: #9a2b2b; border-color: #9a2b2b; }
+  .badge.warnb { color: var(--gold); border-color: var(--gold); }
+  .badge.syn { color: #e5b6ff; border-color: #a24fc4; }
   #report .prev { opacity: .75; border-bottom: 1px solid var(--line); margin-bottom: 6px; padding-bottom: 4px; }
   #report .foot { font-size: 14px; margin-top: 4px; }
   #report .acts { text-align: right; margin-top: 6px; }
@@ -115,7 +120,7 @@
 <div id="help" class="panel">
   <h1 class="title">Mesa de Guerra</h1>
   <button id="help-toggle">Ocultar</button>
-  <div class="sub">Fase 2 · reglas (v0.12)</div>
+  <div class="sub">Fase 2 · reglas (v0.13)</div>
   <h2>Cámara</h2>
   <ul>
     <li><kbd>WASD</kbd> o botón central: desplazar</li>
@@ -128,7 +133,7 @@
     <li>Clic: seleccionar · <kbd>Mayús</kbd>+clic: añadir o quitar</li>
     <li>Arrastra en el tapete: recuadro de selección</li>
     <li>Arrastra una miniatura: mueve la selección (muestra las pulgadas)</li>
-    <li><kbd>R</kbd> girar la selección · <kbd>Ctrl</kbd>+<kbd>A</kbd> todo tu bando</li>
+    <li><kbd>R</kbd> girar la selección · <kbd>Ctrl</kbd>+<kbd>A</kbd> todo tu bando · <kbd>Supr</kbd> retirar (mesa libre)</li>
     <li>Modo reglas: clic selecciona la unidad entera; <kbd>Alt</kbd>+clic, una sola miniatura</li>
     <li><kbd>T</kbd> editar escenografía (añadir, mover, girar, borrar)</li>
     <li><kbd>M</kbd> cinta métrica: arrastra para medir (de peana a peana mide borde a borde)</li>
