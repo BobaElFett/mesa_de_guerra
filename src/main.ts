@@ -18,6 +18,8 @@ import { allowance, originOf, movedSoFar } from "./rules/movement";
 import { toast } from "./ui/tablesDialog";
 import { ShotPlayer } from "./view/shotPlayer";
 import { DATASHEETS } from "./rules/datasheets";
+import { playPhase } from "./ai/bot";
+import { TEST_LEGION, TEST_SWARM } from "./rules/armies";
 import { DiceTray } from "./view/dice";
 import { TRAY } from "./world/table";
 import { Command } from "./core/commands";
@@ -205,6 +207,19 @@ hud.onCharge = (unit, target) => {
   if (c) toast(`Carga: 2D6 = ${c.roll} (necesitaba ${c.need}) — ${c.success ? "¡entra en combate!" : "no llega"}`);
 };
 hud.onFight = (unit, target) => bus.dispatch({ type: "fight", unit, target });
+// Bot: juega la fase en curso del bando activo (para probar y para partidas en solitario)
+document.getElementById("bot-phase")!.addEventListener("click", () => {
+  if (!bus.state.rulesMode || bus.state.gameOver) return;
+  playPhase(bus);
+});
+// Partida de prueba: despliega las dos listas de prueba (se puede deshacer)
+document.getElementById("test-armies")!.addEventListener("click", () => {
+  bus.dispatch({ type: "setArmies", legion: TEST_LEGION, swarm: TEST_SWARM });
+  if (!bus.state.rulesMode) bus.dispatch({ type: "setRulesMode", on: true });
+  tables.hide();
+  cam.reset();
+  toast("Ejércitos de prueba desplegados (460 y 450 puntos)");
+});
 hud.onSheetToggle = () => hud.renderSelection(bus.state, controls.selected, coherencyWarnings());
 hud.onTargetHover = (u) => { targetHover = u; };
 

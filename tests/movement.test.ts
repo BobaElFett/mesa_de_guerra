@@ -47,15 +47,19 @@ test("checkMove: se recorta a la asignación desde el origen", () => {
   assert.ok(Math.abs(r2.moves[0].z - (L1.z - 6)) < 0.011);
 });
 
-test("checkMove: no se puede acabar a 1\" de un enemigo", () => {
+test("checkMove: nunca acaba a 1\" de un enemigo (va al sitio legal más cercano)", () => {
   const bus = toMovement();
-  // pon una Garra justo delante de L1
   const L1 = bus.state.pieces.find((p) => p.id === "L1")!;
   bus.dispatch({ type: "moveMany", moves: [{ id: "E1", x: L1.x, z: L1.z - 5 }] });
   const r = checkMove(bus.state, "U1", [{ id: "L1", x: L1.x, z: L1.z - 4 }, { id: "L2", x: L1.x + 2, z: L1.z }], { kind: "normal" });
-  assert.deepEqual(r.rejected, ["L1"]);
-  assert.equal(r.moves.length, 1);
-  assert.match(r.message!, /1"/);
+  assert.equal(r.rejected.length, 0);
+  const m = r.moves.find((x) => x.id === "L1")!;
+  const E1 = bus.state.pieces.find((p) => p.id === "E1")!;
+  assert.ok(Math.hypot(m.x - E1.x, m.z - E1.z) - 0.63 - 0.49 > 1, "fuera del trabamiento");
+  assert.ok(Math.hypot(m.x - L1.x, m.z - L1.z) <= 6 + 1e-6, "dentro de la asignación");
+  // y no se solapa con su compañera
+  const m2 = r.moves.find((x) => x.id === "L2")!;
+  assert.ok(Math.hypot(m.x - m2.x, m.z - m2.z) >= 1.26 - 1e-6);
 });
 
 test("trabada y restricciones tras mover", () => {

@@ -9,6 +9,15 @@ Plan completo (visión, facciones, roadmap y backlog): documento *Mesa de Guerra
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor.
 
+## Novedades 0.15 · fase 2 (partida de prueba completa, #25) — fase 2 completa
+- **Partida de prueba:** en *Mesas*, el botón *Partida de prueba* despliega dos ejércitos (Legión: Capitán, Asalto Táctico de 10 y de 5, Fuego Pesado — 460 pts; Enjambre: Tirano Sináptico, Guerreros Nodo, Garras Menores de 20, Escupidores de 10 — 450 pts) en sus zonas y activa el modo reglas. Se puede deshacer.
+- **Bot:** en modo reglas, el botón *Bot* juega la fase en curso por el bando activo (mover, disparar, cargar y combatir) con las mismas órdenes que un jugador. Sirve para jugar en solitario contra él o para ver una partida entera.
+- **Listas y despliegue (base para la fase 3):** `rules/armies.ts` valida listas (tamaños, máx. 3 iguales, 1 grande, un personaje, 500 pts) y la orden `setArmies` las despliega en bloques coherentes en cada zona.
+- **Corregido (lo encontró la partida simulada):** al soltar una unidad cerca del límite de movimiento, el recorte al límite podía dejar dos peanas una encima de otra. Ahora la colocación se resuelve de una vez con todas las condiciones (sin solapes, fuera del trabamiento enemigo y dentro de la asignación): cada miniatura va al sitio legal más cercano y, si no hay ninguno, se queda donde estaba.
+- **Pruebas:** partidas completas de 5 rondas bot contra bot con 6 semillas, comprobando en cada fase que no hay solapes, que todo está en la mesa y que las unidades cuadran, y que rehacer el registro da exactamente el mismo estado. 53 pruebas en total.
+- **Prueba de diversión (datos):** en 40 partidas bot contra bot, la Legión gana 26, el Enjambre 7 y hay 7 empates (≈42 ataques, 12 cargas y 0,7 unidades desmoralizadas por partida). El Enjambre sale flojo: hay que jugar unas partidas a mano antes de tocar los números.
+- Los modelos del Capitán, Fuego Pesado, Andador, Tirano, Guerreros Nodo y Escupidores son provisionales (llegan en la fase 3).
+
 ## Novedades 0.14 · fase 2 (panel de unidad, #24)
 - **Hoja de datos en pantalla:** al seleccionar una unidad (de cualquier bando, en mesa libre o en modo reglas) aparece su ficha: nombre en el color del bando, miniaturas vivas, coste en puntos, etiquetas de estado y sus atributos en una rejilla (M, R, Sv, Inv, H, L, CO).
 - Debajo, la **tabla de armas** (alcance, A, HP, F, FP, D y habilidades; las del sargento marcadas), las **habilidades de la unidad** explicadas, las **heridas** de cada miniatura dañada y, en modo reglas, **lo que ha hecho este turno** (movió/avanzó/se retiró, disparó, cargó, combatió, trabada).
@@ -165,11 +174,13 @@ src/
   rules/shooting.ts       fase de disparo: armas, objetivos, restricciones y resolución
   rules/melee.ts          fases de carga y combate
   rules/morale.ts         moral, desmoralizadas y sinapsis
+  rules/armies.ts         listas de ejército, validación y despliegue
+  ai/bot.ts               bot que juega una fase con las órdenes normales
   input/rulesGate.ts      lo que el modo reglas permite mover en cada fase
   view/shotPlayer.ts      reproduce un ataque paso a paso con informe y dados
   ui/hud.ts               turno, herramientas y dados
   ui/tablesDialog.ts      diálogo Mesas: guardar, cargar, borrar, exportar, importar
 ```
 
-## Siguiente: fase 2 (reglas núcleo)
-Hojas de datos de las unidades y las seis fases del turno (mando, movimiento, disparo, carga, combate y moral) con tiradas automáticas, hasta poder jugar una partida completa entre la Legión y el Enjambre en modo reglas.
+## Siguiente: fase 3 (ejércitos)
+Modelos del Capitán, Fuego Pesado, Andador, Tirano, Guerreros Nodo y Escupidores (#26–#29), editor de listas de 500 puntos (#30), despliegue de las listas (#31) y líderes unidos a escuadras (#32).

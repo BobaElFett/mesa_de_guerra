@@ -133,7 +133,7 @@
 <div id="help" class="panel">
   <h1 class="title">Mesa de Guerra</h1>
   <button id="help-toggle">Ocultar</button>
-  <div class="sub">Fase 2 · reglas (v0.14)</div>
+  <div class="sub">Fase 2 · reglas (v0.15)</div>
   <h2>Cámara</h2>
   <ul>
     <li><kbd>WASD</kbd> o botón central: desplazar</li>
@@ -164,6 +164,7 @@
     <span id="table-title" class="dim"></span>
     <span id="turn-text"></span>
     <button id="end-turn" class="primary" title="Intro">Pasar turno</button>
+    <button id="bot-phase" title="El bot juega esta fase por el bando activo" hidden>Bot</button>
   </div>
   <div id="phases" hidden></div>
   <div id="phase-hint" class="dim" hidden></div>
@@ -220,6 +221,7 @@
     <div class="row t-files">
       <button id="table-export">Exportar la actual a archivo</button>
       <button id="table-import-btn">Importar archivo…</button>
+      <button id="test-armies" title="Despliega dos ejércitos de unos 450 puntos y activa el modo reglas">Partida de prueba</button>
       <input id="table-import" type="file" accept=".json,application/json" hidden>
     </div>
     <div class="dim" style="font-size:12px; margin-top:6px">Las mesas se guardan en este navegador. Para llevarlas a otro ordenador, expórtalas a archivo. Un mismo nombre sobrescribe la mesa guardada.</div>

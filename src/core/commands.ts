@@ -4,6 +4,7 @@ import { advancePhase, endTurn } from "../rules/turn";
 import type { MoveKind } from "../rules/movement";
 import { applyShoot } from "../rules/shooting";
 import { applyCharge, applyFight } from "../rules/melee";
+import { deployArmies, ArmyList } from "../rules/armies";
 
 // Toda acción sobre la mesa es una orden. El estado se obtiene aplicando las órdenes
 // en orden desde la mesa inicial: así hay deshacer, guardado y, más adelante, juego en línea
@@ -18,6 +19,8 @@ export type Command =
   /** Poner una pieza de escenografía (recibe el id T<n> siguiente). */
   | { type: "addTerrain"; kind: TerrainKind; x: number; z: number; rot: number }
   | { type: "removeTerrain"; ids: string[] }
+  /** Sustituye los ejércitos por dos listas desplegadas en sus zonas. */
+  | { type: "setArmies"; legion: ArmyList; swarm: ArmyList }
   /** Mesa libre: retirar miniaturas a mano (bajas, recolocar…). */
   | { type: "removePieces"; ids: string[] }
   /** Volver a tirar algunos dados de la última tirada (por índice). */
@@ -83,6 +86,10 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
         x: clamp(cmd.x, -BOARD.w / 2, BOARD.w / 2), z: clamp(cmd.z, -BOARD.d / 2, BOARD.d / 2), rot: cmd.rot,
       });
       s.nextTerrainId += 1;
+      break;
+    }
+    case "setArmies": {
+      deployArmies(s, cmd.legion, cmd.swarm);
       break;
     }
     case "removePieces": {

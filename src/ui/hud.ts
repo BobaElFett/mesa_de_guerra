@@ -236,6 +236,9 @@ export class Hud {
     const btn = $<HTMLButtonElement>("end-turn");
     btn.textContent = s.rulesMode ? (s.phase === "combate" ? "Terminar turno" : "Siguiente fase") : "Pasar turno";
     btn.disabled = s.gameOver;
+    const bot = $<HTMLButtonElement>("bot-phase");
+    bot.hidden = !s.rulesMode;
+    bot.disabled = s.gameOver;
     const phases = $("phases");
     phases.hidden = !s.rulesMode;
     if (s.rulesMode) {

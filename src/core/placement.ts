@@ -11,7 +11,16 @@ const MAX_SEARCH = 12;   // radio máximo de búsqueda (pulgadas)
 
 interface Disc { x: number; z: number; r: number }
 
-export function resolveOverlaps(all: Piece[], moves: PieceMove[]): PieceMove[] {
+export interface PlaceOptions {
+  /** Cada miniatura movida debe quedar a `max` o menos de `x, z` (su origen en la fase). */
+  limit?: (id: string) => { x: number; z: number; max: number } | null;
+  /** Zonas prohibidas extra para cada miniatura (p. ej. enemigos agrandados 1" de trabamiento). */
+  avoid?: (id: string) => Disc[];
+  /** Ids que no encontraron sitio válido y se quedaron donde estaban (salida). */
+  rejected?: string[];
+}
+
+export function resolveOverlaps(all: Piece[], moves: PieceMove[], opts: PlaceOptions = {}): PieceMove[] {
   const movedIds = new Set(moves.map((m) => m.id));
   const radius = new Map(all.map((p) => [p.id, BASE_RADIUS[p.model]]));
   const placed: Disc[] = all.filter((p) => !movedIds.has(p.id)).map((p) => ({ x: p.x, z: p.z, r: radius.get(p.id)! }));
@@ -28,11 +37,21 @@ export function resolveOverlaps(all: Piece[], moves: PieceMove[]): PieceMove[] {
     const m = out[i];
     const r = radius.get(m.id) ?? 0.5;
     const inside = (x: number, z: number) => x >= -hw + r && x <= hw - r && z >= -hd + r && z <= hd - r;
-    const free = (x: number, z: number) => inside(x, z) && placed.every((q) => Math.hypot(x - q.x, z - q.z) >= r + q.r + GAP);
+    const lim = opts.limit?.(m.id) ?? null;
+    const avoid = opts.avoid?.(m.id) ?? [];
+    const free = (x: number, z: number) => inside(x, z)
+      && (!lim || Math.hypot(x - lim.x, z - lim.z) <= lim.max + 1e-6)
+      && placed.every((q) => Math.hypot(x - q.x, z - q.z) >= r + q.r + GAP)
+      && avoid.every((q) => Math.hypot(x - q.x, z - q.z) > r + q.r);
     let x = clamp(m.x, -hw + r, hw - r), z = clamp(m.z, -hd + r, hd - r);
     if (!free(x, z)) {
       const best = search(x, z, free);
       if (best) { x = best[0]; z = best[1]; }
+      else if (lim || avoid.length) {
+        // Sin sitio válido: se queda donde estaba
+        const orig = all.find((p) => p.id === m.id);
+        if (orig) { x = orig.x; z = orig.z; opts.rejected?.push(m.id); }
+      }
     }
     m.x = round2(x); m.z = round2(z);
     placed.push({ x: m.x, z: m.z, r });

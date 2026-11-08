@@ -1,7 +1,8 @@
 import { BASE_RADIUS, GameState, Piece } from "../core/state";
 import type { PieceMove } from "../core/commands";
 import { DATASHEETS } from "./datasheets";
-import { ENGAGEMENT, engaged, gap, disc } from "./geometry";
+import { ENGAGEMENT, engaged } from "./geometry";
+import { resolveOverlaps } from "../core/placement";
 
 // Fase de movimiento del reglamento: mover hasta M, avanzar (M + D6) o retirarse.
 // Distancia en línea recta desde donde empezó la fase (simplificación: el camino no cuenta).
@@ -88,23 +89,28 @@ export interface MoveCheck {
  */
 export function checkMove(s: GameState, unitId: string, moves: PieceMove[], move: UnitMove): MoveCheck {
   const max = allowance(s, unitId, move);
-  const enemies = enemyModels(s, unitId);
+  const enemies = enemyModels(s, unitId).map((e) => ({ x: e.x, z: e.z, r: BASE_RADIUS[e.model] + ENGAGEMENT }));
   const byId = new Map(s.pieces.map((p) => [p.id, p]));
-  const out: PieceMove[] = [];
-  const rejected: string[] = [];
   let clamped = false;
+  const wanted: PieceMove[] = [];
   for (const m of moves) {
     const p = byId.get(m.id);
     if (!p) continue;
-    const [cx, cz] = clampToAllowance(originOf(s, p), m.x, m.z, max + 1e-6);
+    const [cx, cz] = clampToAllowance(originOf(s, p), m.x, m.z, max);
     if (Math.hypot(cx - m.x, cz - m.z) > 0.01) clamped = true;
-    const r = BASE_RADIUS[p.model];
-    const tooClose = enemies.some((e) => gap({ x: cx, z: cz, r }, disc(e)) <= ENGAGEMENT + 1e-6);
-    if (tooClose) { rejected.push(m.id); continue; }
-    out.push({ ...m, x: Math.round(cx * 100) / 100, z: Math.round(cz * 100) / 100 });
+    wanted.push({ ...m, x: cx, z: cz });
   }
+  // Un solo paso de colocación con todas las condiciones: sin solapes, fuera del trabamiento
+  // enemigo y dentro de la asignación. Lo que no cabe se queda donde estaba.
+  const rejected: string[] = [];
+  const placed = resolveOverlaps(s.pieces, wanted, {
+    limit: (id) => { const p = byId.get(id)!; const [x, z] = originOf(s, p); return { x, z, max }; },
+    avoid: () => enemies,
+    rejected,
+  });
+  const out = placed.filter((m) => !rejected.includes(m.id));
   let message: string | null = null;
-  if (rejected.length) message = `No se puede acabar a 1" de un enemigo (${rejected.length === 1 ? "1 miniatura vuelve" : `${rejected.length} vuelven`} a su sitio).`;
+  if (rejected.length) message = `No se puede acabar a 1" de un enemigo ni encima de otra miniatura (${rejected.length === 1 ? "1 miniatura vuelve" : `${rejected.length} vuelven`} a su sitio).`;
   else if (clamped) message = `Hasta ${fmt(max)} desde donde empezó la fase.`;
   return { moves: out, rejected, message };
 }
