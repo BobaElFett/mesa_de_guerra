@@ -1,10 +1,47 @@
 import { CommandBus } from "../core/commands";
 import { FACTIONS, GameState, PLAYERS, RollRecord, TERRAIN } from "../core/state";
 import { PHASES, PHASE_INFO, MAX_ROUNDS } from "../rules/turn";
+import { DATASHEETS } from "../rules/datasheets";
+import { allowance, isEngaged, movedSoFar, MoveKind } from "../rules/movement";
 
 // Interfaz: turno, deshacer/rehacer, dados y medida al arrastrar.
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
+
+/** En modo reglas, con una sola unidad seleccionada: su hoja y, en movimiento, cómo mueve. */
+function unitCard(s: GameState, selected: Set<string>): string {
+  if (!s.rulesMode) return "";
+  const units = new Set(s.pieces.filter((p) => selected.has(p.id)).map((p) => p.unit));
+  if (units.size !== 1) return "";
+  const uid = [...units][0];
+  if (!uid) return "";
+  const unit = s.units.find((u) => u.id === uid);
+  if (!unit) return "";
+  const ds = DATASHEETS[unit.datasheet], P = ds.profile;
+  const alive = s.pieces.filter((p) => p.unit === uid).length;
+  let html = `<div class="unit-card"><b>${ds.name}</b> <span class="dim">· ${alive}/${unit.startingModels} miniaturas</span>`
+    + `<div class="stats">M ${P.M}" · R ${P.T} · Sv ${P.Sv}+${P.Inv ? ` · Inv ${P.Inv}+` : ""} · H ${P.W} · L ${P.Ld}+ · CO ${P.OC}</div>`;
+  if (s.phase === "movimiento" && unit.faction === PLAYERS[s.active] && !s.gameOver) {
+    const mv = s.turnLog.moves[uid];
+    const used = movedSoFar(s, uid), max = allowance(s, uid, mv);
+    const engagedNow = isEngaged(s, uid);
+    const fixed = mv?.kind === "avanzar" || used > 0.01;
+    const label: Record<MoveKind, string> = { normal: "Mueve", avanzar: "Avanza", retirarse: "Se retira" };
+    html += mv
+      ? `<div>${label[mv.kind]}${mv.kind === "avanzar" ? ` (${P.M}" + ${mv.advance}")` : ""}: <b>${fmtIn(used)}</b> de ${fmtIn(max)}</div>`
+      : `<div class="dim">${engagedNow ? "Trabada: solo puede retirarse o quedarse quieta." : "Elige cómo mueve, o arrástrala para un movimiento normal."}</div>`;
+    if (!fixed) {
+      const b = (k: MoveKind, text: string, on: boolean) =>
+        `<button data-move="${k}" data-unit="${uid}"${on ? "" : " disabled"}${mv?.kind === k ? ' class="on"' : ""}>${text}</button>`;
+      html += `<div class="move-btns">${b("normal", `Mover ${P.M}"`, !engagedNow)}${b("avanzar", "Avanzar +D6", !engagedNow)}${b("retirarse", "Retirarse", engagedNow)}</div>`;
+    }
+    if (mv?.kind === "avanzar") html += `<div class="dim">Tras avanzar no dispara (salvo armas de Asalto) ni carga${ds.abilities.includes("rapidez") ? " (Rapidez: esta sí puede cargar)" : ""}.</div>`;
+    if (mv?.kind === "retirarse") html += `<div class="dim">Tras retirarse no dispara ni carga este turno.</div>`;
+  }
+  return html + "</div>";
+}
+
+const fmtIn = (v: number) => `${v.toFixed(1).replace(".", ",")}"`;
 
 export interface HudActions {
   toggleGrid(): boolean;
@@ -21,6 +58,10 @@ export class Hud {
     $("redo").addEventListener("click", () => bus.redo());
     $("end-turn").addEventListener("click", () => this.advance());
     $("mode").addEventListener("click", () => bus.dispatch({ type: "setRulesMode", on: !bus.state.rulesMode }));
+    $("sel").addEventListener("click", (e) => {
+      const b = (e.target as HTMLElement).closest("button[data-move]") as HTMLButtonElement | null;
+      if (b && !b.disabled) this.onDeclareMove(b.dataset.unit!, b.dataset.move as MoveKind);
+    });
     $("grid").addEventListener("click", () => $("grid").classList.toggle("on", actions.toggleGrid()));
     $("topdown").addEventListener("click", () => $("topdown").classList.toggle("on", actions.toggleTopDown()));
     $("new").addEventListener("click", () => {
@@ -86,6 +127,9 @@ export class Hud {
   }
 
   /** Resumen de la selección, abajo a la izquierda. */
+  /** El jugador elige cómo mueve una unidad (botones del panel de unidad). */
+  onDeclareMove: (unit: string, kind: MoveKind) => void = () => {};
+
   renderSelection(s: GameState, selected: Set<string>, incoherent: Set<string> = new Set()) {
     const el = $("sel");
     if (!selected.size) { el.hidden = true; return; }
@@ -98,17 +142,18 @@ export class Hud {
     const terr = s.terrain.filter((t) => selected.has(t.id));
     if (terr.length) parts.push(`<b style="color:#c9c3b4">${terr.length}</b> ${terr.length === 1 ? TERRAIN[terr[0].kind].name.toLowerCase() : "piezas de escenografía"}`);
     el.innerHTML = `${selected.size === 1 ? "1 seleccionada" : `${selected.size} seleccionadas`} · ${parts.join(" · ")}`
+      + unitCard(s, selected)
       + (incoherent.size ? `<div class="warn">${incoherent.size} fuera de coherencia (más de 2" de su unidad)</div>` : "")
       + `<div class="dim">Arrastra para mover · <kbd>R</kbd> girar · <kbd>Esc</kbd> soltar</div>`;
     el.hidden = false;
   }
 
   /** Distancia recorrida junto al cursor mientras se arrastra una miniatura. */
-  showMeasure(inches: number | null, x: number, y: number) {
+  showMeasure(text: string | null, x: number, y: number) {
     const el = $("measure");
-    if (inches === null) { el.hidden = true; return; }
+    if (text === null) { el.hidden = true; return; }
     el.hidden = false;
-    el.textContent = `${inches.toFixed(1).replace(".", ",")}"`;
+    el.innerHTML = text;
     el.style.left = `${x + 16}px`;
     el.style.top = `${y - 10}px`;
   }

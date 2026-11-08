@@ -15,16 +15,27 @@ export const PHASE_INFO: Record<Phase, { name: string; hint: string }> = {
   combate: { name: "Combate", hint: "Primero las que cargaron; luego se alternan. Agrupar 3\", golpear, consolidar 3\"." },
 };
 
-/** Al empezar la fase de mando, los dos jugadores ganan 1 punto de mando. */
+/** Al empezar la fase de mando, los dos jugadores ganan 1 punto de mando y empieza un registro nuevo. */
 function enterCommand(s: GameState) {
   s.cp = [s.cp[0] + 1, s.cp[1] + 1];
+  s.turnLog = { moves: {}, origins: {} };
+}
+
+/** Al empezar la fase de movimiento se apunta dónde está cada miniatura del jugador activo. */
+function enterMovement(s: GameState) {
+  const f = s.active === 0 ? "legion" : "swarm";
+  s.turnLog.origins = Object.fromEntries(s.pieces.filter((p) => p.faction === f).map((p) => [p.id, [p.x, p.z]]));
 }
 
 /** Pasa a la fase siguiente (muta `s`, que ya es una copia). */
 export function advancePhase(s: GameState) {
   if (s.gameOver) return;
   const i = PHASES.indexOf(s.phase);
-  if (i < PHASES.length - 1) { s.phase = PHASES[i + 1]; return; }
+  if (i < PHASES.length - 1) {
+    s.phase = PHASES[i + 1];
+    if (s.phase === "movimiento") enterMovement(s);
+    return;
+  }
   // Fin del turno del jugador activo
   if (s.active === 1 && s.turn >= MAX_ROUNDS) { s.gameOver = true; return; }
   endTurn(s);

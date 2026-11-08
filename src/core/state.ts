@@ -1,5 +1,6 @@
 import type { DatasheetId } from "../rules/datasheets";
 import type { Phase } from "../rules/turn";
+import type { TurnLog } from "../rules/movement";
 
 // Estado de la partida: todo lo que hay en la mesa, serializable a JSON.
 // La vista Three.js solo lo lee; nada lo cambia salvo applyCommand (commands.ts).
@@ -84,6 +85,7 @@ export interface GameState {
   cp: [number, number];      // puntos de mando de cada jugador
   rulesMode: boolean;        // true: modo reglas (el juego guía las fases); false: mesa libre
   gameOver: boolean;         // se acabó la ronda 5
+  turnLog: TurnLog;          // lo hecho en el turno en curso (tipo de movimiento, orígenes…)
   pieces: Piece[];
   units: Unit[];
   terrain: TerrainPiece[];
@@ -114,6 +116,7 @@ export function createInitialState(seed: number): GameState {
   ];
   return {
     version: 1, seed, rng: seed, turn: 1, active: 0, phase: "mando", cp: [1, 1], rulesMode: false, gameOver: false,
+    turnLog: { moves: {}, origins: {} },
     pieces, units, terrain, nextTerrainId: terrain.length + 1, rolls: [],
   };
 }

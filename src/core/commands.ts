@@ -1,6 +1,7 @@
 import { GameState, BOARD, cloneState, createInitialState, TerrainKind, TERRAIN } from "./state";
 import { rollDice } from "./rng";
 import { advancePhase, endTurn } from "../rules/turn";
+import type { MoveKind } from "../rules/movement";
 
 // Toda acción sobre la mesa es una orden. El estado se obtiene aplicando las órdenes
 // en orden desde la mesa inicial: así hay deshacer, guardado y, más adelante, juego en línea
@@ -21,6 +22,8 @@ export type Command =
   /** Modo reglas: pasa a la fase siguiente (y al otro jugador tras el combate). */
   | { type: "nextPhase" }
   | { type: "setRulesMode"; on: boolean }
+  /** Fase de movimiento: la unidad elige mover, avanzar (tira 1D6) o retirarse. */
+  | { type: "declareMove"; unit: string; kind: MoveKind }
   /** Gastar puntos de mando (p. ej. 1 PM para repetir una tirada). */
   | { type: "spendCP"; player: 0 | 1; amount: number };
 
@@ -94,6 +97,18 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
     }
     case "nextPhase": {
       advancePhase(s);
+      break;
+    }
+    case "declareMove": {
+      if (!s.units.some((u) => u.id === cmd.unit)) break;
+      const move: { kind: MoveKind; advance?: number } = { kind: cmd.kind };
+      if (cmd.kind === "avanzar") {
+        const [[d], rng] = rollDice(s.rng, 1, 6);
+        s.rng = rng;
+        move.advance = d;
+        s.rolls.push({ player: s.active, turn: s.turn, sides: 6, results: [d] });
+      }
+      s.turnLog.moves[cmd.unit] = move;
       break;
     }
     case "setRulesMode": {

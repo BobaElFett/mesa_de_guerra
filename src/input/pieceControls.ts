@@ -17,18 +17,38 @@ import { modal } from "../ui/modal";
 const LIFT = 0.6;        // altura a la que se levantan las miniaturas al arrastrarlas
 const CLICK_PX = 4;      // menos de esto es un clic, no un arrastre
 
+/**
+ * Lo que impone el modo reglas a la mano del jugador (null en mesa libre).
+ * Lo implementa main.ts con las reglas de la fase en curso.
+ */
+export interface RulesGate {
+  /** Qué seleccionar al hacer clic en `id`: en modo reglas, toda su unidad (salvo `single`). */
+  selectionFor(id: string, single: boolean): string[];
+  /** Motivo por el que no se pueden mover estas miniaturas ahora, o null si se puede. */
+  blockMove(ids: string[]): string | null;
+  /** Durante el arrastre: dónde puede estar de verdad esa miniatura. */
+  clampLive(id: string, x: number, z: number): [number, number];
+  /** Texto de la etiqueta junto al cursor durante el arrastre (null: solo las pulgadas). */
+  label(ids: string[]): string | null;
+  /** Al soltar o girar: ajusta los movimientos a las reglas. */
+  finalize(moves: PieceMove[]): PieceMove[];
+  notify(msg: string): void;
+}
+
 type Gesture =
   | { kind: "none" }
   | { kind: "piece"; id: string; sx: number; sy: number; dragging: boolean;
-      start: Map<string, { x: number; z: number }>; grab: THREE.Vector2; additive: boolean }
+      start: Map<string, { x: number; z: number }>; grab: THREE.Vector2; additive: boolean; single: boolean }
   | { kind: "box"; sx: number; sy: number; additive: boolean };
 
 export class PieceControls {
   readonly selected = new Set<string>();
   hovered: string | null = null;
   onSelectionChange: () => void = () => {};
-  /** Distancia que lleva la miniatura que más se ha movido (pulgadas), o null si no se arrastra. */
-  onDragInfo: (inches: number | null, clientX: number, clientY: number) => void = () => {};
+  /** Texto junto al cursor mientras se arrastra (pulgadas recorridas), o null al soltar. */
+  onDragInfo: (text: string | null, clientX: number, clientY: number) => void = () => {};
+  /** Reglas activas (modo reglas) o null (mesa libre). */
+  gate: () => RulesGate | null = () => null;
 
   /** Mientras devuelva true (p. ej. con la cinta métrica), el botón izquierdo no es nuestro. */
   blocked: () => boolean = () => false;
@@ -67,8 +87,12 @@ export class PieceControls {
       this.g = { kind: "none" };
       return;
     }
-    if (e.shiftKey) this.selected.add(id);
-    else if (!this.selected.has(id)) { this.selected.clear(); this.selected.add(id); }
+    const ids = this.gate()?.selectionFor(id, e.altKey) ?? [id];
+    if (e.shiftKey) for (const x of ids) this.selected.add(x);
+    else if (!ids.every((x) => this.selected.has(x)) || (e.altKey && this.selected.size !== 1)) {
+      this.selected.clear();
+      for (const x of ids) this.selected.add(x);
+    }
     this.changed();
     const start = new Map<string, { x: number; z: number }>();
     for (const s of this.selected) {
@@ -78,7 +102,7 @@ export class PieceControls {
     const me = start.get(id)!;
     this.g = {
       kind: "piece", id, sx: e.clientX, sy: e.clientY, dragging: false, start,
-      grab: new THREE.Vector2(me.x - p.x, me.z - p.z), additive: e.shiftKey,
+      grab: new THREE.Vector2(me.x - p.x, me.z - p.z), additive: e.shiftKey, single: e.altKey,
     };
   }
 
@@ -100,6 +124,8 @@ export class PieceControls {
     // Arrastre de la selección
     if (!g.dragging) {
       if (Math.hypot(e.clientX - g.sx, e.clientY - g.sy) < CLICK_PX) return;
+      const why = this.gate()?.blockMove([...g.start.keys()]);
+      if (why) { this.gate()?.notify(why); this.g = { kind: "none" }; return; }
       g.dragging = true;
       for (const id of g.start.keys()) this.view.dragging.add(id);
       this.dom.style.cursor = "grabbing";
@@ -113,8 +139,13 @@ export class PieceControls {
       dx = THREE.MathUtils.clamp(dx, -BOARD.w / 2 - s.x, BOARD.w / 2 - s.x);
       dz = THREE.MathUtils.clamp(dz, -BOARD.d / 2 - s.z, BOARD.d / 2 - s.z);
     }
-    for (const [id, s] of g.start) this.view.groupOf(id)?.position.set(s.x + dx, LIFT, s.z + dz);
-    this.onDragInfo(Math.hypot(dx, dz), e.clientX, e.clientY);
+    const gate = this.gate();
+    for (const [id, s] of g.start) {
+      const [x, z] = gate ? gate.clampLive(id, s.x + dx, s.z + dz) : [s.x + dx, s.z + dz];
+      this.view.groupOf(id)?.position.set(x, LIFT, z);
+    }
+    const ids = [...g.start.keys()];
+    this.onDragInfo(gate?.label(ids) ?? inches(Math.hypot(dx, dz)), e.clientX, e.clientY);
   }
 
   private up(e: PointerEvent) {
@@ -139,7 +170,11 @@ export class PieceControls {
     this.onDragInfo(null, 0, 0);
     if (!g.dragging) {
       // Clic sin arrastre sobre una ya seleccionada (sin Mayús): queda solo esa
-      if (!g.additive) { this.selected.clear(); this.selected.add(g.id); this.changed(); }
+      if (!g.additive) {
+        this.selected.clear();
+        for (const x of this.gate()?.selectionFor(g.id, g.single) ?? [g.id]) this.selected.add(x);
+        this.changed();
+      }
       return;
     }
     const moves: PieceMove[] = [];
@@ -181,6 +216,8 @@ export class PieceControls {
   /** Gira la selección (o la miniatura bajo el ratón) alrededor de su centro. */
   rotate(angle: number) {
     const ids = this.selected.size ? [...this.selected] : this.hovered ? [this.hovered] : [];
+    const why = ids.length ? this.gate()?.blockMove(ids) : null;
+    if (why) { this.gate()?.notify(why); return; }
     const ps = ids.map((id) => this.view.placedOf(id)).filter((p) => p !== null);
     if (!ps.length) return;
     const cx = ps.reduce((a, p) => a + p.x, 0) / ps.length;
@@ -197,7 +234,9 @@ export class PieceControls {
   private commit(moves: PieceMove[], start: Map<string, { x: number; z: number }> | null) {
     const minis = moves.filter((m) => this.view.pieceOf(m.id));
     const rest = moves.filter((m) => !this.view.pieceOf(m.id)).map((m) => ({ ...m, x: round2(m.x), z: round2(m.z) }));
-    const fixed = [...resolveOverlaps(this.bus.state.pieces, minis), ...rest];
+    let fixed = [...resolveOverlaps(this.bus.state.pieces, minis), ...rest];
+    const gate = this.gate();
+    if (gate) fixed = gate.finalize(fixed);
     const real = fixed.filter((m) => {
       const p = this.view.placedOf(m.id);
       const from = start?.get(m.id) ?? p;
@@ -240,3 +279,4 @@ function rect(ax: number, ay: number, bx: number, by: number) {
 }
 
 function round2(v: number) { return Math.round(v * 100) / 100; }
+function inches(v: number) { return `${v.toFixed(1).replace(".", ",")}"`; }

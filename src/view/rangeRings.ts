@@ -47,3 +47,43 @@ export class RangeRings {
     for (let i = n; i < this.rings.length; i++) this.rings[i].visible = false;
   }
 }
+
+/** Círculos sueltos (p. ej. hasta dónde puede llegar cada miniatura en la fase de movimiento). */
+export class CircleSet {
+  readonly group = new THREE.Group();
+  private rings: THREE.Mesh[] = [];
+  private geos = new Map<number, THREE.RingGeometry>();
+  private mat: THREE.MeshBasicMaterial;
+
+  constructor(color: string, opacity = 0.5) {
+    this.mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false, side: THREE.DoubleSide });
+  }
+
+  private geo(radius: number): THREE.RingGeometry {
+    const k = Math.round(radius * 20);
+    let g = this.geos.get(k);
+    if (!g) {
+      const r = k / 20;
+      g = new THREE.RingGeometry(Math.max(0.01, r - 0.05), r + 0.05, Math.max(40, Math.round(r * 14)));
+      g.rotateX(-Math.PI / 2);
+      this.geos.set(k, g);
+    }
+    return g;
+  }
+
+  update(circles: { x: number; z: number; r: number }[]) {
+    circles.forEach((c, i) => {
+      let m = this.rings.at(i);
+      if (!m) {
+        m = new THREE.Mesh(this.geo(1), this.mat);
+        m.renderOrder = 2;
+        this.group.add(m);
+        this.rings.push(m);
+      }
+      m.geometry = this.geo(c.r);
+      m.position.set(c.x, 0.025, c.z);
+      m.visible = true;
+    });
+    for (let i = circles.length; i < this.rings.length; i++) this.rings[i].visible = false;
+  }
+}

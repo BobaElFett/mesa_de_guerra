@@ -12,6 +12,10 @@ import { TapeMeasure } from "./tools/tapeMeasure";
 import { RangeRings } from "./view/rangeRings";
 import { RANGES } from "./core/measure";
 import { outOfCoherency } from "./rules/geometry";
+import { createRulesGate } from "./input/rulesGate";
+import { CircleSet } from "./view/rangeRings";
+import { allowance, originOf, movedSoFar } from "./rules/movement";
+import { toast } from "./ui/tablesDialog";
 import { DiceTray } from "./view/dice";
 import { TRAY } from "./world/table";
 import { Command } from "./core/commands";
@@ -97,10 +101,41 @@ function coherencyWarnings(): Set<string> {
   return out;
 }
 
+// Modo reglas: las fases mandan sobre lo que se puede mover
+controls.gate = createRulesGate(bus, pieces, toast);
+const moveRings = new CircleSet("#7fb2ff", 0.55);
+scene.add(moveRings.group);
+/** En movimiento: hasta dónde puede llegar cada miniatura de la unidad seleccionada. */
+function updateMoveRings() {
+  const s = bus.state;
+  const circles: { x: number; z: number; r: number }[] = [];
+  if (s.rulesMode && s.phase === "movimiento" && !s.gameOver) {
+    const units = new Set(s.pieces.filter((p) => controls.selected.has(p.id) && p.unit).map((p) => p.unit!));
+    if (units.size === 1) {
+      const u = [...units][0];
+      const unit = s.units.find((x) => x.id === u);
+      if (unit && unit.faction === (s.active === 0 ? "legion" : "swarm")) {
+        const max = allowance(s, u, s.turnLog.moves[u]);
+        for (const p of s.pieces.filter((q) => q.unit === u)) {
+          const [x, z] = originOf(s, p);
+          circles.push({ x, z, r: max });
+        }
+      }
+    }
+  }
+  moveRings.update(circles);
+}
+
 const tables = new TablesDialog(bus);
 tables.onLoaded = () => { cam.reset(); tape.clear(); };
 controls.onDragInfo = (inches, x, y) => hud.showMeasure(inches, x, y);
 controls.onSelectionChange = () => hud.renderSelection(bus.state, controls.selected, coherencyWarnings());
+hud.onDeclareMove = (unit, kind) => {
+  const s = bus.state;
+  const cur = s.turnLog.moves[unit];
+  if (cur?.kind === "avanzar" || movedSoFar(s, unit) > 0.01) { toast("Esta unidad ya ha movido."); return; }
+  bus.dispatch({ type: "declareMove", unit, kind });
+};
 
 // Bandeja de dados: clic en un dado lo marca para repetir (antes que seleccionar o medir)
 const tray = new DiceTray();
@@ -206,6 +241,7 @@ renderer.setAnimationLoop(() => {
   pieces.highlight(controls.selected, controls.hovered, controls.selected.size ? coherencyWarnings() : undefined);
   ranges.update(pieces, controls.selected);
   tape.update();
+  updateMoveRings();
   tray.update(dt);
   renderer.render(scene, cam.camera);
 });

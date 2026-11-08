@@ -9,6 +9,16 @@ Plan completo (visión, facciones, roadmap y backlog): documento *Mesa de Guerra
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor.
 
+## Novedades 0.10 · fase 2 (fase de movimiento, #20)
+- **Unidad entera:** en modo reglas, un clic selecciona toda la unidad y aparece su ficha (atributos y miniaturas vivas). **Alt+clic** selecciona una sola miniatura para recolocarla dentro de la formación.
+- **Fase de movimiento:** la unidad elige en su ficha **Mover** (hasta M), **Avanzar** (M + D6; el dado sale de la semilla, se ve en la bandeja y se puede deshacer) o **Retirarse** (solo si está trabada). Arrastrarla sin elegir es un movimiento normal.
+- **Límites:** cada miniatura puede alejarse como mucho su asignación desde donde empezó la fase, aunque se arrastre varias veces. Mientras se arrastra, la etiqueta dice «4,2" de 6"» y la miniatura no pasa del límite. Unos círculos azules marcan hasta dónde llega cada una.
+- **Trabada:** una unidad a 1" de un enemigo solo puede retirarse o quedarse quieta. Ninguna miniatura puede acabar un movimiento a 1" de un enemigo: si se suelta ahí, vuelve a su sitio y se avisa.
+- **Fuera de turno:** en modo reglas no se pueden mover las miniaturas del otro bando ni mover nada fuera de la fase de movimiento (la Mesa libre sigue permitiéndolo todo).
+- Se apunta cómo movió cada unidad (avanzar o retirarse) para las restricciones de disparo y carga que llegan en las siguientes fases.
+- Simplificación de esta versión: se mide en línea recta desde el origen; todavía no se comprueba el camino (atravesar enemigos o escenografía).
+- Código: `rules/movement.ts` (asignaciones, recorte, trabamiento y restricciones) y `input/rulesGate.ts` (lo que el modo reglas permite a la mano), con 7 pruebas nuevas (33 en total).
+
 ## Novedades 0.9 · fase 2 (visión, coherencia y fases del turno, #18 y #19)
 - **Modo reglas** (botón *Mesa libre* / *Modo reglas*): el panel del turno muestra las cinco fases (Mando, Movimiento, Disparo, Carga, Combate) con la actual resaltada, los PM de cada bando y una línea que explica qué se hace en esa fase. **Intro** o *Siguiente fase* avanza; tras el combate pasa al otro bando. Cada fase de mando da 1 PM a los dos. Tras la ronda 5 la partida termina.
 - En **mesa libre** todo sigue como antes: *Pasar turno* y sin límite de rondas. Las fases aún no limitan nada; eso llega con las fases de movimiento, disparo y combate.
@@ -122,6 +132,8 @@ src/
   rules/attack.ts         secuencia de ataque: impactar, herir, salvar, daño
   rules/geometry.ts       coherencia, trabamiento, visión y cobertura
   rules/turn.ts           fases del turno, puntos de mando y rondas
+  rules/movement.ts       fase de movimiento: mover, avanzar, retirarse y límites
+  input/rulesGate.ts      lo que el modo reglas permite mover en cada fase
   ui/hud.ts               turno, herramientas y dados
   ui/tablesDialog.ts      diálogo Mesas: guardar, cargar, borrar, exportar, importar
 ```
