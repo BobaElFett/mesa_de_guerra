@@ -133,13 +133,29 @@ export function applyShoot(s: GameState, unitId: string, weaponId: string, targe
   const w = opts.weapons.find((x) => x.weapon.id === weaponId);
   const t = w?.targets.find((x) => x.unit === targetId);
   if (opts.blocked || !w || !t || t.blocked) return null;
-  const shooter = s.units.find((u) => u.id === unitId)!;
+  const shooters = unitModels(s, unitId).filter((p) => t.attackers.includes(p.id));
+  const entry = performAttack(s, "disparo", unitId, shooters, w.weapon, targetId, {
+    distance: t.distance,
+    stationary: !s.turnLog.moves[unitId] || movedSoFar(s, unitId) < 0.01,
+    cover: t.cover,
+  });
+  s.turnLog.shot = s.turnLog.shot ?? {};
+  s.turnLog.shot[unitId] = [...(s.turnLog.shot[unitId] ?? []), weaponId];
+  return entry;
+}
+
+/**
+ * Resuelve un ataque de `attackers` con `weapon` contra la unidad `targetId` y lo aplica a `s`
+ * (daño, bajas, RNG y registro). Lo usan el disparo y el combate.
+ */
+export function performAttack(s: GameState, kind: AttackLogEntry["kind"], unitId: string, attackers: Piece[],
+  weapon: Weapon, targetId: string, extra: { distance?: number; stationary?: boolean; cover?: boolean } = {}): AttackLogEntry {
+  const attacker = s.units.find((u) => u.id === unitId)!;
   const target = s.units.find((u) => u.id === targetId)!;
   const tds = DATASHEETS[target.datasheet];
-  const shooters = unitModels(s, unitId).filter((p) => t.attackers.includes(p.id));
 
-  // Reparto: primero las heridas y luego las más cercanas a los tiradores
-  const near = (p: Piece) => Math.min(...shooters.map((a) => gap(disc(a), disc(p))));
+  // Reparto: primero las heridas y luego las más cercanas a los atacantes
+  const near = (p: Piece) => Math.min(...attackers.map((a) => gap(disc(a), disc(p))));
   const targetModels = unitModels(s, targetId)
     .map((p) => ({ p, d: near(p), left: tds.profile.W - (p.damage ?? 0) }))
     .sort((a, b) => a.d - b.d)
@@ -147,34 +163,27 @@ export function applyShoot(s: GameState, unitId: string, weaponId: string, targe
 
   const dice = new SeededDice(s.rng);
   const res = resolveAttack({
-    weapon: w.weapon,
-    attackers: shooters.length,
+    weapon, attackers: attackers.length,
     target: { profile: tds.profile, models: targetModels, armored: tds.abilities.includes("blindado") },
-    distance: t.distance,
-    stationary: !s.turnLog.moves[unitId] || movedSoFar(s, unitId) < 0.01,
-    cover: t.cover,
+    distance: extra.distance, stationary: extra.stationary, cover: extra.cover,
   }, dice);
   s.rng = dice.state;
 
-  // Daño y bajas
   for (const p of s.pieces) if (p.unit === targetId && res.woundsLeft[p.id] !== undefined) p.damage = tds.profile.W - res.woundsLeft[p.id];
   const slain = new Set(res.slain);
   s.pieces = s.pieces.filter((p) => !slain.has(p.id));
 
-  s.turnLog.shot = s.turnLog.shot ?? {};
-  s.turnLog.shot[unitId] = [...(s.turnLog.shot[unitId] ?? []), weaponId];
-
   const entry: AttackLogEntry = {
-    kind: "disparo", turn: s.turn, player: PLAYERS.indexOf(shooter.faction), attacker: unitId, target: targetId,
-    weapon: weaponId, attackers: shooters.length, cover: t.cover,
-    hitOn: hasAbility(w.weapon, "torrente") ? null : w.weapon.skill, woundOn: woundTarget(w.weapon.strength, tds.profile.T),
+    kind, turn: s.turn, player: PLAYERS.indexOf(attacker.faction), attacker: unitId, target: targetId,
+    weapon: weapon.id, attackers: attackers.length, cover: !!extra.cover,
+    hitOn: hasAbility(weapon, "torrente") ? null : weapon.skill, woundOn: woundTarget(weapon.strength, tds.profile.T),
     result: {
       attacks: res.attacks, hitRolls: res.hitRolls, hits: res.hits, criticalHits: res.criticalHits, woundRolls: res.woundRolls,
       wounds: res.wounds, saveTarget: res.saveTarget, saveRolls: res.saveRolls, failedSaves: res.failedSaves,
       damageRolls: res.damageRolls, slain: res.slain,
     },
   };
-  s.combatLog = [...(s.combatLog ?? []), entry].slice(-40);
+  s.combatLog = [...(s.combatLog ?? []), entry];
   return entry;
 }
 

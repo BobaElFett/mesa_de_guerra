@@ -4,7 +4,8 @@ import { PHASES, PHASE_INFO, MAX_ROUNDS } from "../rules/turn";
 import { DATASHEETS } from "../rules/datasheets";
 import { allowance, isEngaged, movedSoFar, MoveKind } from "../rules/movement";
 import { shootingOptions } from "../rules/shooting";
-import { Weapon } from "../rules/datasheets";
+import { chargeOptions, fightOptions, pendingChargers } from "../rules/melee";
+import { Weapon, WEAPONS } from "../rules/datasheets";
 
 // Interfaz: turno, deshacer/rehacer, dados y medida al arrastrar.
 
@@ -56,6 +57,34 @@ function unitCard(s: GameState, selected: Set<string>): string {
       html += `</div>`;
     }
   }
+  if (s.phase === "carga" && !s.gameOver) {
+    const o = chargeOptions(s, uid);
+    if (o.done) {
+      const c = o.done;
+      const tName = DATASHEETS[s.units.find((u) => u.id === c.target)!.datasheet].name;
+      html += `<div>Carga a ${tName}: 2D6 = <b>${c.roll}</b> (necesitaba ${c.need}) → ${c.success ? `<b class="ok">¡en combate!</b>` : `<b class="bad">falla</b>`}</div>`;
+    } else if (unit.faction === PLAYERS[s.active]) {
+      if (o.blocked) html += `<div class="dim">${o.blocked}</div>`;
+      else if (!o.targets.length) html += `<div class="dim">No hay enemigos.</div>`;
+      else for (const t of o.targets) {
+        html += `<div class="shoot-row"><button data-charge="${uid}|${t.unit}" data-target="${t.unit}"${t.blocked ? " disabled" : ""}>Cargar a ${t.name}</button> <span class="dim">${fmtIn(t.distance)}${t.blocked ? ` · ${t.blocked}` : ` · necesita ${t.need}+ en 2D6`}</span></div>`;
+      }
+    }
+  }
+  if (s.phase === "combate" && !s.gameOver) {
+    const o = fightOptions(s, uid);
+    const ds2 = DATASHEETS[unit.datasheet];
+    const melee = [...new Set([...ds2.weapons, ...(ds2.leaderWeapons ?? [])])].map((id) => WEAPONS[id]).filter((w) => w.range === "CC");
+    html += `<div class="weapon">${melee.map((w) => `<b>${w.name}</b> <span class="dim">${weaponLine(w)}</span>`).join("<br>")}</div>`;
+    if (o.fought) html += `<div class="dim">Ya ha combatido.</div>`;
+    else if (o.blocked && !o.targets.length) html += `<div class="dim">${o.blocked}</div>`;
+    else {
+      if (o.blocked) html += `<div class="dim">${o.blocked}</div>`;
+      for (const t of o.targets) html += `<div class="shoot-row"><button data-fight="${uid}|${t.unit}" data-target="${t.unit}"${o.blocked ? " disabled" : ""}>Combatir contra ${t.name}</button></div>`;
+    }
+    const first = pendingChargers(s);
+    if (first.length && !first.includes(uid)) html += `<div class="dim">Pendientes de combatir primero: ${first.map((u) => DATASHEETS[s.units.find((x) => x.id === u)!.datasheet].name).join(", ")}.</div>`;
+  }
   return html + "</div>";
 }
 
@@ -88,6 +117,10 @@ export class Hud {
       if (b && !b.disabled) this.onDeclareMove(b.dataset.unit!, b.dataset.move as MoveKind);
       const sh = (e.target as HTMLElement).closest("button[data-shoot]") as HTMLButtonElement | null;
       if (sh && !sh.disabled) { const [u, w, t] = sh.dataset.shoot!.split("|"); this.onShoot(u, w, t); }
+      const ch = (e.target as HTMLElement).closest("button[data-charge]") as HTMLButtonElement | null;
+      if (ch && !ch.disabled) { const [u, t] = ch.dataset.charge!.split("|"); this.onCharge(u, t); }
+      const fi = (e.target as HTMLElement).closest("button[data-fight]") as HTMLButtonElement | null;
+      if (fi && !fi.disabled) { const [u, t] = fi.dataset.fight!.split("|"); this.onFight(u, t); }
     });
     $("sel").addEventListener("mouseover", (e) => {
       const b = (e.target as HTMLElement).closest("button[data-target]") as HTMLButtonElement | null;
@@ -163,6 +196,8 @@ export class Hud {
   onDeclareMove: (unit: string, kind: MoveKind) => void = () => {};
   /** El jugador dispara un arma de una unidad a una unidad enemiga. */
   onShoot: (unit: string, weapon: string, target: string) => void = () => {};
+  onCharge: (unit: string, target: string) => void = () => {};
+  onFight: (unit: string, target: string) => void = () => {};
   /** El ratón pasa por encima de un botón de objetivo (para resaltar esa unidad). */
   onTargetHover: (unit: string | null) => void = () => {};
 

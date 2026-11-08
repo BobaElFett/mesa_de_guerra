@@ -3,6 +3,7 @@ import { rollDice } from "./rng";
 import { advancePhase, endTurn } from "../rules/turn";
 import type { MoveKind } from "../rules/movement";
 import { applyShoot } from "../rules/shooting";
+import { applyCharge, applyFight } from "../rules/melee";
 
 // Toda acción sobre la mesa es una orden. El estado se obtiene aplicando las órdenes
 // en orden desde la mesa inicial: así hay deshacer, guardado y, más adelante, juego en línea
@@ -25,6 +26,10 @@ export type Command =
   | { type: "setRulesMode"; on: boolean }
   /** Fase de disparo: una unidad dispara un arma a una unidad enemiga. */
   | { type: "shoot"; unit: string; weapon: string; target: string }
+  /** Fase de carga: declarar una carga (tira 2D6 y, si llega, entra en contacto). */
+  | { type: "charge"; unit: string; target: string }
+  /** Fase de combate: la unidad se agrupa, golpea a la enemiga y consolida. */
+  | { type: "fight"; unit: string; target: string }
   /** Fase de movimiento: la unidad elige mover, avanzar (tira 1D6) o retirarse. */
   | { type: "declareMove"; unit: string; kind: MoveKind }
   /** Gastar puntos de mando (p. ej. 1 PM para repetir una tirada). */
@@ -116,6 +121,14 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
     }
     case "shoot": {
       applyShoot(s, cmd.unit, cmd.weapon, cmd.target);
+      break;
+    }
+    case "charge": {
+      applyCharge(s, cmd.unit, cmd.target);
+      break;
+    }
+    case "fight": {
+      applyFight(s, cmd.unit, cmd.target);
       break;
     }
     case "setRulesMode": {

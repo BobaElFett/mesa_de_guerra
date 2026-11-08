@@ -34,6 +34,7 @@ export function advancePhase(s: GameState) {
   if (i < PHASES.length - 1) {
     s.phase = PHASES[i + 1];
     if (s.phase === "movimiento") enterMovement(s);
+    if (s.phase === "combate") s.turnLog.fought = [];
     return;
   }
   // Fin del turno del jugador activo

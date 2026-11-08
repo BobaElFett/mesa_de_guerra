@@ -197,24 +197,30 @@ shots.onLookTray = () => cam.focus(TRAY.x, TRAY.z, 24);
 let logLen = bus.state.combatLog.length;
 let targetHover: string | null = null;
 hud.onShoot = (unit, weapon, target) => bus.dispatch({ type: "shoot", unit, weapon, target });
+hud.onCharge = (unit, target) => {
+  bus.dispatch({ type: "charge", unit, target });
+  const c = bus.state.turnLog.charges?.[unit];
+  if (c) toast(`Carga: 2D6 = ${c.roll} (necesitaba ${c.need}) — ${c.success ? "¡entra en combate!" : "no llega"}`);
+};
+hud.onFight = (unit, target) => bus.dispatch({ type: "fight", unit, target });
 hud.onTargetHover = (u) => { targetHover = u; };
 
 function refresh(_s?: unknown, cmd?: Command | null) {
   const last = bus.state.rolls.at(-1);
   const log = bus.state.combatLog;
-  const newAttack = cmd?.type === "shoot" && log.length > logLen ? log.at(-1)! : null;
+  const newAttacks = (cmd?.type === "shoot" || cmd?.type === "fight") && log.length > logLen ? log.slice(logLen) : [];
   logLen = log.length;
-  if (newAttack) {
-    pieces.hold(newAttack.result.slain);
+  if (newAttacks.length) {
+    pieces.hold(newAttacks.flatMap((e) => e.result.slain));
   } else {
     if (shots.playing) shots.finish();
-    if (cmd?.type === "roll") tray.show(last, true);
+    if (cmd?.type === "roll" || cmd?.type === "charge") tray.show(last, true);
     else if (cmd?.type === "reroll") tray.show(last, true, cmd.indices);
     else tray.show(last, false);
   }
   renderTray();
   pieces.sync(bus.state);
-  if (newAttack) shots.play(newAttack, bus.state);
+  if (newAttacks.length) shots.playAll(newAttacks, bus.state);
   controls.prune((id) => !!pieces.placedOf(id));
   hud.render(bus.state);
   hud.renderSelection(bus.state, controls.selected, coherencyWarnings());

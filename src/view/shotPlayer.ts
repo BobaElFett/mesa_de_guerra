@@ -47,15 +47,34 @@ export class ShotPlayer {
   get playing() { return this.i >= 0; }
   onLookTray: () => void = () => {};
 
-  play(entry: AttackLogEntry, s: GameState) {
+  private queue: AttackLogEntry[] = [];
+  private leftAfter = new Map<AttackLogEntry, number>();
+  private stateRef: GameState | null = null;
+
+  /** Reproduce uno o varios ataques seguidos (el combate puede tener varias armas). */
+  playAll(entries: AttackLogEntry[], s: GameState) {
     if (this.playing) this.finish();
+    if (!entries.length) { this.onDone(); return; }
+    // Miniaturas que le quedaban al objetivo justo después de cada ataque
+    this.leftAfter = new Map();
+    entries.forEach((e, i) => {
+      const later = entries.slice(i + 1).filter((x) => x.target === e.target).reduce((n, x) => n + x.result.slain.length, 0);
+      this.leftAfter.set(e, s.pieces.filter((p) => p.unit === e.target).length + later);
+    });
+    this.queue = entries.slice(1);
+    this.stateRef = s;
+    this.play(entries[0], s);
+  }
+
+  play(entry: AttackLogEntry, s: GameState) {
     this.entry = entry;
     const r = entry.result;
     const w = WEAPONS[entry.weapon];
     const tUnit = s.units.find((u) => u.id === entry.target)!;
     const aUnit = s.units.find((u) => u.id === entry.attacker)!;
     const tName = DATASHEETS[tUnit.datasheet].name;
-    this.header = `<b>${DATASHEETS[aUnit.datasheet].name}</b> dispara con <b>${w.name}</b> (${entry.attackers} ${entry.attackers === 1 ? "miniatura" : "miniaturas"}) a <b>${tName}</b>${entry.cover ? " · <span class=\"cov\">en cobertura</span>" : ""}`;
+    const verb = entry.kind === "combate" ? "golpea con" : "dispara con";
+    this.header = `<b>${DATASHEETS[aUnit.datasheet].name}</b> ${verb} <b>${w.name}</b> (${entry.attackers} ${entry.attackers === 1 ? "miniatura" : "miniaturas"}) a <b>${tName}</b>${entry.cover ? " · <span class=\"cov\">en cobertura</span>" : ""}`;
     this.steps = [];
     const hitOn = entry.hitOn;
     if (hitOn === null) {
@@ -84,7 +103,7 @@ export class ShotPlayer {
           : `Salvar (${sv}+): ${r.saveRolls.length} dados → <b>${r.failedSaves} fallada${r.failedSaves === 1 ? "" : "s"}</b>`,
       });
     }
-    const left = s.pieces.filter((p) => p.unit === entry.target).length;
+    const left = this.leftAfter.get(entry) ?? s.pieces.filter((p) => p.unit === entry.target).length;
     this.footer = r.slain.length
       ? `Bajas: <b class="bad">${r.slain.length}</b> ${tName}${left === 0 ? " · <b class=\"bad\">unidad destruida</b>" : ` · quedan ${left}`}`
       : r.failedSaves ? `Sin bajas (daño repartido: ${r.damageRolls.reduce((a, b) => a + b, 0)})` : "Sin bajas";
@@ -93,9 +112,23 @@ export class ShotPlayer {
     this.next();
   }
 
-  /** Salta al final: el informe completo y los dados del último paso. */
+  /** Salta al final: el informe completo y los dados del último paso (y los ataques en cola). */
   finish() {
     if (!this.playing) return;
+    if (this.queue.length) {
+      // Resuelve en el informe los que quedan en cola, sin animación
+      const rest = this.queue;
+      this.queue = [];
+      this.finishCurrent();
+      for (const e of rest) { this.prev += this.summaryHtml(); this.play(e, this.stateRef!); this.finishCurrent(); }
+      this.end();
+      return;
+    }
+    this.finishCurrent();
+    this.end();
+  }
+
+  private finishCurrent() {
     const full = (st: Step) => st.line + chips(st.dice, st.good);
     if (this.i < this.steps.length && !this.settled) this.lines.push(full(this.steps[this.i]));
     while (this.i < this.steps.length - 1) {
@@ -104,7 +137,7 @@ export class ShotPlayer {
     }
     const last = this.steps.at(-1);
     if (last) { this.tray.show(this.record(last.dice), false); this.tray.setGood(last.good); }
-    this.end();
+    this.i = this.steps.length;
   }
 
   update(dt: number) {
@@ -137,8 +170,21 @@ export class ShotPlayer {
 
   private end() {
     this.i = -1;
+    const next = this.queue.shift();
+    if (next && this.stateRef) {
+      // Siguiente arma: el informe anterior queda arriba como resumen
+      this.prev += this.summaryHtml();
+      this.play(next, this.stateRef);
+      return;
+    }
     this.render(false);
+    this.prev = "";
     this.onDone();
+  }
+
+  private prev = "";
+  private summaryHtml() {
+    return `<div class="prev">${this.header}<ul>${this.lines.map((l) => `<li>${l}</li>`).join("")}</ul><div class="foot">${this.footer}</div></div>`;
   }
 
   private record(dice: number[]) {
@@ -146,7 +192,7 @@ export class ShotPlayer {
   }
 
   private render(playing: boolean) {
-    this.panel.innerHTML = `<div>${this.header}</div><ul>${this.lines.map((l) => `<li>${l}</li>`).join("")}</ul>`
+    this.panel.innerHTML = this.prev + `<div>${this.header}</div><ul>${this.lines.map((l) => `<li>${l}</li>`).join("")}</ul>`
       + (playing ? "" : `<div class="foot">${this.footer}</div>`)
       + `<div class="acts"><button data-act="tray">Ver bandeja</button> ${playing ? `<button data-act="skip">Saltar</button>` : `<button data-act="close">Cerrar</button>`}</div>`;
   }

@@ -9,6 +9,14 @@ Plan completo (visión, facciones, roadmap y backlog): documento *Mesa de Guerra
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor.
 
+## Novedades 0.12 · fase 2 (carga y combate, #22)
+- **Carga:** en la fase de carga, la ficha de la unidad ofrece *Cargar a…* cada unidad enemiga a 12" o menos, con la distancia y la tirada necesaria en 2D6. Los dados salen de la semilla y ruedan en la bandeja. Si el resultado alcanza para quedar a 1", cada miniatura avanza sola hasta el contacto de peana con la enemiga más cercana (sin solapes); si no, no se mueve. Un aviso dice la tirada y el resultado.
+- **Restricciones de carga:** una por unidad y turno; no si ya está trabada; no tras retirarse; no tras avanzar (salvo Rapidez, que tienen las Garras Menores).
+- **Combate:** cualquier unidad trabada (de los dos bandos) puede *Combatir contra…* una enemiga con la que esté trabada, una vez por fase. Primero deben combatir las unidades que cargaron con éxito; la ficha lo indica.
+- **Cómo se resuelve:** la unidad se agrupa 3" hacia el enemigo, golpean las miniaturas trabadas y las de segunda fila (a ½" de una amiga trabada), cada grupo con su arma cuerpo a cuerpo (el sargento con la espada sierra, el resto con el cuchillo), y después consolida 3". El informe reproduce cada arma seguida, con sus dados.
+- La cola del informe cuenta bien las supervivientes tras cada arma; el registro de ataques ya no se recorta.
+- Código: `rules/melee.ts` (carga, agruparse, consolidar, quién golpea y orden de combate) y `performAttack`, compartido con el disparo. 5 pruebas nuevas (44 en total).
+
 ## Novedades 0.11 · fase 2 (fase de disparo, #21)
 - **Disparar:** en la fase de disparo, la ficha de la unidad lista sus armas a distancia con su perfil (24" A2 3+ F4 FP−1 D1…) y, para cada una, un botón por unidad enemiga con la distancia, si está en cobertura y cuántas miniaturas llegan. Al pasar el ratón por el botón, la unidad objetivo se marca en naranja.
 - **Quién dispara:** solo las miniaturas que llevan el arma, ven alguna miniatura objetivo (ruinas, contenedores y búnker tapan) y la tienen al alcance. El sargento dispara su pistola por separado.
@@ -142,6 +150,7 @@ src/
   rules/turn.ts           fases del turno, puntos de mando y rondas
   rules/movement.ts       fase de movimiento: mover, avanzar, retirarse y límites
   rules/shooting.ts       fase de disparo: armas, objetivos, restricciones y resolución
+  rules/melee.ts          fases de carga y combate
   input/rulesGate.ts      lo que el modo reglas permite mover en cada fase
   view/shotPlayer.ts      reproduce un ataque paso a paso con informe y dados
   ui/hud.ts               turno, herramientas y dados

@@ -20,6 +20,10 @@ export interface TurnLog {
   origins: Record<string, [number, number]>;
   /** Armas con las que ya ha disparado cada unidad este turno. */
   shot?: Record<string, string[]>;
+  /** Cargas declaradas este turno (una por unidad). */
+  charges?: Record<string, { target: string; roll: number; need: number; success: boolean }>;
+  /** Unidades que ya han combatido en esta fase de combate. */
+  fought?: string[];
 }
 
 export const emptyTurnLog = (): TurnLog => ({ moves: {}, origins: {} });

@@ -78,7 +78,9 @@
   #report { left: 50%; top: 60px; transform: translateX(-50%); min-width: 380px; max-width: 560px; padding: 10px 14px; font-size: 13px; }
   #report ul { margin: 6px 0; padding-left: 18px; }
   #report .cov { color: var(--gold); }
-  #report .bad { color: var(--bad); }
+  #report .bad, .unit-card .bad { color: var(--bad); }
+  .unit-card .ok { color: #9fd27a; }
+  #report .prev { opacity: .75; border-bottom: 1px solid var(--line); margin-bottom: 6px; padding-bottom: 4px; }
   #report .foot { font-size: 14px; margin-top: 4px; }
   #report .acts { text-align: right; margin-top: 6px; }
   #report .chips { display: flex; flex-wrap: wrap; gap: 2px; margin: 2px 0 4px; }
@@ -113,7 +115,7 @@
 <div id="help" class="panel">
   <h1 class="title">Mesa de Guerra</h1>
   <button id="help-toggle">Ocultar</button>
-  <div class="sub">Fase 2 · reglas (v0.11)</div>
+  <div class="sub">Fase 2 · reglas (v0.12)</div>
   <h2>Cámara</h2>
   <ul>
     <li><kbd>WASD</kbd> o botón central: desplazar</li>
