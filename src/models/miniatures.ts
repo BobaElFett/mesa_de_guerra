@@ -61,7 +61,9 @@ const LEG_POSES: LegPose[] = [
     handR: [0.18, y(0.64), 0.14], handL: [0.06, y(0.66), 0.42], torsoLean: 0.08, headTurn: -0.2 },
 ];
 
-function legionario(pose: number, leader: boolean): Part[] {
+export type LegionVariant = "tactico" | "pesado" | "capitan";
+
+function legionario(pose: number, leader: boolean, variant: LegionVariant = "tactico"): Part[] {
   const P = LEG_POSES[pose % LEG_POSES.length];
   const A = LEG, p: Part[] = [];
   const hipY = y(0.5), lean = P.torsoLean;
@@ -110,7 +112,39 @@ function legionario(pose: number, leader: boolean): Part[] {
     p.push(box(0.13, 0.12, 0.13, A.dark, hand[0], hand[1] - 0.06, hand[2]));
   };
 
-  if (!leader) {
+  if (variant === "pesado") {
+    // Fuego Pesado: cañón pesado a la cadera, tambor de munición y cinta desde la mochila
+    const r: V3 = [0.2, y(0.66), 0.14], l: V3 = [0.02, y(0.72), 0.42];
+    arm(1, r);
+    arm(-1, l);
+    const d: V3 = [l[0] - r[0], l[1] - r[1], l[2] - r[2]];
+    const n = Math.hypot(...d);
+    const u: V3 = [d[0] / n, d[1] / n, d[2] / n];
+    const at = (t: number): V3 => [r[0] + u[0] * t, r[1] + u[1] * t + 0.03, r[2] + u[2] * t];
+    p.push(segment(at(-0.3), at(n + 0.15), 0.17, 0.2, A.dark));
+    p.push(segment(at(n + 0.15), at(n + 0.55), 0.09, 0.09, A.metal));
+    p.push(segment(at(n + 0.5), at(n + 0.6), 0.13, 0.13, A.dark));            // bocacha
+    const drum = at(n * 0.35);
+    p.push(place(new THREE.CylinderGeometry(0.13, 0.13, 0.12, 8), A.metal, drum[0] + 0.17, drum[1] - 0.04, drum[2], 0, 0, Math.PI / 2));
+    p.push(segment([0.2, hipY + 0.2, chestZ - 0.3], [drum[0] + 0.2, drum[1], drum[2] - 0.05], 0.06, 0.04, A.trim));   // cinta
+    p.push(box(0.5, 0.12, 0.22, A.trim, 0, hipY + 0.06, chestZ - 0.27));      // cinturón de cargadores
+  } else if (variant === "capitan") {
+    // Capitán: espada de energía en alto y pistola de plasma
+    const pistol: V3 = [0.28, y(0.98), 0.46];
+    const sword: V3 = [-0.32, y(0.92), 0.2];
+    arm(1, pistol);
+    arm(-1, sword);
+    p.push(segment([pistol[0], pistol[1] + 0.03, pistol[2] - 0.08], [pistol[0], pistol[1] + 0.03, pistol[2] + 0.2], 0.09, 0.12, A.dark));
+    p.push(place(new THREE.CylinderGeometry(0.05, 0.05, 0.14, 6), "#5fd0ff", pistol[0], pistol[1] + 0.1, pistol[2] + 0.02, Math.PI / 2, 0, 0, true));
+    const tip: V3 = [-0.42, y(1.75), 0.55];
+    p.push(segment([sword[0], sword[1] - 0.1, sword[2] - 0.04], [sword[0], sword[1] + 0.04, sword[2]], 0.06, 0.06, A.trim));
+    p.push(box(0.24, 0.05, 0.09, A.trim, sword[0], sword[1] + 0.04, sword[2]));
+    p.push(segment([sword[0], sword[1] + 0.08, sword[2]], tip, 0.05, 0.13, "#7fd8ff", true));
+    // Capa: tres paneles desde los hombros hasta las rodillas, un poco abiertos
+    for (const [sx, spread] of [[-0.2, -0.08], [0, 0], [0.2, 0.08]] as const) {
+      p.push(segment([sx, hipY + 0.52, chestZ - 0.36], [sx + spread, y(0.12), chestZ - 0.55 - Math.abs(spread)], 0.2, 0.04, "#7a1f1f"));
+    }
+  } else if (!leader) {
     arm(1, P.handR);
     arm(-1, P.handL);
     // Rifle bólter: de la culata (detrás de la mano derecha) a la boca (más allá de la izquierda)
@@ -139,9 +173,17 @@ function legionario(pose: number, leader: boolean): Part[] {
     p.push(segment([sword[0], sword[1] + 0.1, sword[2] - 0.05], [tip[0], tip[1] - 0.04, tip[2] - 0.07], 0.04, 0.04, A.red));
   }
 
-  // Casco con rejilla y visor; el sargento lo lleva rojo con cresta y laurel
   const hx = Math.sin(P.headTurn) * 0.02, hz = chestZ + 0.04;
-  const helm = leader ? A.red : A.armor;
+  if (variant === "capitan") {
+    // Cabeza descubierta con laurel dorado
+    p.push(box(0.2, 0.22, 0.21, "#d8a888", hx, hipY + 0.6, hz, 0, P.headTurn));
+    p.push(box(0.21, 0.07, 0.22, "#3a2a20", hx, hipY + 0.8, hz - 0.01, 0, P.headTurn));
+    p.push(box(0.23, 0.035, 0.23, A.trim, hx, hipY + 0.74, hz, 0, P.headTurn));
+    p.push(box(0.14, 0.03, 0.02, "#3a2a20", hx + Math.sin(P.headTurn) * 0.105, hipY + 0.72, hz + Math.cos(P.headTurn) * 0.105, 0, P.headTurn));
+    return p;
+  }
+  // Casco con rejilla y visor; el sargento lo lleva rojo con cresta y laurel
+  const helm = leader ? A.red : variant === "pesado" ? A.armorD : A.armor;
   p.push(box(0.21, 0.22, 0.23, helm, hx, hipY + 0.6, hz, 0, P.headTurn));
   p.push(box(0.14, 0.09, 0.06, A.dark, hx + Math.sin(P.headTurn) * 0.11, hipY + 0.6, hz + Math.cos(P.headTurn) * 0.11, 0, P.headTurn));
   p.push(place(new THREE.BoxGeometry(0.17, 0.04, 0.03), A.visor,
@@ -176,7 +218,19 @@ const CLAW_POSES: ClawPose[] = [
   { thorax: [0, y(0.8), 0.1], head: [0, y(0.98), 0.28], elbow: [0.32, y(1.14), 0.12], tip: [0.36, y(1.26), 0.5], crouch: -0.04 },
 ];
 
-function garra(pose: number, leader: boolean): Part[] {
+export interface SwarmOpts {
+  /** Brazos-guadaña (por defecto sí). */
+  scythes?: boolean;
+  /** Arma de disparo: escupidor (tubo en los dos bracitos) o cañón bio (en el brazo derecho). */
+  gun?: "none" | "escupidor" | "bio";
+  /** Corona sináptica luminosa. */
+  crown?: boolean;
+  /** Cola y espinas extra (monstruos). */
+  monster?: boolean;
+}
+
+function garra(pose: number, leader: boolean, o: SwarmOpts = {}): Part[] {
+  const scythes = o.scythes ?? true;
   const P = CLAW_POSES[pose % CLAW_POSES.length];
   const C = SW, p: Part[] = [];
   const shell = leader ? C.shellD : C.shell;
@@ -224,10 +278,12 @@ function garra(pose: number, leader: boolean): Part[] {
     const el: V3 = [s * P.elbow[0], P.elbow[1], P.elbow[2]];
     const tip: V3 = [s * P.tip[0], P.tip[1], P.tip[2]];
     const bend: V3 = [(el[0] + tip[0]) / 2 + s * 0.03, Math.max(el[1], tip[1]) + 0.06, (el[2] + tip[2]) / 2];
-    p.push(segment(sh, el, 0.09, 0.1, C.flesh));
-    p.push(box(0.1, 0.08, 0.12, shell, el[0], el[1] - 0.04, el[2]));
-    p.push(segment(el, bend, 0.04, 0.13, C.bone));
-    p.push(spike(bend, tip, 0.05, C.bone, 3));
+    if (scythes) {
+      p.push(segment(sh, el, 0.09, 0.1, C.flesh));
+      p.push(box(0.1, 0.08, 0.12, shell, el[0], el[1] - 0.04, el[2]));
+      p.push(segment(el, bend, 0.04, 0.13, C.bone));
+      p.push(spike(bend, tip, 0.05, C.bone, 3));
+    }
     // Bracitos con garras bajo el pecho
     const fa: V3 = [s * 0.1, P.thorax[1] - 0.1, P.thorax[2] + 0.04];
     const fh: V3 = [s * 0.13, P.thorax[1] - 0.2, P.thorax[2] + 0.18];
@@ -235,6 +291,36 @@ function garra(pose: number, leader: boolean): Part[] {
     p.push(spike(fh, [fh[0], fh[1] - 0.04, fh[2] + 0.1], 0.03, C.bone, 3));
   }
 
+  // Armas de disparo biológicas
+  if (o.gun === "escupidor") {
+    // Tubo carnoso sujeto con los dos bracitos, apuntando al frente
+    const a0: V3 = [0.02, P.thorax[1] - 0.14, P.thorax[2] + 0.12], a1: V3 = [0.02, P.thorax[1] - 0.06, P.thorax[2] + 0.62];
+    p.push(segment(a0, a1, 0.12, 0.12, C.fleshD));
+    p.push(segment([a1[0], a1[1], a1[2] - 0.06], [a1[0], a1[1] + 0.01, a1[2] + 0.05], 0.15, 0.15, shell));
+    p.push(segment([0.02, P.thorax[1] - 0.02, P.thorax[2] + 0.2], [0.02, P.thorax[1] + 0.06, P.thorax[2] + 0.42], 0.08, 0.06, C.glow, true));
+  }
+  if (o.gun === "bio") {
+    const a0: V3 = [0.24, P.thorax[1] - 0.06, P.thorax[2] + 0.02], a1: V3 = [0.3, P.thorax[1] + 0.02, P.thorax[2] + 0.62];
+    p.push(segment(a0, a1, 0.15, 0.15, C.fleshD));
+    p.push(segment([a1[0], a1[1], a1[2] - 0.1], [a1[0], a1[1] + 0.01, a1[2] + 0.05], 0.19, 0.19, shell));
+    for (const t of [0.3, 0.55]) p.push(place(new THREE.DodecahedronGeometry(0.05, 0), C.glow, a0[0] + (a1[0] - a0[0]) * t, a0[1] + (a1[1] - a0[1]) * t + 0.08, a0[2] + (a1[2] - a0[2]) * t, 0, 0, 0, true));
+  }
+  // Corona sináptica: púas que brillan sobre la cabeza
+  if (o.crown) {
+    const hd = P.head;
+    for (const [dx, dz, h] of [[0, -0.08, 0.32], [-0.1, -0.04, 0.24], [0.1, -0.04, 0.24]] as const) {
+      p.push(spike([hd[0] + dx, hd[1] + 0.08, hd[2] + dz], [hd[0] + dx * 1.6, hd[1] + h, hd[2] + dz - 0.12], 0.04, C.glow, 4));
+    }
+    p.push(place(new THREE.DodecahedronGeometry(0.07, 0), C.glow, hd[0], hd[1] + 0.12, hd[2] - 0.1, 0, 0, 0, true));
+  }
+  // Monstruo: espinas de hueso en el lomo y una cola más larga
+  if (o.monster) {
+    for (const t of [0.15, 0.4, 0.65, 0.9]) {
+      const m = mid(t);
+      p.push(spike([m[0], m[1] + 0.2, m[2]], [m[0], m[1] + 0.48, m[2] - 0.14], 0.06, C.bone, 4));
+    }
+    p.push(spike([0.04, hip[1] - 0.14, hip[2] - 0.44], [0.12, hip[1] - 0.3, hip[2] - 0.9], 0.08, shell, 5));
+  }
   // Alfa: espinas de hueso en el lomo y sacos que brillan
   if (leader) {
     for (const t of [0.2, 0.5, 0.8]) {
@@ -249,6 +335,57 @@ function garra(pose: number, leader: boolean): Part[] {
   return p;
 }
 
+// --- Andador de Combate ------------------------------------------------------------
+
+const WALK_POSES = [
+  { footL: 0.35, footR: -0.3, fistY: 2.0, cannonPitch: 0 },
+  { footL: -0.1, footR: 0.15, fistY: 2.5, cannonPitch: 0.15 },
+  { footL: 0.5, footR: -0.45, fistY: 1.7, cannonPitch: -0.1 },
+];
+
+function andador(pose: number): Part[] {
+  const P = WALK_POSES[pose % WALK_POSES.length], A = LEG, p: Part[] = [];
+  const Y = (v: number) => Y0 + v;
+  // Piernas de pistón: pie, espinilla, rodilla, muslo
+  for (const [s, fz] of [[-1, P.footL], [1, P.footR]] as const) {
+    const foot: V3 = [s * 0.55, Y(0.12), fz], knee: V3 = [s * 0.62, Y(1.1), fz * 0.5 + 0.28], hip: V3 = [s * 0.5, Y(1.85), 0];
+    p.push(box(0.7, 0.24, 1.05, A.dark, foot[0], Y(0), fz + 0.1));
+    p.push(box(0.22, 0.1, 0.4, A.metal, foot[0], Y(0.24), fz + 0.5));
+    p.push(segment(foot, knee, 0.34, 0.36, A.armorD));
+    p.push(box(0.42, 0.34, 0.3, A.trim, knee[0], knee[1] - 0.17, knee[2] + 0.14));
+    p.push(segment(knee, hip, 0.42, 0.44, A.armor));
+    p.push(segment([knee[0] + s * 0.18, knee[1], knee[2] - 0.1], [hip[0] + s * 0.2, hip[1] - 0.2, hip[2] - 0.15], 0.08, 0.08, A.metal));   // pistón
+  }
+  p.push(box(1.2, 0.42, 0.85, A.dark, 0, Y(1.62), 0));                       // pelvis
+  // Sarcófago con placa frontal y águila
+  p.push(box(1.45, 1.25, 1.15, A.armor, 0, Y(1.95), -0.02));
+  p.push(box(1.05, 0.85, 0.07, A.trim, 0, Y(2.1), 0.58));
+  p.push(box(0.9, 0.7, 0.05, A.armorD, 0, Y(2.17), 0.6));
+  for (const sx of [-1, 1]) p.push(box(0.32, 0.08, 0.04, A.trim, sx * 0.17, Y(2.62), 0.63, 0, 0, sx * -0.35));
+  // Cabeza blindada con visor
+  p.push(box(0.46, 0.3, 0.42, A.armorD, 0, Y(3.2), 0.28));
+  p.push(place(new THREE.BoxGeometry(0.3, 0.06, 0.03), A.visor, 0, Y(3.38), 0.5, 0, 0, 0, true));
+  // Hombreras y chimeneas
+  for (const sx of [-1, 1]) p.push(box(0.5, 0.45, 0.85, A.armor, sx * 0.9, Y(2.8), 0));
+  for (const sx of [-1, 1]) p.push(place(new THREE.CylinderGeometry(0.09, 0.11, 0.6, 6), A.metal, sx * 0.35, Y(3.45), -0.45));
+  // Brazo izquierdo: cañón de asalto rotativo
+  const ca: V3 = [-1.05, Y(2.45), 0.45];
+  p.push(segment([-0.9, Y(2.75), 0], ca, 0.34, 0.36, A.armorD));
+  p.push(box(0.55, 0.5, 0.7, A.dark, ca[0], ca[1] - 0.25, ca[2] + 0.25, P.cannonPitch));
+  for (let i = 0; i < 3; i++) {
+    const a = (i / 3) * Math.PI * 2;
+    const ox = Math.cos(a) * 0.12, oy = Math.sin(a) * 0.12;
+    p.push(segment([ca[0] + ox, ca[1] + oy, ca[2] + 0.55], [ca[0] + ox, ca[1] + oy + P.cannonPitch * -1.2, ca[2] + 1.55], 0.08, 0.08, A.metal));
+  }
+  // Brazo derecho: puño de combate
+  const fist: V3 = [1.05, Y(P.fistY), 0.75];
+  p.push(segment([0.9, Y(2.75), 0], fist, 0.34, 0.36, A.armorD));
+  p.push(box(0.6, 0.55, 0.6, A.armor, fist[0], fist[1] - 0.28, fist[2] + 0.15));
+  for (let i = 0; i < 3; i++) p.push(box(0.13, 0.12, 0.28, A.dark, fist[0] - 0.18 + i * 0.18, fist[1] - 0.1, fist[2] + 0.55));
+  p.push(place(new THREE.CylinderGeometry(0.06, 0.06, 0.5, 6), "#7fd8ff", fist[0], fist[1] + 0.05, fist[2] + 0.15, Math.PI / 2, 0, 0, true));
+  return p;
+}
+
 // --- Fábrica con caché ----------------------------------------------------------
 
 const cache = new Map<string, THREE.Group>();
@@ -260,15 +397,30 @@ export function makeMiniature(kind: ModelKind, pose = 0, leader = false): THREE.
   if (!proto) {
     proto = new THREE.Group();
     const r = BASE_RADIUS[kind];
-    const rim = kind === "legionario" ? LEG.rim : SW.rim;
-    proto.add(build(peana(r, leader ? (kind === "legionario" ? LEG.trim : SW.glow) : rim, pose * 7 + 3)));
-    const body = build(kind === "legionario" ? legionario(pose, leader) : garra(pose, leader));
-    // El alfa es un poco más grande que sus hermanas
-    if (kind === "garra" && leader) { body.scale.setScalar(1.15); body.position.y = -Y0 * 0.15; }
+    const legion = ["legionario", "capitan", "pesado", "andador"].includes(kind);
+    const rim = leader || kind === "capitan" || kind === "tirano" ? (legion ? LEG.trim : SW.glow) : legion ? LEG.rim : SW.rim;
+    proto.add(build(peana(r, rim, pose * 7 + 3)));
+    const [parts, scale] = bodyOf(kind, pose, leader);
+    const body = build(parts);
+    if (scale !== 1) { body.scale.setScalar(scale); body.position.y = Y0 * (1 - scale); }
     proto.add(body);
     cache.set(key, proto);
   }
   return proto.clone();
+}
+
+/** Piezas del cuerpo de cada tipo de miniatura y su escala sobre la peana. */
+function bodyOf(kind: ModelKind, pose: number, leader: boolean): [Part[], number] {
+  switch (kind) {
+    case "legionario": return [legionario(pose, leader, "tactico"), 1];
+    case "pesado": return [legionario(pose, false, "pesado"), 1];
+    case "capitan": return [legionario(pose, false, "capitan"), 1.12];
+    case "andador": return [andador(pose), 1];
+    case "garra": return [garra(pose, leader), leader ? 1.15 : 1];
+    case "escupidor": return [garra(pose, leader, { scythes: false, gun: "escupidor" }), 0.95];
+    case "nodo": return [garra(pose, leader, { gun: "bio", crown: true }), 1.6];
+    case "tirano": return [garra(pose, true, { gun: "bio", crown: true, monster: true }), 2.5];
+  }
 }
 
 /** Para la vista: miniatura de una pieza del estado. */

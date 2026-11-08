@@ -90,7 +90,7 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
     id: "capitan", name: "Capitán", faction: "legion", character: true,
     profile: { M: 6, T: 4, Sv: 3, Inv: 4, W: 5, Ld: 6, OC: 1 },
     sizes: [{ models: 1, points: 80 }], weapons: ["pistolaPlasma", "espadaEnergia"],
-    abilities: ["alMando"], model: "legionario",
+    abilities: ["alMando"], model: "capitan",
   },
   asalto: {
     id: "asalto", name: "Escuadra de Asalto Táctico", faction: "legion",
@@ -103,19 +103,19 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
     id: "fuegoPesado", name: "Escuadra de Fuego Pesado", faction: "legion",
     profile: { M: 5, T: 4, Sv: 3, W: 2, Ld: 6, OC: 1 },
     sizes: [{ models: 5, points: 120 }], weapons: ["canonPesado", "cuchillo"],
-    abilities: [], model: "legionario",
+    abilities: [], model: "pesado",
   },
   andador: {
     id: "andador", name: "Andador de Combate", faction: "legion", big: true,
     profile: { M: 8, T: 9, Sv: 2, W: 12, Ld: 6, OC: 4 },
     sizes: [{ models: 1, points: 150 }], weapons: ["canonAsalto", "punoCombate"],
-    abilities: ["blindado"], model: "legionario",
+    abilities: ["blindado"], model: "andador",
   },
   tirano: {
     id: "tirano", name: "Tirano Sináptico", faction: "swarm", character: true, big: true,
     profile: { M: 8, T: 9, Sv: 2, Inv: 5, W: 11, Ld: 7, OC: 3 },
     sizes: [{ models: 1, points: 180 }], weapons: ["garrasMonstruosas", "escupeBilis"],
-    abilities: ["sinaptico"], model: "garra",
+    abilities: ["sinaptico"], model: "tirano",
   },
   garras: {
     id: "garras", name: "Garras Menores", faction: "swarm",
@@ -127,13 +127,13 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
     id: "escupidores", name: "Escupidores", faction: "swarm",
     profile: { M: 6, T: 3, Sv: 5, W: 1, Ld: 8, OC: 1 },
     sizes: [{ models: 10, points: 60 }, { models: 20, points: 120 }], weapons: ["escupidor", "mordiscos"],
-    abilities: [], model: "garra",
+    abilities: [], model: "escupidor",
   },
   nodo: {
     id: "nodo", name: "Guerreros Nodo", faction: "swarm",
     profile: { M: 6, T: 5, Sv: 4, W: 3, Ld: 7, OC: 1 },
     sizes: [{ models: 3, points: 80 }, { models: 6, points: 160 }], weapons: ["canonBio", "garrasAfiladas"],
-    abilities: ["sinaptico"], model: "garra",
+    abilities: ["sinaptico"], model: "nodo",
   },
 };
 

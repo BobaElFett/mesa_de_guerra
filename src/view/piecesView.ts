@@ -7,7 +7,7 @@ import { makeTerrain } from "../models/terrain";
 // hacia las del estado, así que al deshacer se ve cada cosa volver a su sitio.
 
 type Item = { kind: "mini"; piece: Piece } | { kind: "terrain"; terrain: TerrainPiece };
-interface Entry { group: THREE.Group; item: Item; dying?: number }
+interface Entry { group: THREE.Group; item: Item; dying?: number; look: string }
 
 /** Posición y giro de cualquier cosa de la mesa. */
 export interface Placed { id: string; x: number; z: number; rot: number }
@@ -36,22 +36,24 @@ export class PiecesView {
 
   sync(state: GameState) {
     const seen = new Set<string>();
-    const upsert = (id: string, item: Item, make: () => THREE.Group, p: Placed) => {
+    const upsert = (id: string, item: Item, make: () => THREE.Group, p: Placed, look: string) => {
       seen.add(id);
       let e = this.entries.get(id);
+      // Mismo id pero otro aspecto (p. ej. tras desplegar listas nuevas): se rehace el modelo
+      if (e && e.look !== look) { this.group.remove(e.group); this.entries.delete(id); e = undefined; }
       if (!e) {
         const g = make();
         g.userData.pieceId = id;
         g.position.set(p.x, 0, p.z);
         g.rotation.y = p.rot;
         this.group.add(g);
-        e = { group: g, item };
+        e = { group: g, item, look };
         this.entries.set(id, e);
       }
       e.item = item;
     };
-    for (const t of state.terrain) upsert(t.id, { kind: "terrain", terrain: t }, () => shadowed(makeTerrain(t.kind)), t);
-    for (const p of state.pieces) upsert(p.id, { kind: "mini", piece: p }, () => miniatureFor(p), p);
+    for (const t of state.terrain) upsert(t.id, { kind: "terrain", terrain: t }, () => shadowed(makeTerrain(t.kind)), t, `t:${t.kind}`);
+    for (const p of state.pieces) upsert(p.id, { kind: "mini", piece: p }, () => miniatureFor(p), p, `m:${p.model}:${p.pose ?? 0}:${p.leader ? 1 : 0}`);
     for (const [id, e] of this.entries) {
       if (seen.has(id)) { e.dying = undefined; e.group.scale.setScalar(1); continue; }
       if (this.held.has(id)) continue;

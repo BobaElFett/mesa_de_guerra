@@ -9,6 +9,15 @@ Plan completo (visión, facciones, roadmap y backlog): documento *Mesa de Guerra
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor.
 
+## Novedades 0.16 · fase 3 (modelos de todas las unidades, #26–#29)
+- **Capitán** (peana de 40 mm): cabeza descubierta con laurel dorado, capa roja, espada de energía luminosa en alto y pistola de plasma.
+- **Escuadra de Fuego Pesado:** legionarios con casco oscuro, cañón pesado a la cadera con tambor de munición, cinta desde la mochila y cinturón de cargadores.
+- **Andador de Combate** (peana de 90 mm): sarcófago con placa dorada y águila, piernas de pistón, cabeza blindada con visor, chimeneas, cañón de asalto rotativo de tres cañones y puño de combate con dedos y bobina de energía. Tres poses.
+- **Tirano Sináptico** (peana de 60 mm): dos veces y media el tamaño de una Garra, con guadañas, cañón bio, corona sináptica luminosa, espinas de hueso en el lomo y cola larga.
+- **Guerreros Nodo** (40 mm): Garras grandes con cañón bio y corona sináptica.
+- **Escupidores** (25 mm): criaturas sin guadañas que sujetan un tubo escupidor con un canal luminoso.
+- **Corregido:** al desplegar listas nuevas, las miniaturas que reutilizaban un id (L1, E1…) conservaban el modelo anterior. Ahora el modelo se rehace si cambia el tipo, la pose o el rango.
+
 ## Novedades 0.15 · fase 2 (partida de prueba completa, #25) — fase 2 completa
 - **Partida de prueba:** en *Mesas*, el botón *Partida de prueba* despliega dos ejércitos (Legión: Capitán, Asalto Táctico de 10 y de 5, Fuego Pesado — 460 pts; Enjambre: Tirano Sináptico, Guerreros Nodo, Garras Menores de 20, Escupidores de 10 — 450 pts) en sus zonas y activa el modo reglas. Se puede deshacer.
 - **Bot:** en modo reglas, el botón *Bot* juega la fase en curso por el bando activo (mover, disparar, cargar y combatir) con las mismas órdenes que un jugador. Sirve para jugar en solitario contra él o para ver una partida entera.
@@ -158,7 +167,8 @@ src/
   camera/tableCamera.ts   cámara de mesa
   world/table.ts          mesa, tapete, rejilla, zonas de despliegue, bandeja y sala
   models/lowpoly.ts       ayudantes low poly (caja, hueso entre dos puntos, púa, fusionar por color)
-  models/miniatures.ts    legionario, sargento, Garra y alfa, con 3 poses cada uno
+  models/miniatures.ts    todas las miniaturas: Legión (táctico, sargento, pesado, Capitán,
+                          Andador) y Enjambre (Garra, alfa, Escupidor, Nodo, Tirano)
   models/terrain.ts       escenografía: ruinas, contenedores, cráter, búnker y barricada
   view/piecesView.ts      dibujo de miniaturas y escenografía, y resaltado
   input/pieceControls.ts  selección, recuadro, arrastre y giro en grupo
@@ -183,4 +193,4 @@ src/
 ```
 
 ## Siguiente: fase 3 (ejércitos)
-Modelos del Capitán, Fuego Pesado, Andador, Tirano, Guerreros Nodo y Escupidores (#26–#29), editor de listas de 500 puntos (#30), despliegue de las listas (#31) y líderes unidos a escuadras (#32).
+Editor de listas de 500 puntos (#30), despliegue de las listas (#31) y líderes unidos a escuadras (#32).
