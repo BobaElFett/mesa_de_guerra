@@ -9,6 +9,13 @@ Plan completo (visión, facciones, roadmap y backlog): documento *Mesa de Guerra
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor.
 
+## Novedades 0.17 · fase 3 (editor de listas de ejército, #30)
+- **Ejércitos:** el botón *Ejércitos* abre un editor con una lista por bando. Se añaden unidades de las hojas de datos de ese bando (el desplegable dice los tamaños y su coste), se elige el número de miniaturas y se quitan con ×.
+- **Puntos y validación al momento:** total sobre 500 (en rojo si se pasa) y los fallos del reglamento: tamaños válidos, como mucho 3 unidades iguales, 1 Andador o Tirano y al menos un personaje.
+- **Listas guardadas:** cada bando guarda y carga listas con nombre en el navegador (hasta 20 por bando); *Vaciar* empieza de cero.
+- **Desplegar:** con las dos listas válidas, *Desplegar* sustituye las miniaturas de la mesa por las listas en sus zonas (se puede deshacer) y activa el modo reglas. Por defecto vienen las dos listas de la partida de prueba.
+- El panel del turno ya no parte en dos líneas el texto ni los botones.
+
 ## Novedades 0.16 · fase 3 (modelos de todas las unidades, #26–#29)
 - **Capitán** (peana de 40 mm): cabeza descubierta con laurel dorado, capa roja, espada de energía luminosa en alto y pistola de plasma.
 - **Escuadra de Fuego Pesado:** legionarios con casco oscuro, cañón pesado a la cadera con tambor de munición, cinta desde la mochila y cinturón de cargadores.
@@ -190,7 +197,8 @@ src/
   view/shotPlayer.ts      reproduce un ataque paso a paso con informe y dados
   ui/hud.ts               turno, herramientas y dados
   ui/tablesDialog.ts      diálogo Mesas: guardar, cargar, borrar, exportar, importar
+  ui/armyDialog.ts        diálogo Ejércitos: listas de 500 puntos y despliegue
 ```
 
 ## Siguiente: fase 3 (ejércitos)
-Editor de listas de 500 puntos (#30), despliegue de las listas (#31) y líderes unidos a escuadras (#32).
+Despliegue de las listas con recolocación antes de empezar (#31) y líderes unidos a escuadras (#32).

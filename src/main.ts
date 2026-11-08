@@ -20,6 +20,7 @@ import { ShotPlayer } from "./view/shotPlayer";
 import { DATASHEETS } from "./rules/datasheets";
 import { playPhase } from "./ai/bot";
 import { TEST_LEGION, TEST_SWARM } from "./rules/armies";
+import { ArmyDialog } from "./ui/armyDialog";
 import { DiceTray } from "./view/dice";
 import { TRAY } from "./world/table";
 import { Command } from "./core/commands";
@@ -212,6 +213,9 @@ document.getElementById("bot-phase")!.addEventListener("click", () => {
   if (!bus.state.rulesMode || bus.state.gameOver) return;
   playPhase(bus);
 });
+// Ejércitos: listas de 500 puntos y despliegue
+const armies = new ArmyDialog(bus, toast);
+armies.onDeployed = () => { cam.reset(); controls.selected.clear(); controls.onSelectionChange(); };
 // Partida de prueba: despliega las dos listas de prueba (se puede deshacer)
 document.getElementById("test-armies")!.addEventListener("click", () => {
   bus.dispatch({ type: "setArmies", legion: TEST_LEGION, swarm: TEST_SWARM });
@@ -315,4 +319,4 @@ renderer.setAnimationLoop(() => {
 });
 
 // Para pruebas desde la consola
-(window as unknown as { mesa: unknown }).mesa = { bus, cam, pieces, controls, tape, ranges, tray, tables, shots };
+(window as unknown as { mesa: unknown }).mesa = { bus, cam, pieces, controls, tape, ranges, tray, tables, shots, armies };
