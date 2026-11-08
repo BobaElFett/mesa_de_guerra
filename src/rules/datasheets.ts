@@ -158,3 +158,12 @@ export function weaponsOf(ds: Datasheet, leader: boolean): Weapon[] {
 
 /** Texto de una tirada de dados: 2, D3, D6. */
 export function diceText(d: Dice): string { return String(d); }
+
+/** Texto de las habilidades de unidad, para la hoja de datos en pantalla. */
+export const UNIT_ABILITY_TEXT: Record<UnitAbility, { name: string; text: string }> = {
+  alMando: { name: "Al mando", text: "Líder de una escuadra de Asalto Táctico o de Fuego Pesado; esa unidad repite los 1 al impactar." },
+  sargento: { name: "Sargento", text: "Una miniatura lleva pistola bólter y espada sierra en lugar de rifle y cuchillo." },
+  blindado: { name: "Blindado", text: "Cada ataque que lo daña quita 1 herida menos (mínimo 1)." },
+  sinaptico: { name: "Sináptico", text: "Las unidades del Enjambre a 12\" superan solas los chequeos de moral." },
+  rapidez: { name: "Rapidez", text: "Puede declarar una carga después de avanzar." },
+};

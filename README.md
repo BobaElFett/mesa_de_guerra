@@ -9,6 +9,11 @@ Plan completo (visión, facciones, roadmap y backlog): documento *Mesa de Guerra
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor.
 
+## Novedades 0.14 · fase 2 (panel de unidad, #24)
+- **Hoja de datos en pantalla:** al seleccionar una unidad (de cualquier bando, en mesa libre o en modo reglas) aparece su ficha: nombre en el color del bando, miniaturas vivas, coste en puntos, etiquetas de estado y sus atributos en una rejilla (M, R, Sv, Inv, H, L, CO).
+- Debajo, la **tabla de armas** (alcance, A, HP, F, FP, D y habilidades; las del sargento marcadas), las **habilidades de la unidad** explicadas, las **heridas** de cada miniatura dañada y, en modo reglas, **lo que ha hecho este turno** (movió/avanzó/se retiró, disparó, cargó, combatió, trabada).
+- Los botones de la fase en curso (mover, disparar, cargar, combatir) siguen arriba; *Ocultar hoja* pliega el detalle.
+
 ## Novedades 0.13 · fase 2 (moral y sinapsis, #23)
 - **Chequeos de moral automáticos:** al empezar la fase de mando de un bando (en modo reglas), cada unidad suya por debajo de la mitad (de miniaturas, o de heridas si es de una sola) tira 2D6 contra su L con los dados de la semilla. Un informe enseña cada chequeo.
 - **Desmoralizada:** si falla, queda desmoralizada hasta su siguiente fase de mando: CO 0 y sin PM. Se marca con un anillo rojo oscuro en la mesa y una etiqueta en su ficha.

@@ -205,6 +205,7 @@ hud.onCharge = (unit, target) => {
   if (c) toast(`Carga: 2D6 = ${c.roll} (necesitaba ${c.need}) — ${c.success ? "¡entra en combate!" : "no llega"}`);
 };
 hud.onFight = (unit, target) => bus.dispatch({ type: "fight", unit, target });
+hud.onSheetToggle = () => hud.renderSelection(bus.state, controls.selected, coherencyWarnings());
 hud.onTargetHover = (u) => { targetHover = u; };
 
 function refresh(_s?: unknown, cmd?: Command | null) {

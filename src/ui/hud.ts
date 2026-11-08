@@ -6,15 +6,18 @@ import { allowance, isEngaged, movedSoFar, MoveKind } from "../rules/movement";
 import { shootingOptions } from "../rules/shooting";
 import { chargeOptions, fightOptions, pendingChargers } from "../rules/melee";
 import { belowHalf, inSynapse } from "../rules/morale";
-import { Weapon, WEAPONS } from "../rules/datasheets";
+import { Weapon, WEAPONS, Profile, UNIT_ABILITY_TEXT, unitPoints } from "../rules/datasheets";
 
 // Interfaz: turno, deshacer/rehacer, dados y medida al arrastrar.
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 
 /** En modo reglas, con una sola unidad seleccionada: su hoja y, en movimiento, cómo mueve. */
+/** ¿Se ve la hoja de datos completa? (se recuerda mientras dura la sesión) */
+let sheetOpen = true;
+export function toggleSheet() { sheetOpen = !sheetOpen; }
+
 function unitCard(s: GameState, selected: Set<string>): string {
-  if (!s.rulesMode) return "";
   const units = new Set(s.pieces.filter((p) => selected.has(p.id)).map((p) => p.unit));
   if (units.size !== 1) return "";
   const uid = [...units][0];
@@ -28,8 +31,60 @@ function unitCard(s: GameState, selected: Set<string>): string {
     belowHalf(s, uid) && !unit.shocked ? `<span class="badge warnb">Por debajo de la mitad</span>` : "",
     unit.faction === "swarm" && inSynapse(s, uid) ? `<span class="badge syn">En sinapsis</span>` : "",
   ].join("");
-  let html = `<div class="unit-card"><b>${ds.name}</b> <span class="dim">· ${alive}/${unit.startingModels} miniaturas</span>${badges ? `<div class="badges">${badges}</div>` : ""}`
-    + `<div class="stats">M ${P.M}" · R ${P.T} · Sv ${P.Sv}+${P.Inv ? ` · Inv ${P.Inv}+` : ""} · H ${P.W} · L ${P.Ld}+ · CO ${P.OC}</div>`;
+  const F = FACTIONS[unit.faction];
+  const pts = unitPoints(ds, unit.startingModels);
+  let html = `<div class="unit-card"><div class="uc-head"><b style="color:${F.color}">${ds.name}</b> <span class="dim">· ${alive}/${unit.startingModels} miniaturas${pts !== null ? ` · ${pts} pts` : ""}</span>`
+    + ` <button class="sheet-toggle" data-toggle="sheet" title="Mostrar u ocultar la hoja de datos">${sheetOpen ? "Ocultar hoja" : "Hoja de datos"}</button></div>`
+    + (badges ? `<div class="badges">${badges}</div>` : "")
+    + statGrid(P);
+  const actions = s.rulesMode ? phaseActions(s, uid) : "";
+  html += actions;
+  if (sheetOpen) html += sheetDetails(s, uid);
+  return html + "</div>";
+}
+
+function statGrid(P: Profile): string {
+  const cells: [string, string][] = [["M", `${P.M}"`], ["R", `${P.T}`], ["Sv", `${P.Sv}+`], ...(P.Inv ? [["Inv", `${P.Inv}+`] as [string, string]] : []), ["H", `${P.W}`], ["L", `${P.Ld}+`], ["CO", `${P.OC}`]];
+  return `<div class="stat-grid">${cells.map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join("")}</div>`;
+}
+
+/** Armas, habilidades, heridas por miniatura y lo hecho este turno. */
+function sheetDetails(s: GameState, uid: string): string {
+  const unit = s.units.find((u) => u.id === uid)!;
+  const ds = DATASHEETS[unit.datasheet];
+  const models = s.pieces.filter((p) => p.unit === uid);
+  const ids = [...new Set([...ds.weapons, ...(ds.leaderWeapons ?? [])])];
+  const leaderName = unit.faction === "legion" ? "sargento" : "alfa";
+  let html = `<table class="wtable"><tr><th>Arma</th><th>Alc.</th><th>A</th><th>HP</th><th>F</th><th>FP</th><th>D</th></tr>`;
+  for (const id of ids) {
+    const w = WEAPONS[id];
+    const who = ds.leaderWeapons?.includes(id) ? ` <span class="dim">(${leaderName})</span>` : "";
+    const ab = weaponLine(w).match(/\((.*)\)$/)?.[1];
+    html += `<tr><td>${w.name}${who}${ab ? `<div class="dim">${ab}</div>` : ""}</td><td>${w.range === "CC" ? "CC" : `${w.range}"`}</td><td>${w.attacks}</td><td>${w.skill ? `${w.skill}+` : "—"}</td><td>${w.strength}</td><td>${w.ap === 0 ? "0" : `−${-w.ap}`}</td><td>${w.damage}</td></tr>`;
+  }
+  html += `</table>`;
+  if (ds.abilities.length) html += `<div class="abil">${ds.abilities.map((a) => `<div><b>${UNIT_ABILITY_TEXT[a].name}:</b> ${UNIT_ABILITY_TEXT[a].text}</div>`).join("")}</div>`;
+  const hurt = models.filter((p) => (p.damage ?? 0) > 0);
+  if (hurt.length) html += `<div class="dim">Heridas: ${hurt.map((p) => `${p.leader ? leaderName : p.id} ${ds.profile.W - (p.damage ?? 0)}/${ds.profile.W}`).join(" · ")}</div>`;
+  if (s.rulesMode) {
+    const t = s.turnLog, done: string[] = [];
+    const mv = t.moves[uid];
+    if (mv) done.push(mv.kind === "avanzar" ? `avanzó (+${mv.advance}")` : mv.kind === "retirarse" ? "se retiró" : `movió ${fmtIn(movedSoFar(s, uid))}`);
+    if (t.shot?.[uid]?.length) done.push(`disparó (${t.shot[uid].map((w) => WEAPONS[w].name).join(", ")})`);
+    const c = t.charges?.[uid];
+    if (c) done.push(`cargó: ${c.roll} → ${c.success ? "en combate" : "falló"}`);
+    if (t.fought?.includes(uid)) done.push("combatió");
+    if (isEngaged(s, uid)) done.push("trabada");
+    if (done.length) html += `<div class="dim">Este turno: ${done.join(" · ")}</div>`;
+  }
+  return html;
+}
+
+/** Botones y estado de la fase en curso (modo reglas). */
+function phaseActions(s: GameState, uid: string): string {
+  const unit = s.units.find((u) => u.id === uid)!;
+  const ds = DATASHEETS[unit.datasheet], P = ds.profile;
+  let html = "";
   if (s.phase === "movimiento" && unit.faction === PLAYERS[s.active] && !s.gameOver) {
     const mv = s.turnLog.moves[uid];
     const used = movedSoFar(s, uid), max = allowance(s, uid, mv);
@@ -91,7 +146,7 @@ function unitCard(s: GameState, selected: Set<string>): string {
     const first = pendingChargers(s);
     if (first.length && !first.includes(uid)) html += `<div class="dim">Pendientes de combatir primero: ${first.map((u) => DATASHEETS[s.units.find((x) => x.id === u)!.datasheet].name).join(", ")}.</div>`;
   }
-  return html + "</div>";
+  return html;
 }
 
 const fmtIn = (v: number) => `${v.toFixed(1).replace(".", ",")}"`;
@@ -121,6 +176,7 @@ export class Hud {
     $("sel").addEventListener("click", (e) => {
       const b = (e.target as HTMLElement).closest("button[data-move]") as HTMLButtonElement | null;
       if (b && !b.disabled) this.onDeclareMove(b.dataset.unit!, b.dataset.move as MoveKind);
+      if ((e.target as HTMLElement).closest("button[data-toggle=sheet]")) { toggleSheet(); this.onSheetToggle(); return; }
       const sh = (e.target as HTMLElement).closest("button[data-shoot]") as HTMLButtonElement | null;
       if (sh && !sh.disabled) { const [u, w, t] = sh.dataset.shoot!.split("|"); this.onShoot(u, w, t); }
       const ch = (e.target as HTMLElement).closest("button[data-charge]") as HTMLButtonElement | null;
@@ -203,6 +259,8 @@ export class Hud {
   /** El jugador dispara un arma de una unidad a una unidad enemiga. */
   onShoot: (unit: string, weapon: string, target: string) => void = () => {};
   onCharge: (unit: string, target: string) => void = () => {};
+  /** Se ha plegado o desplegado la hoja de datos (hay que volver a pintar la selección). */
+  onSheetToggle: () => void = () => {};
   onFight: (unit: string, target: string) => void = () => {};
   /** El ratón pasa por encima de un botón de objetivo (para resaltar esa unidad). */
   onTargetHover: (unit: string | null) => void = () => {};
