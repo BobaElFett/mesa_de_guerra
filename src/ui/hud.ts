@@ -215,6 +215,10 @@ export class Hud {
     $("end-turn").addEventListener("click", () => this.advance());
     $("mode").addEventListener("click", () => bus.dispatch({ type: "setRulesMode", on: !bus.state.rulesMode }));
     $("sel").addEventListener("click", (e) => {
+      const any = (e.target as HTMLElement).closest("button") as HTMLButtonElement | null;
+      const d = any?.dataset;
+      const actor = d ? (d.unit ?? d.shoot?.split("|")[0] ?? d.charge?.split("|")[0] ?? d.fight?.split("|")[0] ?? d.strat?.split("|")[1]) : undefined;
+      if (actor && !this.canAct(actor)) return;
       const b = (e.target as HTMLElement).closest("button[data-move]") as HTMLButtonElement | null;
       if (b && !b.disabled) this.onDeclareMove(b.dataset.unit!, b.dataset.move as MoveKind);
       if ((e.target as HTMLElement).closest("button[data-toggle=sheet]")) { toggleSheet(); this.onSheetToggle(); return; }
@@ -265,7 +269,13 @@ export class Hud {
   rollNow() { this.bus.dispatch({ type: "roll", count: this.diceCount, sides: 6 }); }
 
   /** Intro / botón: siguiente fase en modo reglas; siguiente turno en mesa libre. */
+  /** ¿Puede el jugador dar órdenes a esta unidad? (no a las de la IA) */
+  canAct: (unit: string) => boolean = () => true;
+  /** Antes de pasar de fase o de turno; false lo impide. */
+  beforeAdvance: () => boolean = () => true;
+
   advance() {
+    if (!this.beforeAdvance()) return;
     this.bus.dispatch(this.bus.state.rulesMode ? { type: "nextPhase" } : { type: "endTurn" });
   }
 

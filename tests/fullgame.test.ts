@@ -8,7 +8,7 @@ import { ArmyList, listPoints, validateList, TEST_LEGION, TEST_SWARM } from "../
 export const LEGION: ArmyList = TEST_LEGION;
 export const SWARM: ArmyList = TEST_SWARM;
 
-function invariants(s: GameState, where: string) {
+export function invariants(s: GameState, where: string) {
   const units = new Set(s.units.map((u) => u.id));
   for (const p of s.pieces) {
     assert.ok(Number.isFinite(p.x) && Number.isFinite(p.z), `${where}: ${p.id} posición`);

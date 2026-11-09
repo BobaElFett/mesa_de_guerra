@@ -9,6 +9,30 @@ Plan completo (visión, facciones, roadmap y backlog): documento *Mesa de Guerra
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor.
 
+## Novedades 0.20 · fase 4 (IA y misiones, #33–#39) — fase 4 completa
+- **Objetivos (#33):** marcadores de 40 mm con un faro. Los controla el bando que sume más CO con miniaturas a 3" o menos (borde con borde; las desmoralizadas cuentan 0; empate, nadie). El cristal y el anillo de 3" toman el color de quien lo controla.
+- **Tres misiones (#34):** se eligen en *Ejércitos* (y valen también para *Partida de prueba*):
+    - **Toma y mantén:** cinco objetivos (una base en cada zona, dos flancos y el búnker del centro). Al empezar tu turno, desde la ronda 2: 5 PV por objetivo, hasta 15.
+    - **Corazón del frente:** tres objetivos en la línea central; el búnker vale el doble. Al empezar tu turno: 4 PV por flanco y 8 por el Corazón.
+    - **Caza de presas:** cuentan las bajas: 1 PV por cada 20 puntos de miniaturas enemigas eliminadas. Además, cuatro objetivos de 2 PV al acabar tu turno (hasta 4).
+- **Puntos de victoria y fin de partida (#35):** panel de misión arriba a la derecha con los PV, cada objetivo con el CO de cada bando y lo que vale ahora. PV también en el panel del turno. Tras la ronda 5, resumen: quién gana, PV por ronda, puntos perdidos y unidades destruidas por cada bando.
+- **Estratagemas (#36):** en tu turno, con 1 PM, desde la ficha de la unidad. Cada una, una vez por turno y nunca sobre una unidad desmoralizada (salvo Reagrupar):
+    - **Reagrupar** (mando): la unidad deja de estar desmoralizada.
+    - **Puntería** (disparo): +1 para herir.
+    - **Ímpetu** (carga): si la carga falla, se repite la tirada.
+    - **Furia** (combate): +1 para impactar.
+- **IA táctica (#37):** juega cada fase con las mismas órdenes que un jugador:
+    - Mueve cada unidad al destino de más valor entre varios (quedarse, cada objetivo, hacia cada enemigo, alejarse; con o sin avanzar): objetivos que gana o asegura, disparos y cargas que tendrá a tiro y el daño que puede recibir (cuerpo a cuerpo y disparos, con la cobertura).
+    - Dispara el arma y al objetivo con más puntos esperados (heridas × puntos por herida, más si acaba con la unidad o está en un objetivo), recalculando tras cada disparo.
+    - Carga según la probabilidad de llegar y lo que gana y pierde en el combate, sin dejar un objetivo que solo ella sujeta. Usa estratagemas cuando compensan.
+    - Tres niveles: **Fácil** (el bot de la fase 2, no mira los objetivos), **Normal** (valora peor los objetivos, se equivoca más y no usa estratagemas) y **Difícil**.
+- **Jugar contra la IA (#38):** en *Ejércitos*, *Rival* elige qué bando lleva la IA (por defecto el Enjambre, en Normal). La IA despliega como sale la lista, juega sus fases sola paso a paso (con los dados a la vista y un aviso de lo que hace) y, en combate, golpea con sus unidades cuando le toca, también en tu turno. No se pueden mover ni dar órdenes a sus unidades; **Pausar IA** deja llevarlas a mano. Sin IA, el botón **IA** juega la fase en curso por el bando activo.
+- **Equilibrio (#39):** con partidas IA contra IA:
+    - Garras Menores pasan a R4 y Escupidores a Sv 4+; los flancos de Toma y mantén se acercan a cada bando (z ±5) y las misiones de objetivos puntúan al empezar el turno, para premiar aguantar.
+    - Difícil contra Difícil, 120 partidas: Legión 51, Enjambre 53, 16 empates. Por misión el carácter se nota: Toma y mantén favorece al Enjambre (rápido y con muchas miniaturas), Caza de presas a la Legión (gana el intercambio de bajas) y Corazón del frente queda parejo.
+    - Niveles: Difícil gana a Fácil 20-1 y a Normal 21-12 (prueba automática); Normal gana a Fácil casi nueve de cada diez.
+- **Pruebas:** 81 en total (IA: cuentas, papeles, reparto de objetivos, partidas completas en las tres misiones sin solapes ni miniaturas fuera de la mesa y reproducibles; misiones y estratagemas).
+
 ## Novedades 0.19 · fase 3 (líderes unidos a escuadras, #32) — fase 3 completa
 - **Lidera a:** en el editor de *Ejércitos*, el Capitán tiene un desplegable para unirse a una Escuadra de Asalto Táctico o de Fuego Pesado de la misma lista (una escuadra admite un solo líder). La lista de prueba lo une a la escuadra de Asalto de 10.
 - **Despliegue juntos:** el líder sale pegado a su escuadra, en coherencia con ella.

@@ -121,13 +121,13 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
   },
   garras: {
     id: "garras", name: "Garras Menores", faction: "swarm",
-    profile: { M: 8, T: 3, Sv: 5, W: 1, Ld: 8, OC: 1 },
+    profile: { M: 8, T: 4, Sv: 5, W: 1, Ld: 8, OC: 1 },
     sizes: [{ models: 10, points: 65 }, { models: 20, points: 130 }], weapons: ["garras"],
     abilities: ["rapidez"], model: "garra",
   },
   escupidores: {
     id: "escupidores", name: "Escupidores", faction: "swarm",
-    profile: { M: 6, T: 3, Sv: 5, W: 1, Ld: 8, OC: 1 },
+    profile: { M: 6, T: 3, Sv: 4, W: 1, Ld: 8, OC: 1 },
     sizes: [{ models: 10, points: 60 }, { models: 20, points: 120 }], weapons: ["escupidor", "mordiscos"],
     abilities: [], model: "escupidor",
   },

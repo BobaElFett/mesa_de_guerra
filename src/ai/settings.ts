@@ -20,6 +20,9 @@ export const settings: GameSettings = (() => {
   return { ...DEFAULTS };
 })();
 
+/** Estado de la sesión (no se guarda): la IA en pausa deja jugar su bando a mano. */
+export const runtime = { aiPaused: false };
+
 export function saveSettings() {
   try { localStorage.setItem(KEY, JSON.stringify(settings)); } catch { /* nada */ }
 }

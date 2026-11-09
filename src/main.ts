@@ -19,7 +19,9 @@ import { allowance, originOf, movedSoFar } from "./rules/movement";
 import { toast } from "./ui/tablesDialog";
 import { ShotPlayer } from "./view/shotPlayer";
 import { DATASHEETS } from "./rules/datasheets";
-import { playPhase } from "./ai/bot";
+import { aiPlayPhase } from "./ai/tactics";
+import { fightOptions } from "./rules/melee";
+import { AiController } from "./ai/controller";
 import { TEST_LEGION, TEST_SWARM } from "./rules/armies";
 import { ArmyDialog } from "./ui/armyDialog";
 import { DiceTray } from "./view/dice";
@@ -33,7 +35,8 @@ import { ObjectivesView } from "./view/objectivesView";
 import { MissionPanel } from "./ui/missionPanel";
 import { EndDialog } from "./ui/endDialog";
 import { MISSIONS } from "./rules/missions";
-import { settings } from "./ai/settings";
+import { AI_LEVEL_NAME, settings } from "./ai/settings";
+import { FACTIONS } from "./core/state";
 
 // --- Renderer y escena ---------------------------------------------------
 const app = document.getElementById("app")!;
@@ -220,14 +223,35 @@ hud.onCharge = (unit, target) => {
   if (c) toast(`Carga: 2D6 = ${c.roll} (necesitaba ${c.need}) — ${c.success ? "¡entra en combate!" : "no llega"}`);
 };
 hud.onFight = (unit, target) => bus.dispatch({ type: "fight", unit, target });
-// Bot: juega la fase en curso del bando activo (para probar y para partidas en solitario)
+// IA: con un bando a cargo de la IA, el botón la pausa o la reanuda; sin IA, juega la fase
+// en curso por el bando activo (para probar o para ver una partida entera)
+const ai = new AiController(bus, () => shots.playing || endDialog.open || modal.open);
+ai.onAction = (t) => toast(`IA · ${t}`);
+ai.onStatus = (t) => {
+  const el = document.getElementById("ai-status")!;
+  el.hidden = !t;
+  if (t && el.textContent !== t) el.textContent = t;
+};
 document.getElementById("bot-phase")!.addEventListener("click", () => {
   if (!bus.state.rulesMode || bus.state.gameOver) return;
-  playPhase(bus);
+  if (settings.aiSide) { ai.paused = !ai.paused; refresh(); return; }
+  if (bus.state.phase === "despliegue") { bus.dispatch({ type: "nextPhase" }); return; }
+  aiPlayPhase(bus, settings.aiLevel);
 });
+hud.canAct = (unit) => {
+  const u = bus.state.units.find((x) => x.id === unit);
+  if (u && settings.aiSide === u.faction && !ai.paused) { toast("Esa unidad la lleva la IA."); return false; }
+  return true;
+};
+hud.beforeAdvance = () => {
+  if (ai.isAiTurn() && !ai.paused) { toast("Es el turno de la IA (pulsa Pausar IA para tomar el control)."); return false; }
+  ai.flushFights();
+  return true;
+};
 // Ejércitos: listas de 500 puntos y despliegue
 const armies = new ArmyDialog(bus, toast);
-armies.onDeployed = () => { cam.reset(); controls.selected.clear(); controls.onSelectionChange(); };
+armies.onDeployed = () => { cam.reset(); controls.selected.clear(); controls.onSelectionChange(); ai.paused = false; };
+armies.onSettings = () => refresh();
 // Partida de prueba: despliega las dos listas de prueba (se puede deshacer)
 document.getElementById("test-armies")!.addEventListener("click", () => {
   bus.dispatch({ type: "setArmies", legion: TEST_LEGION, swarm: TEST_SWARM, mission: settings.mission });
@@ -277,6 +301,10 @@ function refresh(_s?: unknown, cmd?: Command | null) {
   moraleLen = ml.length;
   controls.prune((id) => !!pieces.placedOf(id));
   hud.render(bus.state);
+  const aiBtn = $btn("bot-phase");
+  aiBtn.textContent = settings.aiSide ? (ai.paused ? "Reanudar IA" : "Pausar IA") : "IA";
+  aiBtn.title = settings.aiSide ? `La IA (${AI_LEVEL_NAME[settings.aiLevel]}) lleva ${FACTIONS[settings.aiSide].of.replace(/^de /, "").replace(/^del /, "el ")}` : "La IA juega esta fase por el bando activo";
+  if (ai.isAiTurn() && !ai.paused) $btn("end-turn").disabled = true;
   hud.renderSelection(bus.state, controls.selected, coherencyWarnings());
   writeTable(bus.serialize());
 }
@@ -327,6 +355,7 @@ renderer.setAnimationLoop(() => {
   cam.update(dt);
   pieces.update(dt);
   objectives.update(dt);
+  ai.update(dt);
   const targets = targetHover ? new Set(bus.state.pieces.filter((p) => p.unit === targetHover).map((p) => p.id)) : undefined;
   const shockedIds = bus.state.rulesMode ? new Set(bus.state.pieces.filter((p) => bus.state.units.find((u) => u.id === p.unit)?.shocked).map((p) => p.id)) : undefined;
   pieces.highlight(controls.selected, controls.hovered, controls.selected.size ? coherencyWarnings() : undefined, targets, shockedIds);
@@ -339,4 +368,4 @@ renderer.setAnimationLoop(() => {
 });
 
 // Para pruebas desde la consola
-(window as unknown as { mesa: unknown }).mesa = { bus, cam, pieces, controls, tape, ranges, tray, tables, shots, armies };
+(window as unknown as { mesa: unknown }).mesa = { bus, cam, pieces, controls, tape, ranges, tray, tables, shots, armies, ai, endDialog, fightOptions };

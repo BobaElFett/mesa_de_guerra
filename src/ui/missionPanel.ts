@@ -36,11 +36,11 @@ export class MissionPanel {
     }).join("");
     let proj = "";
     if (s.rulesMode && !s.gameOver && s.phase !== "despliegue") {
-      const held = (s.objectives ?? []).filter((o) => objectiveStatus(s, o).holder === s.active);
-      const raw = held.reduce((n, o) => n + o.vp, 0), n = Math.min(raw, m.capPerTurn);
+      const worth = (pl: 0 | 1) => Math.min(m.capPerTurn, (s.objectives ?? []).filter((o) => objectiveStatus(s, o).holder === pl).reduce((n, o) => n + o.vp, 0));
+      const when = m.scoreAt === "inicio" ? "al empezar el turno de cada uno" : "al acabar el turno de cada uno";
       proj = s.turn < FIRST_SCORING_ROUND
-        ? `<div class="m-proj dim">Se puntúa desde la ronda ${FIRST_SCORING_ROUND}.</div>`
-        : `<div class="m-proj">Si el turno acaba así: <b style="color:${C(s.active)}">+${n} PV</b> ${FACTIONS[PLAYERS[s.active]].of.replace("de la ", "a la ").replace("del ", "al ")}</div>`;
+        ? `<div class="m-proj dim">Se puntúa desde la ronda ${FIRST_SCORING_ROUND}, ${when}.</div>`
+        : `<div class="m-proj">Valen ahora: <b style="color:${C(0)}">+${worth(0)}</b> · <b style="color:${C(1)}">+${worth(1)}</b> PV <span class="dim">(${when})</span></div>`;
     }
     const end = s.gameOver ? `<div style="margin-top:6px"><button data-act="summary" class="primary">Ver resumen</button></div>` : "";
     el.innerHTML = `<div class="m-head"><span class="m-name">${m.name}</span><span class="dim">ronda ${Math.min(s.turn, MAX_ROUNDS)}/${MAX_ROUNDS}</span>`

@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { CommandBus } from "../src/core/commands";
 import { TEST_LEGION, TEST_SWARM } from "../src/rules/armies";
-import { MISSIONS, MissionId, objectiveStatus, outcome } from "../src/rules/missions";
+import { MISSIONS, MissionId, objectiveStatus, outcome, recordCasualties } from "../src/rules/missions";
 import { stratBlocked } from "../src/rules/stratagems";
 
 function game(mission: MissionId = "tomar") {
@@ -37,18 +37,30 @@ test("control: suma CO a 3\"; empate = nadie; desmoralizadas no cuentan", () => 
   assert.equal(st.holder, null);
 });
 
-test("se puntúa al final del turno desde la ronda 2, con tope", () => {
+test("Toma y mantén puntúa al empezar el turno desde la ronda 2, con tope", () => {
   const bus = game();
   const legs = bus.state.pieces.filter((p) => p.model === "legionario");
   const objs = bus.state.objectives!;
-  // Una legionaria en cada objetivo
+  // Una legionaria junto a cada objetivo
   bus.dispatch({ type: "moveMany", moves: objs.map((o, i) => ({ id: legs[i].id, x: o.x + 1.6, z: o.z })) });
-  toEndOfTurn(bus);                                    // ronda 1: no puntúa
+  toEndOfTurn(bus);                                    // ronda 1, Legión: no puntúa
   assert.deepEqual(bus.state.vp, [0, 0]);
-  toEndOfTurn(bus);                                    // turno del Enjambre
-  for (let i = 0; i < 5; i++) bus.dispatch({ type: "nextPhase" });   // ronda 2, Legión
+  toEndOfTurn(bus);                                    // ronda 1, Enjambre → ronda 2, mando de la Legión
+  assert.equal(bus.state.turn, 2);
   assert.equal(bus.state.vp![0], 15);                  // 5 objetivos × 5, tope 15
-  assert.match(bus.state.vpLog!.at(-1)!.why, /tope 15/);
+  const e = bus.state.vpLog!.find((x) => x.player === 0)!;
+  assert.match(e.why, /tope 15/);
+});
+
+test("Caza de presas: PV por los puntos de las miniaturas eliminadas", () => {
+  const bus = game("caza");
+  const g = bus.state.units.find((u) => u.datasheet === "garras")!.id;   // 130 pts / 20 = 6,5 pts cada una
+  const s = structuredClone(bus.state);
+  recordCasualties(s, 0, g, 3);                        // 19,5 pts: aún 0 PV
+  assert.deepEqual(s.vp, [0, 0]);
+  recordCasualties(s, 0, g, 1);                        // 26 pts: 1 PV
+  assert.deepEqual(s.vp, [1, 0]);
+  assert.ok(Math.abs(s.killPts![0] - 26) < 1e-9);
 });
 
 test("Caza de presas: PV por unidad destruida", () => {

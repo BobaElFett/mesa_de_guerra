@@ -1,6 +1,6 @@
 import type { GameState } from "../core/state";
 import { runMoraleTests } from "./morale";
-import { scoreEndOfTurn } from "./missions";
+import { scoreObjectives } from "./missions";
 
 // El turno del reglamento (antes de la ronda 1, la fase de despliegue): cinco fases por jugador, dos jugadores por ronda, cinco rondas.
 
@@ -24,6 +24,7 @@ function enterCommand(s: GameState) {
   s.cp = [s.cp[0] + 1, s.cp[1] + 1];
   s.turnLog = { moves: {}, origins: {} };
   if (s.rulesMode) runMoraleTests(s);
+  scoreObjectives(s, "inicio");
 }
 
 /** Al empezar la fase de movimiento se apunta dónde está cada miniatura del jugador activo. */
@@ -44,7 +45,7 @@ export function advancePhase(s: GameState) {
     return;
   }
   // Fin del turno del jugador activo: puntúa la misión
-  scoreEndOfTurn(s);
+  scoreObjectives(s, "final");
   if (s.active === 1 && s.turn >= MAX_ROUNDS) { s.gameOver = true; return; }
   endTurn(s);
 }

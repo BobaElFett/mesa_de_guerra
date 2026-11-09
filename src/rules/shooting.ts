@@ -1,5 +1,5 @@
 import { hasStrat } from "./stratagems";
-import { recordKill } from "./missions";
+import { recordCasualties } from "./missions";
 import { isGuarded, underCommand } from "./leaders";
 import { GameState, Piece, PLAYERS } from "../core/state";
 import { DATASHEETS, Weapon, WEAPONS, hasAbility } from "./datasheets";
@@ -179,7 +179,7 @@ export function performAttack(s: GameState, kind: AttackLogEntry["kind"], unitId
   for (const p of s.pieces) if (p.unit === targetId && res.woundsLeft[p.id] !== undefined) p.damage = tds.profile.W - res.woundsLeft[p.id];
   const slain = new Set(res.slain);
   s.pieces = s.pieces.filter((p) => !slain.has(p.id));
-  if (slain.size && !s.pieces.some((p) => p.unit === targetId)) recordKill(s, PLAYERS.indexOf(attacker.faction) as 0 | 1, targetId);
+  if (slain.size) recordCasualties(s, PLAYERS.indexOf(attacker.faction) as 0 | 1, targetId, slain.size);
 
   const entry: AttackLogEntry = {
     kind, turn: s.turn, player: PLAYERS.indexOf(attacker.faction), attacker: unitId, target: targetId,

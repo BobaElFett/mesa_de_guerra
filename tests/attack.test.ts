@@ -114,10 +114,10 @@ test("Explosiva: +1 ataque por cada 5 miniaturas del objetivo", () => {
 });
 
 test("estadística: 10 000 rifles contra Garras dan lo esperado", () => {
-  // Esperado por ataque: 2/3 impactan × 2/3 hieren × 5/6 no salvan (6+) = 0,370
+  // Esperado por ataque: 2/3 impactan × 1/2 hieren (F4 contra R4) × 5/6 no salvan (6+) = 0,278
   const r = resolveAttack({ weapon: WEAPONS.rifleBolter, attackers: 5000, target: { profile: P("garras"), models: models(100000, 1) } }, new SeededDice(12345));
   const rate = r.slain.length / r.attacks;
-  assert.ok(Math.abs(rate - (2 / 3) * (2 / 3) * (5 / 6)) < 0.015, `tasa ${rate}`);
+  assert.ok(Math.abs(rate - (2 / 3) * (1 / 2) * (5 / 6)) < 0.015, `tasa ${rate}`);
 });
 
 test("es determinista: misma semilla, mismo resultado", () => {

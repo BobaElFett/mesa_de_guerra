@@ -42,7 +42,7 @@ test("disparo: aplica daño, quita bajas, gasta el arma y es determinista", () =
   assert.equal(e.result.attacks, 8);
   assert.equal(e.result.hitRolls.length, 8);
   assert.equal(e.hitOn, 3);
-  assert.equal(e.woundOn, 3);          // F4 contra R3
+  assert.equal(e.woundOn, 4);          // F4 contra R4
   assert.equal(e.result.saveTarget, 6); // 5+ con FP −1
   const after = bus.state.pieces.filter((p) => p.unit === "U2").length;
   assert.equal(before - after, e.result.slain.length);

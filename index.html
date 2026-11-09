@@ -161,7 +161,7 @@
   #mission .m-fold { margin-left: auto; font-size: 11px; padding: 0 6px; }
   .strats { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
   .strats button { font-size: 12px; border-color: #8a6d2a; }
-  #ai-status { font-size: 12px; color: var(--gold); margin-left: 6px; }
+  #ai-status { font-size: 12px; color: var(--gold); margin-left: 6px; white-space: nowrap; }
   #end-backdrop { position: fixed; inset: 0; z-index: 10; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; }
   #end-backdrop[hidden] { display: none; }
   #end { position: static; width: 520px; max-height: 86vh; overflow-y: auto; padding: 16px 20px; }
@@ -207,6 +207,13 @@
     <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> deshacer · <kbd>Ctrl</kbd>+<kbd>Y</kbd> rehacer</li>
     <li><kbd>Espacio</kbd> tirar dados · <kbd>+</kbd> <kbd>−</kbd> cuántos · <kbd>B</kbd> ver la bandeja</li>
     <li><kbd>Intro</kbd> pasar turno (en modo reglas: siguiente fase) · <kbd>G</kbd> rejilla</li>
+  </ul>
+  <h2>Partida</h2>
+  <ul>
+    <li><b>Ejércitos</b>: listas, misión, rival (IA o dos jugadores) y dificultad</li>
+    <li>Objetivos: los controla quien sume más CO a 3"; los PV, arriba a la derecha</li>
+    <li>Estratagemas (1 PM): botones en la ficha de la unidad, en tu turno</li>
+    <li><b>Pausar IA</b> para tomar el control de su bando</li>
   </ul>
   <h2>Guardado</h2>
   <div class="dim">La mesa se guarda sola en este navegador. <b>Mesas</b> (o <kbd>Ctrl</kbd>+<kbd>S</kbd>) la guarda con nombre, carga otras y exporta o importa archivos.</div>
