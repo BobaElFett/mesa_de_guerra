@@ -2,7 +2,7 @@ import { declareCharge, resolveReaction } from "../rules/reactions";
 import { applyStratagem, StratId } from "../rules/stratagems";
 import type { MissionId } from "../rules/missions";
 import { formation } from "../rules/leaders";
-import { GameState, BOARD, cloneState, createInitialState, TerrainKind, TERRAIN } from "./state";
+import { GameState, BOARD, cloneState, createInitialState, TerrainKind, TerrainPiece, TERRAIN } from "./state";
 import { rollDice } from "./rng";
 import { advancePhase, endTurn } from "../rules/turn";
 import type { MoveKind } from "../rules/movement";
@@ -23,6 +23,8 @@ export type Command =
   /** Poner una pieza de escenografía (recibe el id T<n> siguiente). */
   | { type: "addTerrain"; kind: TerrainKind; x: number; z: number; rot: number }
   | { type: "removeTerrain"; ids: string[] }
+  /** Sustituye la escenografía por un mapa entero (#51). */
+  | { type: "setTerrain"; pieces: TerrainPiece[] }
   /** Sustituye los ejércitos por dos listas desplegadas en sus zonas. */
   | { type: "setArmies"; legion: ArmyList; swarm: ArmyList; mission?: MissionId }
   /** Mesa libre: retirar miniaturas a mano (bajas, recolocar…). */
@@ -44,7 +46,7 @@ export type Command =
   /** Gastar puntos de mando (p. ej. 1 PM para repetir una tirada). */
   | { type: "spendCP"; player: 0 | 1; amount: number }
   /** Estratagema: gasta PM y da su efecto a una unidad del jugador activo. */
-  | { type: "stratagem"; id: StratId; unit: string }
+  | { type: "stratagem"; id: StratId; unit: string; target?: string }
   /** El defensor de una carga en espera decide si hace fuego defensivo (#50). */
   | { type: "reactCharge"; fire: boolean };
 
@@ -87,6 +89,12 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
       s.rng = rng;
       s.rolls.push({ player: s.active, turn: s.turn, sides, results });
       if (s.rolls.length > MAX_ROLLS) s.rolls.splice(0, s.rolls.length - MAX_ROLLS);
+      break;
+    }
+    case "setTerrain": {
+      // Mapa entero (de ejemplo o aleatorio): sustituye toda la escenografía
+      s.terrain = cmd.pieces.filter((t) => t.kind in TERRAIN).map((t, i) => ({ id: `T${i + 1}`, kind: t.kind, x: t.x, z: t.z, rot: t.rot }));
+      s.nextTerrainId = s.terrain.length + 1;
       break;
     }
     case "addTerrain": {
@@ -164,7 +172,7 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
       break;
     }
     case "stratagem": {
-      applyStratagem(s, cmd.id, cmd.unit);
+      applyStratagem(s, cmd.id, cmd.unit, cmd.target);
       break;
     }
     case "spendCP": {

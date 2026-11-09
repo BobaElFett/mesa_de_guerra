@@ -1,3 +1,4 @@
+import { aiDeploy } from "./deploy";
 import { CommandBus } from "../core/commands";
 import { Faction, GameState, PLAYERS } from "../core/state";
 import { pendingChargers } from "../rules/melee";
@@ -44,10 +45,24 @@ export class AiController {
     for (let g = 0; g < 30 && canFight(this.bus.state, this.side); g++) fightStep(this.bus, this.side, settings.aiLevel);
   }
 
+  /** Ya ha colocado su ejército en este despliegue. */
+  private deployed = false;
+
   update(dt: number) {
     const s = this.bus.state;
     const side = this.side;
-    if (!side || !s.rulesMode || s.gameOver || s.phase === "despliegue") { this.onStatus(null); return; }
+    // Despliegue (#51): la IA recoloca su ejército una vez; luego empieza el jugador
+    if (side && s.rulesMode && s.phase === "despliegue" && !s.gameOver) {
+      if (!this.deployed && !this.paused) {
+        this.deployed = true;
+        const mv = aiDeploy(s, side);
+        if (mv.length) { this.bus.dispatch({ type: "moveMany", moves: mv }); this.onAction("ha colocado su ejército"); }
+      }
+      this.onStatus(null);
+      return;
+    }
+    if (s.phase !== "despliegue") this.deployed = false;
+    if (!side || !s.rulesMode || s.gameOver) { this.onStatus(null); return; }
     const aiTurn = PLAYERS[s.active] === side;
     const name = `IA ${AI_LEVEL_NAME[settings.aiLevel]}`;
     if (this.paused) { this.onStatus(`${name} en pausa`); return; }

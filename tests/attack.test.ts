@@ -128,7 +128,7 @@ test("es determinista: misma semilla, mismo resultado", () => {
 test("puntos de las unidades", () => {
   assert.equal(unitPoints(DATASHEETS.asalto, 5), 90);
   assert.equal(unitPoints(DATASHEETS.asalto, 10), 170);
-  assert.equal(unitPoints(DATASHEETS.garras, 20), 130);
+  assert.equal(unitPoints(DATASHEETS.garras, 20), 110);
   assert.equal(unitPoints(DATASHEETS.asalto, 7), null);
   for (const ds of Object.values(DATASHEETS)) for (const id of [...ds.weapons, ...(ds.leaderWeapons ?? [])]) assert.ok(WEAPONS[id], `${ds.id}: arma ${id}`);
 });

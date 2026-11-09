@@ -59,7 +59,7 @@ export function permission(s: GameState, op: BusOp, by: Role, side: Faction, las
 
 function cmdPermission(s: GameState, c: Command, host: boolean, side: Faction): string | null {
   const active = PLAYERS[s.active];
-  if (c.type === "setArmies" || c.type === "setRulesMode") return host ? null : "Preparar la partida es cosa del anfitrión.";
+  if (c.type === "setArmies" || c.type === "setRulesMode" || c.type === "setTerrain") return host ? null : "Preparar la partida es cosa del anfitrión.";
   if (!s.rulesMode) return null;                       // mesa libre: como en una mesa de verdad
   const ownPieces = (ids: string[]) => ids.every((id) => { const f = sideOfPiece(s, id); return f === side || (f === "terrain" && host) || f === null; });
   switch (c.type) {

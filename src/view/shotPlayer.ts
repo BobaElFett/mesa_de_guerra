@@ -73,7 +73,7 @@ export class ShotPlayer {
     const tUnit = s.units.find((u) => u.id === entry.target)!;
     const aUnit = s.units.find((u) => u.id === entry.attacker)!;
     const tName = DATASHEETS[tUnit.datasheet].name;
-    const verb = entry.kind === "combate" ? "golpea con" : entry.overwatch ? "hace fuego defensivo con" : "dispara con";
+    const verb = entry.kind === "combate" ? "golpea con" : entry.overwatch ? "hace fuego defensivo con" : entry.mortal ? "lanza" : "dispara con";
     this.header = `<b>${DATASHEETS[aUnit.datasheet].name}</b> ${verb} <b>${w.name}</b> (${entry.attackers} ${entry.attackers === 1 ? "miniatura" : "miniaturas"}) a <b>${tName}</b>${entry.cover ? " · <span class=\"cov\">en cobertura</span>" : ""}`;
     this.steps = [];
     const hitOn = entry.hitOn;
@@ -87,14 +87,16 @@ export class ShotPlayer {
         line: `Impactar (${hitOn}+): ${r.hitRolls.length} dados → <b>${r.hits} impacto${r.hits === 1 ? "" : "s"}</b>${extra > 0 ? ` (${extra} por Sostenida)` : ""}`,
       });
     }
-    if (r.woundRolls.length || r.wounds) {
+    if (entry.mortal) {
+      this.lines.push(`Heridas mortales: <b>${r.wounds}</b> (no se pueden salvar)`);
+    } else if (r.woundRolls.length || r.wounds) {
       const on = entry.woundOn;
       this.steps.push({
         dice: r.woundRolls, good: (v) => v !== 1 && (v === 6 || v >= on),
         line: `Herir (${on}+): ${r.woundRolls.length} dados → <b>${r.wounds} herida${r.wounds === 1 ? "" : "s"}</b>`,
       });
     }
-    if (r.wounds) {
+    if (r.wounds && !entry.mortal) {
       const sv = r.saveTarget;
       this.steps.push({
         dice: r.saveRolls, good: (v) => sv !== null && v !== 1 && v >= sv,   // verde = salvada (éxito del defensor)

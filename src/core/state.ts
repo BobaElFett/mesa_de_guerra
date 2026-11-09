@@ -144,7 +144,7 @@ export function createInitialState(seed: number): GameState {
 }
 
 /** Mapa de ejemplo, simétrico respecto al centro del tapete: cada bando tiene lo mismo. */
-function exampleMap(): TerrainPiece[] {
+export function exampleMap(): TerrainPiece[] {
   const half: [TerrainKind, number, number, number][] = [
     ["ruina", -14, -4, 0],
     ["ruinaGrande", -22, 7, Math.PI / 2],

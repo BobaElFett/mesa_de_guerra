@@ -322,7 +322,7 @@
     <div class="row t-files">
       <button id="table-export">Exportar la actual a archivo</button>
       <button id="table-import-btn">Importar archivo…</button>
-      <button id="test-armies" title="Despliega dos ejércitos de unos 450 puntos y activa el modo reglas">Partida de prueba</button>
+      <button id="test-armies" title="Despliega dos ejércitos de prueba (unos 460–485 puntos) y activa el modo reglas">Partida de prueba</button>
       <input id="table-import" type="file" accept=".json,application/json" hidden>
     </div>
     <div class="dim" style="font-size:12px; margin-top:6px">Las mesas se guardan en este navegador. Para llevarlas a otro ordenador, expórtalas a archivo. Un mismo nombre sobrescribe la mesa guardada.</div>
@@ -335,6 +335,7 @@
       <button id="armies-close" style="margin-left:auto">Cerrar</button></div>
     <div class="setup-row" id="armies-setup">
       <label>Misión <select id="mission-pick"></select></label>
+      <label>Mapa <select id="map-pick"><option value="actual">La mesa actual</option><option value="ejemplo">Mapa de ejemplo</option><option value="aleatorio">Aleatorio (simétrico)</option></select></label>
       <label>Rival <select id="ai-side"><option value="">Dos jugadores (sin IA)</option><option value="swarm">IA lleva el Enjambre</option><option value="legion">IA lleva la Legión</option></select></label>
       <label>Dificultad <select id="ai-level"><option value="facil">Fácil</option><option value="normal" selected>Normal</option><option value="dificil">Difícil</option></select></label>
       <div class="m-desc" id="mission-desc"></div>

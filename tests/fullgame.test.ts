@@ -40,11 +40,11 @@ export function playGame(seed: number, check = false) {
   return bus;
 }
 
-test("las listas de prueba son válidas y rondan los 450–460 puntos", () => {
+test("las listas de prueba son válidas: 460 y 485 puntos", () => {
   assert.deepEqual(validateList(LEGION, "legion"), []);
   assert.deepEqual(validateList(SWARM, "swarm"), []);
   assert.equal(listPoints(LEGION), 460);
-  assert.equal(listPoints(SWARM), 450);
+  assert.equal(listPoints(SWARM), 485);
 });
 
 test("validación de listas", () => {
@@ -59,8 +59,8 @@ test("despliegue: cada bando en su zona, sin solapes", () => {
   const bus = new CommandBus(1);
   bus.dispatch({ type: "setArmies", legion: LEGION, swarm: SWARM });
   const s = bus.state;
-  assert.equal(s.units.length, 8);
-  assert.equal(s.pieces.length, 1 + 10 + 5 + 5 + 1 + 3 + 20 + 10);
+  assert.equal(s.units.length, 9);
+  assert.equal(s.pieces.length, 1 + 10 + 5 + 5 + 1 + 3 + 20 + 10 + 10);
   for (const p of s.pieces) assert.ok(p.faction === "legion" ? p.z >= 12 - 1e-6 : p.z <= -12 + 1e-6, `${p.id} z=${p.z}`);
   invariants(s, "despliegue");
 });

@@ -50,6 +50,8 @@ export interface AttackLogEntry {
   woundOn: number;
   /** Fuego defensivo contra una carga (#50). */
   overwatch?: boolean;
+  /** Heridas mortales (Granadas, #52). */
+  mortal?: boolean;
   result: Pick<AttackResult, "attacks" | "hitRolls" | "hits" | "criticalHits" | "woundRolls" | "wounds" | "saveTarget" | "saveRolls" | "failedSaves" | "damageRolls" | "slain">;
 }
 
@@ -155,7 +157,7 @@ export function applyShoot(s: GameState, unitId: string, weaponId: string, targe
  * (daño, bajas, RNG y registro). Lo usan el disparo y el combate.
  */
 export function performAttack(s: GameState, kind: AttackLogEntry["kind"], unitId: string, attackers: Piece[],
-  weapon: Weapon, targetId: string, extra: { distance?: number; stationary?: boolean; cover?: boolean; overwatch?: boolean } = {}): AttackLogEntry {
+  weapon: Weapon, targetId: string, extra: { distance?: number; stationary?: boolean; cover?: boolean; overwatch?: boolean; mortal?: boolean } = {}): AttackLogEntry {
   const attacker = s.units.find((u) => u.id === unitId)!;
   const target = s.units.find((u) => u.id === targetId)!;
   const tds = DATASHEETS[target.datasheet];
@@ -174,6 +176,7 @@ export function performAttack(s: GameState, kind: AttackLogEntry["kind"], unitId
     distance: extra.distance, stationary: extra.stationary, cover: extra.cover,
     rerollHitOnes: underCommand(s, unitId) && !extra.overwatch,
     onlySixes: extra.overwatch,
+    mortal: extra.mortal,
     woundMod: kind === "disparo" && !extra.overwatch && hasStrat(s, "punteria", unitId) ? 1 : 0,
     hitMod: kind === "combate" && hasStrat(s, "furia", unitId) ? 1 : 0,
   }, dice);
@@ -189,6 +192,7 @@ export function performAttack(s: GameState, kind: AttackLogEntry["kind"], unitId
     weapon: weapon.id, attackers: attackers.length, cover: !!extra.cover,
     hitOn: hasAbility(weapon, "torrente") ? null : extra.overwatch ? 6 : weapon.skill, woundOn: woundTarget(weapon.strength, tds.profile.T),
     ...(extra.overwatch ? { overwatch: true } : {}),
+    ...(extra.mortal ? { mortal: true } : {}),
     result: {
       attacks: res.attacks, hitRolls: res.hitRolls, hits: res.hits, criticalHits: res.criticalHits, woundRolls: res.woundRolls,
       wounds: res.wounds, saveTarget: res.saveTarget, saveRolls: res.saveRolls, failedSaves: res.failedSaves,

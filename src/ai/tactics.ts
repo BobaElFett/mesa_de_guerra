@@ -7,7 +7,7 @@ import { shootingOptions } from "../rules/shooting";
 import { chargeOptions, fightOptions } from "../rules/melee";
 import { formation, formationModels, partnerOf, underCommand } from "../rules/leaders";
 import { OBJECTIVE_RADIUS, OBJECTIVE_RANGE, objectiveStatus } from "../rules/missions";
-import { hasStrat, stratBlocked } from "../rules/stratagems";
+import { grenadeTargets, hasStrat, stratBlocked } from "../rules/stratagems";
 import { crossesSolid, disc, gap, sight } from "../rules/geometry";
 import {
   attackValue, centroid, expectedAttack, groupGap, meleeExpected, p2D6, pointsPerWound, unitCost,
@@ -399,6 +399,22 @@ function bestShots(s: GameState, f: Faction, W?: Weights): ShotPick[] {
 function shootStep(bus: CommandBus, W: Weights): boolean {
   const s = bus.state;
   const f = mine(s);
+  // Granadas (#52) con la unidad que más daño haga, si compensa
+  if (W.strats && s.cp[s.active] > W.cpReserve && !(s.turnLog.strats ?? []).some((x) => x.id === "granadas")) {
+    let best: { u: string; t: string; v: number } | null = null;
+    for (const u of s.units.filter((x) => x.faction === f && alive(s, x.id))) {
+      if (stratBlocked(s, "granadas", u.id)) continue;
+      for (const t of grenadeTargets(s, u.id)) {
+        const v = attackValue(s, t, expectedAttack(s, WEAPONS.granadas, 1, t, { mortal: true }));
+        if (!best || v > best.v) best = { u: u.id, t, v };
+      }
+    }
+    if (best && best.v >= 10) {
+      bus.dispatch({ type: "stratagem", id: "granadas", unit: best.u, target: best.t });
+      lastAction = `${nameOf(s, best.u)} lanza granadas a ${nameOf(s, best.t)}`;
+      return true;
+    }
+  }
   const picks = bestShots(s, f, W);
   if (!picks.length) return false;
   const pick = picks[0];
@@ -499,6 +515,12 @@ export function canFight(s: GameState, f: Faction): boolean {
 
 function commandStep(bus: CommandBus, W: Weights): boolean {
   const s = bus.state;
+  // Oleada sin fin (#52): Garras que hayan perdido al menos 3
+  if (W.strats && s.cp[s.active] > W.cpReserve && !(s.turnLog.strats ?? []).some((x) => x.id === "oleada")) {
+    const g = s.units.find((u) => u.faction === mine(s) && !stratBlocked(s, "oleada", u.id)
+      && u.startingModels - s.pieces.filter((p) => p.unit === u.id).length >= 3);
+    if (g) { bus.dispatch({ type: "stratagem", id: "oleada", unit: g.id }); lastAction = `Oleada sin fin: vuelven Garras a ${nameOf(s, g.id)}`; return true; }
+  }
   if ((s.turnLog.strats ?? []).some((x) => x.id === "reagrupar")) return false;
   const shocked = s.units.filter((u) => u.faction === mine(s) && u.shocked && alive(s, u.id))
     .sort((a, b) => unitCost(s, b.id) - unitCost(s, a.id));

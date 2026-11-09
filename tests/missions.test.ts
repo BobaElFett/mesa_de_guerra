@@ -54,13 +54,13 @@ test("Toma y mantén puntúa al empezar el turno desde la ronda 2, con tope", ()
 
 test("Caza de presas: PV por los puntos de las miniaturas eliminadas", () => {
   const bus = game("caza");
-  const g = bus.state.units.find((u) => u.datasheet === "garras")!.id;   // 130 pts / 20 = 6,5 pts cada una
+  const g = bus.state.units.find((u) => u.datasheet === "garras" && u.startingModels === 20)!.id;   // 110 pts / 20 = 5,5 cada una
   const s = structuredClone(bus.state);
-  recordCasualties(s, 0, g, 3);                        // 19,5 pts: aún 0 PV
+  recordCasualties(s, 0, g, 3);                        // 16,5 pts: aún 0 PV
   assert.deepEqual(s.vp, [0, 0]);
-  recordCasualties(s, 0, g, 1);                        // 26 pts: 1 PV
+  recordCasualties(s, 0, g, 1);                        // 22 pts: 1 PV
   assert.deepEqual(s.vp, [1, 0]);
-  assert.ok(Math.abs(s.killPts![0] - 26) < 1e-9);
+  assert.ok(Math.abs(s.killPts![0] - 22) < 1e-9);
 });
 
 test("Caza de presas: PV por unidad destruida", () => {

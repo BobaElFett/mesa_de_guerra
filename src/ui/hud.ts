@@ -180,12 +180,13 @@ function phaseActions(s: GameState, uid: string, inFormation = false): string {
 function stratButtons(s: GameState, uid: string): string {
   const unit = s.units.find((u) => u.id === uid)!;
   if (s.gameOver || unit.faction !== PLAYERS[s.active]) return "";
-  const list = STRAT_IDS.filter((id) => STRATAGEMS[id].phase === s.phase);
+  const list = STRAT_IDS.filter((id) => STRATAGEMS[id].phase === s.phase && (!STRATAGEMS[id].faction || STRATAGEMS[id].faction === unit.faction));
   if (!list.length) return "";
   return `<div class="strats">` + list.map((id) => {
     const st = STRATAGEMS[id];
     if (hasStrat(s, id, uid)) return `<span class="badge lead" title="${st.text}">${st.name} activa</span>`;
     const why = stratBlocked(s, id, uid);
+    if (st.needsTarget) return `<span class="badge" title="${st.text}${why ? ` — ${why}` : ""}">${st.name} · ${st.cost} PM: ${why ?? "haz clic en el enemigo"}</span>`;
     return `<button data-strat="${id}|${uid}"${why ? " disabled" : ""} title="${st.text}${why ? ` — ${why}` : ""}">${st.name} · ${st.cost} PM</button>`;
   }).join(" ") + `</div>`;
 }

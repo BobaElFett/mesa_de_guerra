@@ -70,6 +70,8 @@ const w = (id: string, name: string, range: number | "CC", attacks: Dice, skill:
 
 export const WEAPONS: Record<string, Weapon> = Object.fromEntries([
   w("pistolaPlasma", "Pistola de plasma", 12, 1, 2, 8, -3, 2, [{ kind: "pistola" }]),
+  // Estratagema Granadas (#52): 6 dados a 4+, cada éxito es una herida mortal (sin salvación)
+  w("granadas", "Granadas", 8, 6, 4, 4, 0, 1),
   w("espadaEnergia", "Espada de energía", "CC", 5, 2, 5, -2, 2),
   w("rifleBolter", "Rifle bólter", 24, 2, 3, 4, -1, 1, [{ kind: "asalto" }]),
   w("pistolaBolter", "Pistola bólter", 12, 1, 3, 4, -1, 1, [{ kind: "pistola" }]),
@@ -122,7 +124,7 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
   garras: {
     id: "garras", name: "Garras Menores", faction: "swarm",
     profile: { M: 8, T: 4, Sv: 5, W: 1, Ld: 8, OC: 1 },
-    sizes: [{ models: 10, points: 65 }, { models: 20, points: 130 }], weapons: ["garras"],
+    sizes: [{ models: 10, points: 55 }, { models: 20, points: 110 }], weapons: ["garras"],
     abilities: ["rapidez"], model: "garra",
   },
   escupidores: {

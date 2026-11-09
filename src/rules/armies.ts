@@ -128,10 +128,10 @@ export function deployArmies(s: GameState, legion: ArmyList, swarm: ArmyList, mi
   setupMission(s, mission);
 }
 
-/** Listas de la partida de prueba (#25): unos 450 puntos por bando. */
+/** Listas de la partida de prueba (#25): 460 y 485 puntos (las Garras bajaron de precio en #51). */
 export const TEST_LEGION: ArmyList = { name: "Prueba Legión", units: [
   { datasheet: "capitan", models: 1, leads: 1 }, { datasheet: "asalto", models: 10 }, { datasheet: "asalto", models: 5 }, { datasheet: "fuegoPesado", models: 5 },
 ] };
 export const TEST_SWARM: ArmyList = { name: "Prueba Enjambre", units: [
-  { datasheet: "tirano", models: 1 }, { datasheet: "nodo", models: 3 }, { datasheet: "garras", models: 20 }, { datasheet: "escupidores", models: 10 },
+  { datasheet: "tirano", models: 1 }, { datasheet: "nodo", models: 3 }, { datasheet: "garras", models: 20 }, { datasheet: "escupidores", models: 10 }, { datasheet: "garras", models: 10 },
 ] };

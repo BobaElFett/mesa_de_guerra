@@ -4,7 +4,8 @@ import { DATASHEETS } from "./datasheets";
 import { shootingOptions } from "./shooting";
 import { chargeOptions, fightOptions } from "./melee";
 import { formation } from "./leaders";
-import { hasStrat, stratBlocked } from "./stratagems";
+import { grenadeTargets, hasStrat, stratBlocked, STRATAGEMS } from "./stratagems";
+import { WEAPONS } from "./datasheets";
 import { attackValue, expectedAttack, meleeExpected, p2D6 } from "../ai/evaluate";
 import { underCommand } from "./leaders";
 import { movedSoFar } from "./movement";
@@ -60,6 +61,17 @@ export function actionsAgainst(s: GameState, actor: string[], target: string): B
           value: attackValue(s, target, e),
         });
       }
+    }
+    // Granadas (#52): estratagema con objetivo
+    for (const u of actor) {
+      const unit = s.units.find((x) => x.id === u)!;
+      if (unit.faction !== STRATAGEMS.granadas.faction) continue;
+      const why = stratBlocked(s, "granadas", u) ?? (grenadeTargets(s, u).includes(target) ? null : "Fuera de 8\" o sin visión.");
+      const e = expectedAttack(s, WEAPONS.granadas, 1, target, { mortal: true });
+      out.push({
+        label: `Granadas · 1 PM${actor.length > 1 ? ` (${name(s, u)})` : ""}`, cmd: why ? null : { type: "stratagem", id: "granadas", unit: u, target },
+        detail: why ?? `6D6 a 4+: ~${fmt(e.damage)} heridas mortales · sin salvación`, blocked: why ?? undefined, value: why ? 0 : attackValue(s, target, e) * 0.8,
+      });
     }
   } else if (s.phase === "carga") {
     const head = actor[0];

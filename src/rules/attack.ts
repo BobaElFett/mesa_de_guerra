@@ -79,6 +79,8 @@ export interface AttackInput {
   rerollHitOnes?: boolean;
   /** Fuego defensivo: solo impacta con 6 (sin modificadores). Torrente sigue impactando solo. */
   onlySixes?: boolean;
+  /** Heridas mortales: cada impacto hiere solo y no hay salvación (Granadas). */
+  mortal?: boolean;
 }
 
 export interface AttackResult {
@@ -146,7 +148,8 @@ export function resolveAttack(input: AttackInput, dice: DiceSource): AttackResul
   const toWound = woundTarget(weapon.strength, target.profile.T);
   const wmod = clamp1(input.woundMod);
   let wounds = lethal, critWounds = 0;
-  for (let i = 0; i < res.hits - lethal; i++) {
+  if (input.mortal) wounds = res.hits;
+  for (let i = 0; i < (input.mortal ? 0 : res.hits - lethal); i++) {
     const r = dice.d6();
     res.woundRolls.push(r);
     const crit = r === 6;
@@ -159,7 +162,7 @@ export function resolveAttack(input: AttackInput, dice: DiceSource): AttackResul
   res.criticalWounds = critWounds;
 
   // --- Salvar y dañar, herida a herida -----------------------------------------------
-  const sv = saveTarget(target.profile, weapon.ap, !!input.cover);
+  const sv = input.mortal ? null : saveTarget(target.profile, weapon.ap, !!input.cover);
   res.saveTarget = sv;
   const devastating = hasAbility(weapon, "devastadora") ? critWounds : 0;
   const order = allocationOrder(target.models, res.woundsLeft, target.profile.W);

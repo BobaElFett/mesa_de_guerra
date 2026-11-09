@@ -1,3 +1,4 @@
+import { mapFor } from "../rules/maps";
 import { MISSIONS, MissionId } from "../rules/missions";
 import { AiLevel, saveSettings, settings } from "../ai/settings";
 import { CommandBus } from "../core/commands";
@@ -28,6 +29,12 @@ function writeSaved(d: Saved) {
 
 const clone = (l: ArmyList): ArmyList => JSON.parse(JSON.stringify(l));
 
+/** Pone el mapa elegido en Ejércitos (#51) antes de desplegar. */
+export function applyMap(bus: CommandBus) {
+  if (settings.map === "actual") return;
+  bus.dispatch({ type: "setTerrain", pieces: mapFor(settings.map, Math.floor(Math.random() * 2 ** 31), bus.state.terrain) });
+}
+
 export class ArmyDialog {
   private lists: Record<Faction, ArmyList> = { legion: clone(TEST_LEGION), swarm: clone(TEST_SWARM) };
   onDeployed: () => void = () => {};
@@ -53,6 +60,7 @@ export class ArmyDialog {
     pick.value = settings.mission;
     $<HTMLSelectElement>("ai-side").value = settings.aiSide ?? "";
     $<HTMLSelectElement>("ai-level").value = settings.aiLevel;
+    $<HTMLSelectElement>("map-pick").value = settings.map;
     const desc = () => { $("mission-desc").textContent = MISSIONS[settings.mission].summary; };
     desc();
     $("armies-setup").addEventListener("change", (e) => {
@@ -60,6 +68,7 @@ export class ArmyDialog {
       settings.mission = pick.value as MissionId;
       settings.aiSide = ($<HTMLSelectElement>("ai-side").value || null) as Faction | null;
       settings.aiLevel = $<HTMLSelectElement>("ai-level").value as AiLevel;
+      settings.map = $<HTMLSelectElement>("map-pick").value as typeof settings.map;
       saveSettings();
       desc();
       this.onSettings();
@@ -114,6 +123,7 @@ export class ArmyDialog {
     }
     const errs = SIDES.flatMap((f) => validateList(this.lists[f], f));
     if (errs.length) { this.notify("Corrige las listas antes de desplegar."); return; }
+    applyMap(this.bus);
     this.bus.dispatch({ type: "setArmies", legion: clone(this.lists.legion), swarm: clone(this.lists.swarm), mission: settings.mission });
     if (!this.bus.state.rulesMode) this.bus.dispatch({ type: "setRulesMode", on: true });
     this.hide();

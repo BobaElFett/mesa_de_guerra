@@ -33,7 +33,7 @@ import { PLAYERS } from "./core/state";
 import { listPoints } from "./rules/armies";
 import { AiController } from "./ai/controller";
 import { TEST_LEGION, TEST_SWARM } from "./rules/armies";
-import { ArmyDialog } from "./ui/armyDialog";
+import { applyMap, ArmyDialog } from "./ui/armyDialog";
 import { DiceTray } from "./view/dice";
 import { TRAY } from "./world/table";
 import { Command } from "./core/commands";
@@ -440,11 +440,12 @@ net.onSession = (s) => {
 document.addEventListener("visibilitychange", () => net.refresh());
 // Partida de prueba: despliega las dos listas de prueba (se puede deshacer)
 document.getElementById("test-armies")!.addEventListener("click", () => {
+  applyMap(bus);
   bus.dispatch({ type: "setArmies", legion: TEST_LEGION, swarm: TEST_SWARM, mission: settings.mission });
   if (!bus.state.rulesMode) bus.dispatch({ type: "setRulesMode", on: true });
   tables.hide();
   cam.reset();
-  toast(`Ejércitos de prueba desplegados (460 y 450 puntos) · ${MISSIONS[settings.mission].name}`);
+  toast(`Ejércitos de prueba desplegados (${listPoints(TEST_LEGION)} y ${listPoints(TEST_SWARM)} puntos) · ${MISSIONS[settings.mission].name}`);
 });
 missionPanel.onShowSummary = () => endDialog.show(bus.state);
 endDialog.onNewGame = () => armies.show();
