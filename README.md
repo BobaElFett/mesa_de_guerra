@@ -9,6 +9,21 @@ Plan completo (visión, facciones, roadmap y backlog): documento *Mesa de Guerra
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor.
 
+## Novedades 0.21 · fase 5 (en línea, #40–#45) — fase 5 completa
+- **Dos ordenadores, una mesa:** botón **En línea**. Uno crea la sala (elige su bando) y el otro se une. Solo viajan las órdenes, nunca el estado: como todo es determinista (la semilla de los dados va en la partida), los dos llegan a la misma mesa.
+- **Órdenes por la red (#40):** el anfitrión es la autoridad. El invitado le pide cada orden; el anfitrión comprueba que puede hacerla, la aplica y la reenvía numerada a los dos. Permisos en modo reglas:
+    - cada uno solo mueve, despliega y da órdenes a su ejército, y solo en su turno (en combate, cada uno golpea con lo suyo cuando le toca);
+    - preparar la partida (misión, Desplegar, modo reglas, cargar o empezar mesa, escenografía) es cosa del anfitrión;
+    - cada uno solo deshace y rehace lo suyo. En mesa libre todo vale, como en una mesa de verdad.
+- **Tres maneras de conectar (#41):**
+    - **Por internet, con código de sala** de 5 letras: WebRTC con el servidor gratuito de PeerJS, que solo os presenta; la partida va directa entre los dos navegadores.
+    - **Manual (copiar y pegar):** el anfitrión manda un texto (unos 500 caracteres, por mensaje o correo) y el invitado contesta con otro. Sin ningún servidor, solo STUN público para atravesar el router.
+    - **En este ordenador:** dos pestañas del mismo navegador, para probar o jugar en la misma pantalla.
+- **La sala (#42):** el diálogo muestra con quién estás conectado, qué bando llevas y qué toca después. El invitado prepara su lista en *Ejércitos* y la envía («Enviar mi lista a la sala»); al anfitrión le aparece en la columna del rival y despliega con la misión que elija. La IA se desactiva en línea. Si se corta, el anfitrión sigue esperando con el mismo código y el invitado pulsa **Reconectar** (o se une otra vez): recibe la partida entera tal como va. El invitado no sobrescribe su mesa guardada.
+- **Sin desincronizarse (#43):** con cada orden viaja la huella del estado del anfitrión. Si la del invitado no coincide, o falta una orden en la numeración, pide la partida entera y se arregla solo. Los mensajes grandes (la partida entera) se trocean.
+- **Chat (#44):** abajo a la izquierda, con avisos (conexión, lista recibida, de quién es el turno). La pastilla del panel del turno dice si estás en línea, tu bando y el ping.
+- **Pruebas (#45):** 89 en total. En Node, la Legión jugada desde un bus y el Enjambre desde otro acaban con la misma mesa, sin resincronizar; también los permisos, el deshacer, la desincronización provocada, un mensaje perdido y los troceos. En el navegador, dos pestañas y dos navegadores con WebRTC real (conexión manual) juegan una partida entera con la IA moviendo cada bando: la misma mesa al final y ninguna resincronización. La conexión con código no se ha podido probar aquí (sin salida a internet): sin servidor, avisa y propone la manual.
+
 ## Novedades 0.20 · fase 4 (IA y misiones, #33–#39) — fase 4 completa
 - **Objetivos (#33):** marcadores de 40 mm con un faro. Los controla el bando que sume más CO con miniaturas a 3" o menos (borde con borde; las desmoralizadas cuentan 0; empate, nadie). El cristal y el anillo de 3" toman el color de quien lo controla.
 - **Tres misiones (#34):** se eligen en *Ejércitos* (y valen también para *Partida de prueba*):

@@ -21,7 +21,7 @@ export const settings: GameSettings = (() => {
 })();
 
 /** Estado de la sesión (no se guarda): la IA en pausa deja jugar su bando a mano. */
-export const runtime = { aiPaused: false };
+export const runtime: { aiPaused: boolean; online: boolean; localSide: Faction | null } = { aiPaused: false, online: false, localSide: null };
 
 export function saveSettings() {
   try { localStorage.setItem(KEY, JSON.stringify(settings)); } catch { /* nada */ }

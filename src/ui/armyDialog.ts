@@ -34,6 +34,10 @@ export class ArmyDialog {
   onClosed: () => void = () => {};
   /** Cambió la misión o la IA. */
   onSettings: () => void = () => {};
+  /** En línea: el invitado manda su lista en vez de desplegar. */
+  onSendList: (f: Faction, list: ArmyList) => void = () => {};
+  /** En línea: quién soy (null = sin red). */
+  private online: { role: "host" | "guest"; side: Faction; got?: boolean } | null = null;
 
   constructor(private bus: CommandBus, private notify: (m: string) => void) {
     $("armies-open").addEventListener("click", () => this.show());
@@ -81,7 +85,33 @@ export class ArmyDialog {
   /** Listas actuales (para pruebas). */
   current() { return this.lists; }
 
+  /** Modo en línea (o null para volver a jugar en un solo ordenador). */
+  setOnline(o: { role: "host" | "guest"; side: Faction } | null) {
+    this.online = o ? { ...o } : null;
+    $("ai-side").closest("label")!.toggleAttribute("hidden", !!o);
+    $("ai-level").closest("label")!.toggleAttribute("hidden", !!o);
+    $("mission-pick").toggleAttribute("disabled", o?.role === "guest");
+    const btn = $("armies-deploy");
+    btn.textContent = o?.role === "guest" ? "Enviar mi lista a la sala" : "Desplegar";
+    if (!$("armies-backdrop").hidden) this.render();
+  }
+
+  /** El anfitrión recibe la lista del invitado para su bando. */
+  setList(f: Faction, list: ArmyList) {
+    this.lists[f] = clone(list);
+    if (this.online) this.online.got = true;
+    if (!$("armies-backdrop").hidden) this.render();
+  }
+
   private deploy() {
+    if (this.online?.role === "guest") {
+      const f = this.online.side;
+      if (validateList(this.lists[f], f).length) { this.notify("Corrige tu lista antes de enviarla."); return; }
+      this.onSendList(f, clone(this.lists[f]));
+      this.notify(`Lista enviada al anfitrión (${listPoints(this.lists[f])} puntos). Él despliega la partida.`);
+      this.hide();
+      return;
+    }
     const errs = SIDES.flatMap((f) => validateList(this.lists[f], f));
     if (errs.length) { this.notify("Corrige las listas antes de desplegar."); return; }
     this.bus.dispatch({ type: "setArmies", legion: clone(this.lists.legion), swarm: clone(this.lists.swarm), mission: settings.mission });
@@ -168,8 +198,13 @@ export class ArmyDialog {
       const options = Object.values(DATASHEETS).filter((d) => d.faction === f)
         .map((d) => `<option value="${d.id}">${d.name} — ${d.sizes.map((s) => `${s.models}: ${s.points}`).join(" / ")} pts</option>`).join("");
       const loads = saved[f].map((l) => `<option value="${l.name}">${l.name} (${listPoints(l)} pts)</option>`).join("");
-      return `<div class="army-col">
-        <div class="title" style="color:${F.color};font-size:17px">${F.name}</div>
+      // En línea: la columna del rival es suya (el invitado no la toca; el anfitrión ve si ha llegado)
+      const theirs = this.online && f !== this.online.side;
+      const tag = !this.online ? "" : !theirs ? ` <span class="dim" style="font-size:12px">(tu ejército)</span>`
+        : this.online.role === "host" ? ` <span class="dim" style="font-size:12px">(rival: ${this.online.got ? "ha enviado su lista" : "aún no ha enviado su lista; se usa esta"})</span>`
+        : ` <span class="dim" style="font-size:12px">(la pone el anfitrión)</span>`;
+      return `<div class="army-col${theirs && this.online!.role === "guest" ? " theirs" : ""}">
+        <div class="title" style="color:${F.color};font-size:17px">${F.name}${tag}</div>
         <input data-name="${f}" value="${(list.name ?? "").replace(/"/g, "&quot;")}" placeholder="Nombre de la lista" maxlength="40">
         <table class="army-table"><tr><th>Unidad</th><th>Mini.</th><th>Pts</th><th></th></tr>${rows || `<tr><td colspan="4" class="dim">Sin unidades</td></tr>`}</table>
         <div class="row"><select id="add-${f}">${options}</select><button data-side="${f}" data-act="add">Añadir</button></div>
@@ -183,6 +218,7 @@ export class ArmyDialog {
         </div>
       </div>`;
     }).join("");
-    $<HTMLButtonElement>("armies-deploy").disabled = !allOk;
+    const mineOk = this.online?.role === "guest" ? validateList(this.lists[this.online.side], this.online.side).length === 0 : allOk;
+    $<HTMLButtonElement>("armies-deploy").disabled = !mineOk;
   }
 }

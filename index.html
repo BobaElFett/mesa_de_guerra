@@ -127,6 +127,7 @@
   .t-actions { display: flex; gap: 6px; margin-top: 5px; }
   .t-actions button { font-size: 12px; padding: 2px 8px; }
   .t-files { margin-top: 10px; flex-wrap: wrap; }
+  .army-col.theirs { opacity: .45; pointer-events: none; }
   #armies-backdrop { position: fixed; inset: 0; z-index: 10; background: rgba(8,9,12,.55); display: flex; align-items: center; justify-content: center; }
   #armies { position: relative; width: min(980px, 96vw); max-height: 88vh; overflow: auto; padding: 14px 16px; font-size: 13px; }
   #armies .row { display: flex; gap: 8px; align-items: center; }
@@ -161,6 +162,28 @@
   #mission .m-fold { margin-left: auto; font-size: 11px; padding: 0 6px; }
   .strats { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
   .strats button { font-size: 12px; border-color: #8a6d2a; }
+  #net-backdrop { position: fixed; inset: 0; z-index: 10; background: rgba(8,9,12,.55); display: flex; align-items: center; justify-content: center; }
+  #net-backdrop[hidden] { display: none; }
+  #net { position: relative; width: min(620px, 94vw); max-height: 88vh; overflow: auto; padding: 14px 16px; font-size: 13px; }
+  #net h3 { font-size: 14px; margin: 12px 0 4px; }
+  #net .net-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  #net .net-box { border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; }
+  #net label { display: block; margin: 4px 0; }
+  #net input[type=text], #net select { width: 100%; box-sizing: border-box; }
+  #net textarea { width: 100%; box-sizing: border-box; height: 74px; font-family: ui-monospace, monospace; font-size: 11px; resize: vertical; background: #12141a; color: var(--text); border: 1px solid var(--line); border-radius: 4px; }
+  #net .code { font-family: "Rajdhani", sans-serif; font-size: 44px; letter-spacing: .25em; text-align: center; color: var(--gold); margin: 6px 0; user-select: all; }
+  #net .net-note { font-size: 12px; color: var(--dim); margin-top: 4px; }
+  #net .net-err { color: #ff8a7a; font-size: 12px; margin-top: 4px; }
+  #net .row.end { justify-content: flex-end; gap: 6px; margin-top: 10px; }
+  #net-status { font-size: 12px; margin-left: 6px; white-space: nowrap; color: #9fd39a; }
+  #net-status.off { color: #ff8a7a; }
+  #chat { left: 12px; bottom: 12px; width: 280px; padding: 6px 8px; z-index: 4; }
+  #chat-log { max-height: 150px; overflow-y: auto; font-size: 12px; margin: 4px 0; }
+  #chat-log div { padding: 1px 0; word-wrap: break-word; }
+  #chat-log .sys { color: var(--dim); font-style: italic; }
+  #chat.folded #chat-log, #chat.folded #chat-form { display: none; }
+  #chat-form { display: flex; gap: 4px; }
+  #chat-form input { flex: 1; min-width: 0; }
   #ai-status { font-size: 12px; color: var(--gold); margin-left: 6px; white-space: nowrap; }
   #end-backdrop { position: fixed; inset: 0; z-index: 10; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; }
   #end-backdrop[hidden] { display: none; }
@@ -186,7 +209,7 @@
 <div id="help" class="panel">
   <h1 class="title">Mesa de Guerra</h1>
   <button id="help-toggle">Ocultar</button>
-  <div class="sub">Fase 4 · IA y misiones (v0.20)</div>
+  <div class="sub">Fase 5 · en línea (v0.21)</div>
   <h2>Cámara</h2>
   <ul>
     <li><kbd>WASD</kbd> o botón central: desplazar</li>
@@ -214,6 +237,7 @@
     <li>Objetivos: los controla quien sume más CO a 3"; los PV, arriba a la derecha</li>
     <li>Estratagemas (1 PM): botones en la ficha de la unidad, en tu turno</li>
     <li><b>Pausar IA</b> para tomar el control de su bando</li>
+    <li><b>En línea</b>: crear sala o unirse (código, copiar y pegar u otra pestaña); chat abajo a la izquierda</li>
   </ul>
   <h2>Guardado</h2>
   <div class="dim">La mesa se guarda sola en este navegador. <b>Mesas</b> (o <kbd>Ctrl</kbd>+<kbd>S</kbd>) la guarda con nombre, carga otras y exporta o importa archivos.</div>
@@ -226,6 +250,7 @@
     <button id="end-turn" class="primary" title="Intro">Pasar turno</button>
     <button id="bot-phase" title="La IA juega esta fase por el bando activo" hidden>IA</button>
     <span id="ai-status" hidden></span>
+    <span id="net-status" hidden></span>
   </div>
   <div id="phases" hidden></div>
   <div id="phase-hint" class="dim" hidden></div>
@@ -235,6 +260,7 @@
   <button id="mode" title="Mesa libre: todo se mueve a mano. Modo reglas: el juego guía las fases.">Mesa libre</button>
   <button id="armies-open" title="Listas de ejército de 500 puntos y despliegue">Ejércitos</button>
   <button id="tables-open" title="Ctrl+S guarda con el nombre actual">Mesas</button>
+  <button id="net-open" title="Jugar contra otra persona en otro ordenador">En línea</button>
   <button id="undo" title="Ctrl+Z">Deshacer</button>
   <button id="redo" title="Ctrl+Y">Rehacer</button>
   <button id="terrain-edit" title="T: desbloquea la escenografía para moverla, añadirla o borrarla">Escenografía</button>
@@ -308,6 +334,20 @@
       <button id="armies-deploy" class="primary">Desplegar</button>
     </div>
   </div>
+</div>
+<div id="net-backdrop" hidden>
+  <div id="net" class="panel" role="dialog" aria-label="En línea">
+    <div class="row"><span class="title" style="font-size:18px">En línea</span>
+      <span class="dim" style="font-size:12px;margin-left:10px">Dos ordenadores, una mesa: solo viajan las órdenes</span>
+      <button id="net-close" style="margin-left:auto">Cerrar</button></div>
+    <div id="net-body"></div>
+  </div>
+</div>
+<div id="chat" class="panel" hidden>
+  <div class="row"><b style="font-size:13px">Sala</b><span id="chat-who" class="dim" style="font-size:12px;margin-left:6px"></span>
+    <button id="chat-fold" style="margin-left:auto;font-size:11px;padding:0 6px">Plegar</button></div>
+  <div id="chat-log"></div>
+  <form id="chat-form"><input id="chat-input" placeholder="Escribe al rival…" maxlength="400" autocomplete="off"><button>Enviar</button></form>
 </div>
 <div id="toast" hidden></div>
 <div id="measure" hidden></div>

@@ -19,8 +19,14 @@ import { allowance, originOf, movedSoFar } from "./rules/movement";
 import { toast } from "./ui/tablesDialog";
 import { ShotPlayer } from "./view/shotPlayer";
 import { DATASHEETS } from "./rules/datasheets";
-import { aiPlayPhase } from "./ai/tactics";
+import { aiPlayPhase, aiStep, canFight, fightStep } from "./ai/tactics";
+import { stateHash } from "./net/protocol";
 import { fightOptions } from "./rules/melee";
+import { NetDialog } from "./ui/netDialog";
+import { ChatPanel } from "./ui/chat";
+import { runtime } from "./ai/settings";
+import { PLAYERS } from "./core/state";
+import { listPoints } from "./rules/armies";
 import { AiController } from "./ai/controller";
 import { TEST_LEGION, TEST_SWARM } from "./rules/armies";
 import { ArmyDialog } from "./ui/armyDialog";
@@ -240,10 +246,13 @@ document.getElementById("bot-phase")!.addEventListener("click", () => {
 });
 hud.canAct = (unit) => {
   const u = bus.state.units.find((x) => x.id === unit);
-  if (u && settings.aiSide === u.faction && !ai.paused) { toast("Esa unidad la lleva la IA."); return false; }
+  if (u && runtime.online && runtime.localSide && u.faction !== runtime.localSide) { toast("Esa unidad es de tu rival."); return false; }
+  if (u && !runtime.online && settings.aiSide === u.faction && !ai.paused) { toast("Esa unidad la lleva la IA."); return false; }
   return true;
 };
 hud.beforeAdvance = () => {
+  const s = bus.state;
+  if (runtime.online && s.rulesMode && s.phase !== "despliegue" && PLAYERS[s.active] !== runtime.localSide) { toast("Es el turno de tu rival."); return false; }
   if (ai.isAiTurn() && !ai.paused) { toast("Es el turno de la IA (pulsa Pausar IA para tomar el control)."); return false; }
   ai.flushFights();
   return true;
@@ -252,6 +261,55 @@ hud.beforeAdvance = () => {
 const armies = new ArmyDialog(bus, toast);
 armies.onDeployed = () => { cam.reset(); controls.selected.clear(); controls.onSelectionChange(); ai.paused = false; };
 armies.onSettings = () => refresh();
+
+/** Pastilla del panel del turno con el estado de la sala, y aviso de turno en el chat. */
+function netStatus() {
+  const el = document.getElementById("net-status")!;
+  const s = net?.session;
+  el.hidden = !s;
+  if (!s) return;
+  const me = FACTIONS[s.side];
+  el.classList.toggle("off", !s.connected);
+  el.innerHTML = s.connected ? `En línea · tú: <b style="color:${me.color}">${me.name.replace(/^(La |El )/, "")}</b>${s.rtt ? ` · ${s.rtt} ms` : ""}` : s.status === "desconectado" ? "Sin conexión" : "Esperando rival…";
+  const st = bus.state;
+  if (st.rulesMode && st.phase !== "despliegue" && !st.gameOver) {
+    const key = `${st.turn}-${st.active}`;
+    if (key !== lastTurnKey) { lastTurnKey = key; chat.system(PLAYERS[st.active] === s.side ? `Ronda ${st.turn}: te toca.` : `Ronda ${st.turn}: turno de ${s.opponent || "tu rival"}.`); }
+  }
+  if (st.rulesMode && PLAYERS[st.active] !== s.side && st.phase !== "despliegue") $btn("end-turn").disabled = true;
+}
+
+// En línea (#40–#44): sala con otro ordenador; solo viajan las órdenes
+const net = new NetDialog(bus, toast);
+const chat = new ChatPanel();
+let lastTurnKey = "";
+net.onSession = (s) => {
+  runtime.online = !!s;
+  runtime.localSide = s ? s.side : null;
+  armies.setOnline(s ? { role: s.role, side: s.side } : null);
+  chat.show(!!s);
+  if (!s) { refresh(); return; }
+  chat.onSend = (t) => s.sendChat(t);
+  armies.onSendList = (_f, l) => s.sendList(l);
+  s.onChat = (t, by) => chat.add(by === s.role ? "Tú" : s.opponent || "Rival", t);
+  s.onReject = (r) => toast(r);
+  s.onList = (f, l) => { armies.setList(f, l); chat.system(`${s.opponent || "Tu rival"} ha enviado su lista (${listPoints(l)} puntos).`); toast("Lista del rival recibida: está en Ejércitos."); };
+  s.onSnapshot = () => { runtime.localSide = s.side; armies.setOnline({ role: s.role, side: s.side }); cam.reset(); };
+  let was = s.status;
+  s.onStatus = () => {
+    runtime.localSide = s.side;
+    if (s.status !== was) {
+      if (s.status === "conectado") chat.system(`Conectado con ${s.opponent}.`);
+      if (s.status === "desconectado" && was === "conectado") chat.system("Se ha cortado la conexión.");
+      was = s.status;
+    }
+    chat.who(s.opponent ? `con ${s.opponent}` : "");
+    net.sessionChanged();
+    refresh();
+  };
+  refresh();
+};
+document.addEventListener("visibilitychange", () => net.refresh());
 // Partida de prueba: despliega las dos listas de prueba (se puede deshacer)
 document.getElementById("test-armies")!.addEventListener("click", () => {
   bus.dispatch({ type: "setArmies", legion: TEST_LEGION, swarm: TEST_SWARM, mission: settings.mission });
@@ -301,12 +359,14 @@ function refresh(_s?: unknown, cmd?: Command | null) {
   moraleLen = ml.length;
   controls.prune((id) => !!pieces.placedOf(id));
   hud.render(bus.state);
+  netStatus();
   const aiBtn = $btn("bot-phase");
   aiBtn.textContent = settings.aiSide ? (ai.paused ? "Reanudar IA" : "Pausar IA") : "IA";
   aiBtn.title = settings.aiSide ? `La IA (${AI_LEVEL_NAME[settings.aiLevel]}) lleva ${FACTIONS[settings.aiSide].of.replace(/^de /, "").replace(/^del /, "el ")}` : "La IA juega esta fase por el bando activo";
   if (ai.isAiTurn() && !ai.paused) $btn("end-turn").disabled = true;
+  if (runtime.online) aiBtn.hidden = true;
   hud.renderSelection(bus.state, controls.selected, coherencyWarnings());
-  writeTable(bus.serialize());
+  if (net?.session?.role !== "guest") writeTable(bus.serialize());   // el invitado no pisa su mesa guardada
 }
 bus.onChange(refresh);
 refresh();
@@ -368,4 +428,4 @@ renderer.setAnimationLoop(() => {
 });
 
 // Para pruebas desde la consola
-(window as unknown as { mesa: unknown }).mesa = { bus, cam, pieces, controls, tape, ranges, tray, tables, shots, armies, ai, endDialog, fightOptions };
+(window as unknown as { mesa: unknown }).mesa = { bus, cam, pieces, controls, tape, ranges, tray, tables, shots, armies, ai, endDialog, fightOptions, net, tactics: { aiStep, fightStep, canFight }, stateHash };

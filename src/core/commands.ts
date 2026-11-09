@@ -182,7 +182,20 @@ export interface SavedTable {
  * Historial de órdenes con deshacer y rehacer.
  * `log` guarda todas las órdenes; `cursor` dice cuántas están aplicadas.
  */
+/** Lo que cambia la mesa: una orden, deshacer, rehacer, mesa nueva o cargar una guardada. */
+export type BusOp =
+  | { k: "cmd"; cmd: Command }
+  | { k: "undo" }
+  | { k: "redo" }
+  | { k: "reset"; seed: number }
+  | { k: "load"; saved: SavedTable };
+
 export class CommandBus {
+  /**
+   * En línea: si devuelve true, la operación no se aplica aquí (se ha enviado al anfitrión,
+   * o el anfitrión la ha aplicado él con `apply`). Sin red no hay gancho.
+   */
+  remote: ((op: BusOp) => boolean) | null = null;
   private initial: GameState;
   private log: Command[] = [];
   private cursor = 0;
@@ -196,6 +209,11 @@ export class CommandBus {
 
   /** Mesa nueva con otra semilla (no se puede deshacer). */
   reset(seed: number) {
+    if (this.remote?.({ k: "reset", seed })) return;
+    this.applyReset(seed);
+  }
+
+  private applyReset(seed: number) {
     this.seed = seed;
     this.initial = createInitialState(seed);
     this.state = this.initial;
@@ -206,6 +224,11 @@ export class CommandBus {
 
   /** Sustituye la mesa por una guardada (no se puede deshacer). */
   load(saved: SavedTable) {
+    if (this.remote?.({ k: "load", saved })) return;
+    this.applyLoad(saved);
+  }
+
+  private applyLoad(saved: SavedTable) {
     this.seed = saved.seed;
     this.initial = createInitialState(saved.seed);
     this.log = saved.log.slice();
@@ -227,6 +250,11 @@ export class CommandBus {
   }
 
   dispatch(cmd: Command) {
+    if (this.remote?.({ k: "cmd", cmd })) return;
+    this.applyCmd(cmd);
+  }
+
+  private applyCmd(cmd: Command) {
     this.log.length = this.cursor;          // una orden nueva descarta lo deshecho
     this.log.push(cmd);
     this.cursor++;
@@ -240,6 +268,12 @@ export class CommandBus {
 
   undo() {
     if (!this.canUndo) return;
+    if (this.remote?.({ k: "undo" })) return;
+    this.applyUndo();
+  }
+
+  private applyUndo() {
+    if (!this.canUndo) return;
     this.cursor--;
     this.state = this.replay();
     this.emit(null);
@@ -247,10 +281,31 @@ export class CommandBus {
 
   redo() {
     if (!this.canRedo) return;
+    if (this.remote?.({ k: "redo" })) return;
+    this.applyRedo();
+  }
+
+  private applyRedo() {
+    if (!this.canRedo) return;
     this.state = applyCommand(this.state, this.log[this.cursor]);
     this.cursor++;
     this.emit(null);
   }
+
+  /** Aplica una operación sin pasar por el gancho de red (la que llega del anfitrión). */
+  apply(op: BusOp) {
+    switch (op.k) {
+      case "cmd": this.applyCmd(op.cmd); break;
+      case "undo": this.applyUndo(); break;
+      case "redo": this.applyRedo(); break;
+      case "reset": this.applyReset(op.seed); break;
+      case "load": this.applyLoad(op.saved); break;
+    }
+  }
+
+  /** La orden que se desharía (para comprobar de quién es). */
+  get lastCommand(): Command | null { return this.cursor > 0 ? this.log[this.cursor - 1] : null; }
+  get nextCommand(): Command | null { return this.cursor < this.log.length ? this.log[this.cursor] : null; }
 
   serialize(): SavedTable {
     return { v: 1, seed: this.seed, log: this.log.slice(), cursor: this.cursor };

@@ -1,6 +1,6 @@
 {
   "name": "mesa-de-guerra",
-  "version": "0.20.0",
+  "version": "0.21.0",
   "description": "Mesa de juego virtual low poly para un wargame de miniaturas sci-fi, en el navegador",
   "scripts": {
     "build": "node build.mjs",
@@ -9,13 +9,14 @@
     "test": "node run-tests.mjs"
   },
   "dependencies": {
+    "peerjs": "^1.5.5",
     "three": "^0.169.0"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "@types/three": "^0.169.0",
     "esbuild": "^0.24.0",
-    "typescript": "^5.6.3",
-    "@types/node": "^22.0.0"
+    "typescript": "^5.6.3"
   },
   "private": true
 }

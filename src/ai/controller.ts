@@ -19,7 +19,7 @@ export class AiController {
 
   constructor(private bus: CommandBus, private busy: () => boolean) {}
 
-  get side(): Faction | null { return settings.aiSide; }
+  get side(): Faction | null { return runtime.online ? null : settings.aiSide; }
 
   /** ¿Le toca jugar a la IA ahora (y por tanto el jugador no debería tocar)? */
   isAiTurn(s: GameState = this.bus.state): boolean {

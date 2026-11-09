@@ -32,10 +32,15 @@ export function createRulesGate(bus: CommandBus, view: PiecesView, notify: (msg:
       if (s.gameOver) return "La partida ha terminado.";
       if (deploying()) {
         const factions = new Set(minis.map((id) => view.pieceOf(id)!.faction));
-        if (settings.aiSide && factions.has(settings.aiSide)) return "Esas unidades las coloca la IA.";
+        if (runtime.localSide && [...factions].some((f) => f !== runtime.localSide)) return "Esas unidades las coloca tu rival.";
+        if (!runtime.online && settings.aiSide && factions.has(settings.aiSide)) return "Esas unidades las coloca la IA.";
         return factions.size > 1 ? "Despliega cada bando por separado." : null;
       }
-      if (settings.aiSide && !runtime.aiPaused && PLAYERS[s.active] === settings.aiSide) return "Es el turno de la IA (Pausar IA para moverla a mano).";
+      if (runtime.online && runtime.localSide) {
+        if (minis.some((id) => view.pieceOf(id)!.faction !== runtime.localSide)) return "Esas miniaturas son de tu rival.";
+        if (PLAYERS[s.active] !== runtime.localSide) return "Es el turno de tu rival.";
+      }
+      if (!runtime.online && settings.aiSide && !runtime.aiPaused && PLAYERS[s.active] === settings.aiSide) return "Es el turno de la IA (Pausar IA para moverla a mano).";
       if (s.phase !== "movimiento") return `En la fase de ${PHASE_INFO[s.phase].name.toLowerCase()} no se mueve a mano. Para colocar libremente, cambia a Mesa libre.`;
       const units = new Set(minis.map((id) => { const u = unitOf(id); return u ? formation(s, u)[0] : null; }));
       if (units.size > 1) return "Mueve las unidades de una en una.";
