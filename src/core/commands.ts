@@ -1,3 +1,4 @@
+import { formation } from "../rules/leaders";
 import { GameState, BOARD, cloneState, createInitialState, TerrainKind, TERRAIN } from "./state";
 import { rollDice } from "./rng";
 import { advancePhase, endTurn } from "../rules/turn";
@@ -130,7 +131,7 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
         move.advance = d;
         s.rolls.push({ player: s.active, turn: s.turn, sides: 6, results: [d] });
       }
-      s.turnLog.moves[cmd.unit] = move;
+      for (const u of formation(s, cmd.unit)) s.turnLog.moves[u] = move;   // el líder y su escuadra, juntos
       break;
     }
     case "shoot": {

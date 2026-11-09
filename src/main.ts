@@ -1,3 +1,4 @@
+import { formation, formationModels } from "./rules/leaders";
 import * as THREE from "three";
 import { CommandBus } from "./core/commands";
 import { freshSeed } from "./core/rng";
@@ -100,9 +101,9 @@ tape.terrain = () => bus.state.terrain;
 
 /** Miniaturas fuera de coherencia en las unidades que tienen algo seleccionado. */
 function coherencyWarnings(): Set<string> {
-  const units = new Set(bus.state.pieces.filter((p) => controls.selected.has(p.id) && p.unit).map((p) => p.unit!));
+  const units = new Set(bus.state.pieces.filter((p) => controls.selected.has(p.id) && p.unit).map((p) => formation(bus.state, p.unit!)[0]));
   const out = new Set<string>();
-  for (const u of units) for (const id of outOfCoherency(bus.state.pieces.filter((p) => p.unit === u))) out.add(id);
+  for (const u of units) for (const id of outOfCoherency(formationModels(bus.state, u))) out.add(id);   // el líder cuenta con su escuadra
   return out;
 }
 
@@ -138,7 +139,7 @@ controls.onSelectionChange = () => hud.renderSelection(bus.state, controls.selec
 hud.onDeclareMove = (unit, kind) => {
   const s = bus.state;
   const cur = s.turnLog.moves[unit];
-  if (cur?.kind === "avanzar" || movedSoFar(s, unit) > 0.01) { toast("Esta unidad ya ha movido."); return; }
+  if (cur?.kind === "avanzar" || formation(s, unit).some((u) => movedSoFar(s, u) > 0.01)) { toast("Esta unidad ya ha movido."); return; }
   bus.dispatch({ type: "declareMove", unit, kind });
 };
 

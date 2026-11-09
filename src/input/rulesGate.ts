@@ -1,9 +1,10 @@
+import { formation, formationModels } from "../rules/leaders";
 import { CommandBus, PieceMove } from "../core/commands";
 import { FACTIONS, PLAYERS } from "../core/state";
 import { PHASE_INFO } from "../rules/turn";
 import { checkDeploy, clampToZone } from "../rules/deployment";
 import { BASE_RADIUS } from "../core/state";
-import { allowance, checkMove, clampToAllowance, isEngaged, originOf, unitModels } from "../rules/movement";
+import { allowance, checkMove, clampToAllowance, isEngaged, originOf } from "../rules/movement";
 import { PiecesView } from "../view/piecesView";
 import { RulesGate } from "./pieceControls";
 
@@ -20,7 +21,7 @@ export function createRulesGate(bus: CommandBus, view: PiecesView, notify: (msg:
     selectionFor(id, single) {
       const u = unitOf(id);
       if (!u || single) return [id];
-      return unitModels(bus.state, u).map((p) => p.id);
+      return formationModels(bus.state, u).map((p) => p.id);     // con su líder, si lo tiene
     },
 
     blockMove(ids) {
@@ -33,13 +34,13 @@ export function createRulesGate(bus: CommandBus, view: PiecesView, notify: (msg:
         return factions.size > 1 ? "Despliega cada bando por separado." : null;
       }
       if (s.phase !== "movimiento") return `En la fase de ${PHASE_INFO[s.phase].name.toLowerCase()} no se mueve a mano. Para colocar libremente, cambia a Mesa libre.`;
-      const units = new Set(minis.map(unitOf));
+      const units = new Set(minis.map((id) => { const u = unitOf(id); return u ? formation(s, u)[0] : null; }));
       if (units.size > 1) return "Mueve las unidades de una en una.";
       const u = [...units][0]!;
       const unit = s.units.find((x) => x.id === u)!;
       if (unit.faction !== PLAYERS[s.active]) return `Es el turno ${FACTIONS[PLAYERS[s.active]].of}.`;
       if (!s.turnLog.moves[u]) {
-        if (isEngaged(s, u)) return "Unidad trabada: elige Retirarse en su panel (o déjala quieta).";
+        if (formation(s, u).some((id) => isEngaged(s, id))) return "Unidad trabada: elige Retirarse en su panel (o déjala quieta).";
         bus.dispatch({ type: "declareMove", unit: u, kind: "normal" });   // mover sin más = movimiento normal
       }
       return null;

@@ -1,3 +1,4 @@
+import { formation, partnerOf, underCommand } from "../rules/leaders";
 import { CommandBus } from "../core/commands";
 import { FACTIONS, GameState, PLAYERS, RollRecord, TERRAIN } from "../core/state";
 import { PHASES, PHASE_INFO, MAX_ROUNDS, Phase } from "../rules/turn";
@@ -18,10 +19,19 @@ let sheetOpen = true;
 export function toggleSheet() { sheetOpen = !sheetOpen; }
 
 function unitCard(s: GameState, selected: Set<string>): string {
-  const units = new Set(s.pieces.filter((p) => selected.has(p.id)).map((p) => p.unit));
-  if (units.size !== 1) return "";
-  const uid = [...units][0];
-  if (!uid) return "";
+  const units = [...new Set(s.pieces.filter((p) => selected.has(p.id)).map((p) => p.unit))];
+  if (units.some((u) => !u)) return "";
+  // Un líder con su escuadra: las dos fichas, la escuadra primero (el movimiento se elige en ella)
+  if (units.length === 2) {
+    const f = formation(s, units[0]!);
+    if (f.length !== 2 || !f.includes(units[1]!)) return "";
+    return singleCard(s, f[0]) + singleCard(s, f[1], true);
+  }
+  if (units.length !== 1) return "";
+  return singleCard(s, units[0]!);
+}
+
+function singleCard(s: GameState, uid: string, inFormation = false): string {
   const unit = s.units.find((u) => u.id === uid);
   if (!unit) return "";
   const ds = DATASHEETS[unit.datasheet], P = ds.profile;
@@ -30,6 +40,7 @@ function unitCard(s: GameState, selected: Set<string>): string {
     unit.shocked ? `<span class="badge bad">Desmoralizada</span>` : "",
     belowHalf(s, uid) && !unit.shocked ? `<span class="badge warnb">Por debajo de la mitad</span>` : "",
     unit.faction === "swarm" && inSynapse(s, uid) ? `<span class="badge syn">En sinapsis</span>` : "",
+    leaderBadge(s, uid),
   ].join("");
   const F = FACTIONS[unit.faction];
   const pts = unitPoints(ds, unit.startingModels);
@@ -37,7 +48,7 @@ function unitCard(s: GameState, selected: Set<string>): string {
     + ` <button class="sheet-toggle" data-toggle="sheet" title="Mostrar u ocultar la hoja de datos">${sheetOpen ? "Ocultar hoja" : "Hoja de datos"}</button></div>`
     + (badges ? `<div class="badges">${badges}</div>` : "")
     + statGrid(P);
-  const actions = s.rulesMode ? phaseActions(s, uid) : "";
+  const actions = s.rulesMode ? phaseActions(s, uid, inFormation) : "";
   html += actions;
   if (sheetOpen) html += sheetDetails(s, uid);
   return html + "</div>";
@@ -81,23 +92,36 @@ function sheetDetails(s: GameState, uid: string): string {
 }
 
 /** Botones y estado de la fase en curso (modo reglas). */
-function phaseActions(s: GameState, uid: string): string {
+/** Líder unido a escuadra: con quién va y qué gana. */
+function leaderBadge(s: GameState, uid: string): string {
+  const other = partnerOf(s, uid);
+  if (!other) return "";
+  const u = s.units.find((x) => x.id === uid)!, o = s.units.find((x) => x.id === other)!;
+  const name = DATASHEETS[o.datasheet].name;
+  const cmd = underCommand(s, uid) ? " · repite 1 al impactar" : "";
+  return u.attachedTo
+    ? `<span class="badge lead" title="Se mueve y carga con su escuadra; no se le puede disparar mientras quede alguien en ella">Lidera: ${name}${cmd}</span>`
+    : `<span class="badge lead" title="El líder se mueve y carga con la escuadra">Con ${name}${cmd}</span>`;
+}
+
+function phaseActions(s: GameState, uid: string, inFormation = false): string {
   const unit = s.units.find((u) => u.id === uid)!;
   const ds = DATASHEETS[unit.datasheet], P = ds.profile;
   let html = "";
-  if (s.phase === "movimiento" && unit.faction === PLAYERS[s.active] && !s.gameOver) {
+  if (s.phase === "movimiento" && inFormation) html += `<div class="dim">Mueve con su escuadra.</div>`;
+  else if (s.phase === "movimiento" && unit.faction === PLAYERS[s.active] && !s.gameOver) {
     const mv = s.turnLog.moves[uid];
     const used = movedSoFar(s, uid), max = allowance(s, uid, mv);
     const engagedNow = isEngaged(s, uid);
     const fixed = mv?.kind === "avanzar" || used > 0.01;
     const label: Record<MoveKind, string> = { normal: "Mueve", avanzar: "Avanza", retirarse: "Se retira" };
     html += mv
-      ? `<div>${label[mv.kind]}${mv.kind === "avanzar" ? ` (${P.M}" + ${mv.advance}")` : ""}: <b>${fmtIn(used)}</b> de ${fmtIn(max)}</div>`
+      ? `<div>${label[mv.kind]}${mv.kind === "avanzar" ? ` (${allowance(s, uid, undefined)}" + ${mv.advance}")` : ""}: <b>${fmtIn(used)}</b> de ${fmtIn(max)}</div>`
       : `<div class="dim">${engagedNow ? "Trabada: solo puede retirarse o quedarse quieta." : "Elige cómo mueve, o arrástrala para un movimiento normal."}</div>`;
     if (!fixed) {
       const b = (k: MoveKind, text: string, on: boolean) =>
         `<button data-move="${k}" data-unit="${uid}"${on ? "" : " disabled"}${mv?.kind === k ? ' class="on"' : ""}>${text}</button>`;
-      html += `<div class="move-btns">${b("normal", `Mover ${P.M}"`, !engagedNow)}${b("avanzar", "Avanzar +D6", !engagedNow)}${b("retirarse", "Retirarse", engagedNow)}</div>`;
+      html += `<div class="move-btns">${b("normal", `Mover ${allowance(s, uid, undefined)}"`, !engagedNow)}${b("avanzar", "Avanzar +D6", !engagedNow)}${b("retirarse", "Retirarse", engagedNow)}</div>`;
     }
     if (mv?.kind === "avanzar") html += `<div class="dim">Tras avanzar no dispara (salvo armas de Asalto) ni carga${ds.abilities.includes("rapidez") ? " (Rapidez: esta sí puede cargar)" : ""}.</div>`;
     if (mv?.kind === "retirarse") html += `<div class="dim">Tras retirarse no dispara ni carga este turno.</div>`;

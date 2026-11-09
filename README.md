@@ -9,6 +9,16 @@ Plan completo (visión, facciones, roadmap y backlog): documento *Mesa de Guerra
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor.
 
+## Novedades 0.19 · fase 3 (líderes unidos a escuadras, #32) — fase 3 completa
+- **Lidera a:** en el editor de *Ejércitos*, el Capitán tiene un desplegable para unirse a una Escuadra de Asalto Táctico o de Fuego Pesado de la misma lista (una escuadra admite un solo líder). La lista de prueba lo une a la escuadra de Asalto de 10.
+- **Despliegue juntos:** el líder sale pegado a su escuadra, en coherencia con ella.
+- **Una sola formación:** al hacer clic en el líder o en la escuadra se seleccionan los dos (doble clic sigue cogiendo una sola miniatura). Se mueven juntos con el movimiento que se declare para cualquiera de ellos, a la M más baja de los dos (con Fuego Pesado, 5"), y la coherencia se mide con todas sus miniaturas.
+- **Cargan juntos:** una sola tirada de 2D6 para la formación; los dos quedan como unidades que han cargado y combaten primero. En combate cada unidad golpea con sus propias armas.
+- **Protegido:** no se puede disparar al líder mientras quede alguna miniatura de su escuadra (el objetivo aparece como «Protegido por su escuadra»). Si la escuadra cae, el líder sigue solo; si cae el líder, la escuadra pierde la ventaja.
+- **Al mando:** mientras van juntos, la escuadra y el líder repiten los 1 al impactar, al disparar y en combate. El panel de la selección muestra las dos fichas con la etiqueta «Lidera…» / «Con Capitán · repite 1 al impactar».
+- **Bot:** mueve al líder con su escuadra y no carga con la formación si lleva armas pesadas.
+- **Pruebas:** 64 en total (6 nuevas de líderes y 5 de despliegue). En 40 partidas bot contra bot: Legión 26, Enjambre 8, empates 6.
+
 ## Novedades 0.18 · fase 3 (fase de despliegue, #31)
 - **Despliegue antes de la ronda 1:** al desplegar listas (*Ejércitos* o *Partida de prueba*) la partida empieza en la fase **Despliegue**: ronda 1, 1 PM por bando y registros de combate y moral vacíos.
 - **Recolocar:** en esta fase los dos bandos pueden arrastrar y girar sus miniaturas, pero solo dentro de su zona (la franja de su color): al arrastrar no pasan del borde de la zona y, al soltar, cada peana va al hueco libre más cercano dentro de ella. Lo que no cabe vuelve a su sitio.

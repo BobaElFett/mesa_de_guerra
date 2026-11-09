@@ -1,3 +1,4 @@
+import { formation } from "./leaders";
 import { BASE_RADIUS, GameState, Piece } from "../core/state";
 import type { PieceMove } from "../core/commands";
 import { DATASHEETS } from "./datasheets";
@@ -47,7 +48,7 @@ export function isEngaged(s: GameState, unitId: string): boolean {
 export function allowance(s: GameState, unitId: string, move: UnitMove | undefined): number {
   const u = s.units.find((x) => x.id === unitId);
   if (!u) return 0;
-  const M = DATASHEETS[u.datasheet].profile.M;
+  const M = Math.min(...formation(s, unitId).map((id) => DATASHEETS[s.units.find((x) => x.id === id)!.datasheet].profile.M));
   if (!move) return M;
   return move.kind === "avanzar" ? M + (move.advance ?? 0) : M;
 }

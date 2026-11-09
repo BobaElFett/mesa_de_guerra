@@ -51,6 +51,8 @@ export interface Unit {
   startingModels: number;
   /** Desmoralizada hasta su siguiente fase de mando (CO 0, sin PM). */
   shocked?: boolean;
+  /** Personaje unido a esta escuadra (id de la unidad que lidera). */
+  attachedTo?: string;
 }
 
 export type TerrainKind = "ruina" | "ruinaGrande" | "cajas" | "crater" | "bunker" | "barricada";

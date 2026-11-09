@@ -3,7 +3,12 @@ import { DATASHEETS, DatasheetId, unitPoints } from "./datasheets";
 
 // Listas de ejército y despliegue en las zonas de cada bando.
 
-export interface ArmyEntry { datasheet: DatasheetId; models: number }
+export interface ArmyEntry {
+  datasheet: DatasheetId;
+  models: number;
+  /** Personaje: índice (en la lista) de la escuadra que lidera. */
+  leads?: number;
+}
 export interface ArmyList { name?: string; units: ArmyEntry[] }
 
 export const POINTS_LIMIT = 500;
@@ -25,6 +30,15 @@ export function validateList(list: ArmyList, faction: Faction, limit = POINTS_LI
     counts.set(u.datasheet, (counts.get(u.datasheet) ?? 0) + 1);
     if (ds.big) big++;
     if (ds.character) characters++;
+  }
+  // Líderes: solo a escuadras que puedan liderar, y una escuadra con un líder como mucho
+  const led = new Set<number>();
+  for (const u of list.units) {
+    if (u.leads === undefined) continue;
+    const ds = DATASHEETS[u.datasheet], to = list.units[u.leads];
+    if (!ds?.leads || !to || !ds.leads.includes(to.datasheet)) errs.push(`${ds?.name ?? u.datasheet} no puede liderar esa unidad.`);
+    else if (led.has(u.leads)) errs.push(`${DATASHEETS[to.datasheet].name} tiene dos líderes.`);
+    led.add(u.leads);
   }
   for (const [id, n] of counts) if (n > 3) errs.push(`Como mucho 3 ${DATASHEETS[id].name} (hay ${n}).`);
   if (big > 1) errs.push("Como mucho 1 Andador o Tirano.");
@@ -49,21 +63,34 @@ export function deployArmies(s: GameState, legion: ArmyList, swarm: ArmyList) {
     const dir = faction === "legion" ? 1 : -1;              // hacia su borde de la mesa
     const front = dir * (BOARD.d / 2 - DEPLOY_DEPTH + 0.8);  // primera fila, junto al borde de su zona
     let pieceN = 0;
-    // Bloques: ancho de cada unidad
-    const blocks = list.units.map((u) => {
+    // Bloques: ancho de cada unidad. Cada líder va justo detrás (al lado) de su escuadra.
+    const valid = (i: number) => {
+      const u = list.units[i], to = u.leads !== undefined ? list.units[u.leads] : undefined;
+      return !!to && !!DATASHEETS[u.datasheet].leads?.includes(to.datasheet) && list.units.findIndex((x) => x.leads === u.leads) === i;
+    };
+    const order: number[] = [];
+    list.units.forEach((u, i) => { if (!valid(i)) order.push(i); });
+    list.units.forEach((u, i) => { if (valid(i)) order.splice(order.indexOf(u.leads!) + 1, 0, i); });
+    const blocks = order.map((i) => {
+      const u = list.units[i];
       const ds = DATASHEETS[u.datasheet];
       const r = BASE_RADIUS[ds.model];
       const perRow = Math.min(5, u.models);
       const step = 2 * r + 0.6;
-      return { u, ds, r, perRow, step, width: (perRow - 1) * step + 2 * r };
+      return { i, u, ds, r, perRow, step, width: (perRow - 1) * step + 2 * r, attached: valid(i) };
     });
-    const gapBetween = 3;
-    const total = blocks.reduce((n, b) => n + b.width, 0) + gapBetween * (blocks.length - 1);
+    const gapBetween = 3, gapLeader = 0.6;
+    const gapBefore = (b: (typeof blocks)[number]) => (b.attached ? gapLeader : gapBetween);
+    const total = blocks.reduce((n, b, k) => n + b.width + (k ? gapBefore(b) : 0), 0);
+    const unitIdOf = new Map<number, string>();
     let x = -Math.min(total, BOARD.w - 2) / 2;
     let rowOffset = 0;
-    for (const b of blocks) {
+    blocks.forEach((b, k) => {
+      if (k) x += gapBefore(b);
       if (x + b.width > BOARD.w / 2 - 1) { x = -BOARD.w / 2 + 1; rowOffset += 6; }   // otra franja si no cabe
       const unit: Unit = { id: `U${++unitN}`, datasheet: b.u.datasheet, faction, startingModels: b.u.models };
+      if (b.attached) unit.attachedTo = unitIdOf.get(b.u.leads!);
+      unitIdOf.set(b.i, unit.id);
       s.units.push(unit);
       for (let i = 0; i < b.u.models; i++) {
         const col = i % b.perRow, row = Math.floor(i / b.perRow);
@@ -79,8 +106,8 @@ export function deployArmies(s: GameState, legion: ArmyList, swarm: ArmyList) {
         p.z = Math.max(-BOARD.d / 2 + b.r, Math.min(BOARD.d / 2 - b.r, p.z));
         s.pieces.push(p);
       }
-      x += b.width + gapBetween;
-    }
+      x += b.width;
+    });
   }
   // Partida nueva: empieza en la fase de despliegue, con los dos bandos a 1 PM
   s.turnLog = { moves: {}, origins: {} };
@@ -90,7 +117,7 @@ export function deployArmies(s: GameState, legion: ArmyList, swarm: ArmyList) {
 
 /** Listas de la partida de prueba (#25): unos 450 puntos por bando. */
 export const TEST_LEGION: ArmyList = { name: "Prueba Legión", units: [
-  { datasheet: "capitan", models: 1 }, { datasheet: "asalto", models: 10 }, { datasheet: "asalto", models: 5 }, { datasheet: "fuegoPesado", models: 5 },
+  { datasheet: "capitan", models: 1, leads: 1 }, { datasheet: "asalto", models: 10 }, { datasheet: "asalto", models: 5 }, { datasheet: "fuegoPesado", models: 5 },
 ] };
 export const TEST_SWARM: ArmyList = { name: "Prueba Enjambre", units: [
   { datasheet: "tirano", models: 1 }, { datasheet: "nodo", models: 3 }, { datasheet: "garras", models: 20 }, { datasheet: "escupidores", models: 10 },

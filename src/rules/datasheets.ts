@@ -54,6 +54,8 @@ export interface Datasheet {
   /** Modelo 3D con el que se dibuja (provisional hasta la fase 3 para algunas). */
   model: ModelKind;
   character?: boolean;
+  /** Escuadras que este personaje puede liderar. */
+  leads?: DatasheetId[];
   /** Vehículo o monstruo: como mucho 1 por ejército. */
   big?: boolean;
 }
@@ -90,7 +92,7 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
     id: "capitan", name: "Capitán", faction: "legion", character: true,
     profile: { M: 6, T: 4, Sv: 3, Inv: 4, W: 5, Ld: 6, OC: 1 },
     sizes: [{ models: 1, points: 80 }], weapons: ["pistolaPlasma", "espadaEnergia"],
-    abilities: ["alMando"], model: "capitan",
+    abilities: ["alMando"], model: "capitan", leads: ["asalto", "fuegoPesado"],
   },
   asalto: {
     id: "asalto", name: "Escuadra de Asalto Táctico", faction: "legion",
@@ -161,7 +163,7 @@ export function diceText(d: Dice): string { return String(d); }
 
 /** Texto de las habilidades de unidad, para la hoja de datos en pantalla. */
 export const UNIT_ABILITY_TEXT: Record<UnitAbility, { name: string; text: string }> = {
-  alMando: { name: "Al mando", text: "Líder de una escuadra de Asalto Táctico o de Fuego Pesado; esa unidad repite los 1 al impactar." },
+  alMando: { name: "Al mando", text: "Puede liderar una escuadra de Asalto Táctico o de Fuego Pesado: se mueven y cargan juntos, la escuadra lo protege de los disparos y los dos repiten los 1 al impactar." },
   sargento: { name: "Sargento", text: "Una miniatura lleva pistola bólter y espada sierra en lugar de rifle y cuchillo." },
   blindado: { name: "Blindado", text: "Cada ataque que lo daña quita 1 herida menos (mínimo 1)." },
   sinaptico: { name: "Sináptico", text: "Las unidades del Enjambre a 12\" superan solas los chequeos de moral." },

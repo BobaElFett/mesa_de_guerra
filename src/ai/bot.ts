@@ -1,3 +1,4 @@
+import { formation, formationModels, partnerOf } from "../rules/leaders";
 import { CommandBus, PieceMove } from "../core/commands";
 import { GameState, Piece, PLAYERS } from "../core/state";
 import { DATASHEETS, hasAbility, WEAPONS } from "../rules/datasheets";
@@ -35,8 +36,9 @@ function nearestEnemy(s: GameState, p: Piece): Piece | null {
 function movePhase(bus: CommandBus) {
   for (const u of ownUnits(bus.state)) {
     const s = bus.state;
-    if (isEngaged(s, u.id)) continue;                 // se queda a pelear
-    const models = unitModels(s, u.id);
+    if (u.attachedTo && partnerOf(s, u.id)) continue;    // el líder se mueve con su escuadra
+    if (formation(s, u.id).some((id) => isEngaged(s, id))) continue;   // se queda a pelear
+    const models = formationModels(s, u.id);
     if (!enemyModels(s, u.id).length) continue;
     // Las pesadas que ya tienen a quién disparar se quedan quietas (+1 al impactar)
     if (heavy(s, u.id) && shootingOptions(s, u.id).weapons.some((w) => w.targets.some((t) => !t.blocked))) continue;
@@ -46,7 +48,7 @@ function movePhase(bus: CommandBus) {
     const s2 = bus.state;
     const max = allowance(s2, u.id, s2.turnLog.moves[u.id]);
     const moves: PieceMove[] = [];
-    for (const p of unitModels(s2, u.id)) {
+    for (const p of formationModels(s2, u.id)) {
       const e = nearestEnemy(s2, p);
       if (!e) continue;
       const g = gap(disc(p), disc(e));
@@ -78,7 +80,7 @@ function shootPhase(bus: CommandBus) {
 
 function chargePhase(bus: CommandBus) {
   for (const u of ownUnits(bus.state)) {
-    if (heavy(bus.state, u.id)) continue;
+    if (formation(bus.state, u.id).some((id) => heavy(bus.state, id))) continue;
     const o = chargeOptions(bus.state, u.id);
     if (o.blocked || o.done) continue;
     const t = o.targets.find((x) => !x.blocked && x.need <= 9);

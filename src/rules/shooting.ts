@@ -1,3 +1,4 @@
+import { isGuarded, underCommand } from "./leaders";
 import { GameState, Piece, PLAYERS } from "../core/state";
 import { DATASHEETS, Weapon, WEAPONS, hasAbility } from "./datasheets";
 import { resolveAttack, SeededDice, woundTarget, AttackResult } from "./attack";
@@ -113,6 +114,7 @@ export function shootingOptions(s: GameState, unitId: string): ShootingOptions {
       }
       t.cover = t.attackers.length > 0 && !anyClear;
       if (opt.blocked) t.blocked = opt.blocked;
+      else if (isGuarded(s, e.id)) t.blocked = "Protegido por su escuadra: primero hay que acabar con ella.";
       else if (selfEngaged && !engagedWithMe) t.blocked = "Trabada: solo puede disparar a quien la traba.";
       else if (!selfEngaged && engagedWithAny(s, e.id)) t.blocked = "Está trabada con tus tropas.";
       else if (t.distance === Infinity) t.blocked = "Sin visión.";
@@ -166,6 +168,7 @@ export function performAttack(s: GameState, kind: AttackLogEntry["kind"], unitId
     weapon, attackers: attackers.length,
     target: { profile: tds.profile, models: targetModels, armored: tds.abilities.includes("blindado") },
     distance: extra.distance, stationary: extra.stationary, cover: extra.cover,
+    rerollHitOnes: underCommand(s, unitId),
   }, dice);
   s.rng = dice.state;
 

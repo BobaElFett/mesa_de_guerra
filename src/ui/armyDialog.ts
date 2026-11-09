@@ -81,7 +81,13 @@ export class ArmyDialog {
       const ds = DATASHEETS[sel.value as DatasheetId];
       if (ds) list.units.push({ datasheet: ds.id, models: ds.sizes[0].models });
     } else if (b.dataset.act === "remove") {
-      list.units.splice(Number(b.dataset.i), 1);
+      const gone = Number(b.dataset.i);
+      list.units.splice(gone, 1);
+      // Los líderes siguen apuntando a la misma escuadra (o a ninguna si era esa)
+      for (const u of list.units) if (u.leads !== undefined) {
+        if (u.leads === gone) delete u.leads;
+        else if (u.leads > gone) u.leads--;
+      }
     } else if (b.dataset.act === "save") {
       const saved = readSaved();
       const name = (list.name ?? "").trim() || `${FACTIONS[f].name} ${listPoints(list)} pts`;
@@ -102,7 +108,12 @@ export class ArmyDialog {
 
   private change(e: Event) {
     const t = e.target as HTMLSelectElement;
-    if (t.dataset.size !== undefined) {
+    if (t.dataset.leads !== undefined) {
+      const [f, i] = t.dataset.leads.split("|");
+      const u = this.lists[f as Faction].units[Number(i)];
+      if (t.value === "") delete u.leads; else u.leads = Number(t.value);
+      this.render();
+    } else if (t.dataset.size !== undefined) {
       const [f, i] = t.dataset.size.split("|");
       this.lists[f as Faction].units[Number(i)].models = Number(t.value);
       this.render();
@@ -123,7 +134,12 @@ export class ArmyDialog {
       const rows = list.units.map((u, i) => {
         const ds = DATASHEETS[u.datasheet];
         const sizes = ds.sizes.map((s) => `<option value="${s.models}"${s.models === u.models ? " selected" : ""}>${s.models}</option>`).join("");
-        return `<tr><td>${ds.name}${ds.character ? ' <span class="dim">(personaje)</span>' : ""}</td>`
+        // Personaje que puede liderar: a qué escuadra de la lista se une
+        const squads = ds.leads ? list.units.map((x, j) => ({ x, j })).filter(({ x }) => ds.leads!.includes(x.datasheet)) : [];
+        const leads = ds.leads ? `<div class="lead-pick">Lidera a <select data-leads="${f}|${i}"><option value="">— nadie —</option>`
+          + squads.map(({ x, j }) => `<option value="${j}"${u.leads === j ? " selected" : ""}>${j + 1}. ${DATASHEETS[x.datasheet].name} (${x.models})</option>`).join("")
+          + `</select></div>` : "";
+        return `<tr><td><span class="dim">${i + 1}.</span> ${ds.name}${ds.character ? ' <span class="dim">(personaje)</span>' : ""}${leads}</td>`
           + `<td>${ds.sizes.length > 1 ? `<select data-size="${f}|${i}">${sizes}</select>` : u.models}</td>`
           + `<td class="pts">${unitPoints(ds, u.models) ?? "—"}</td>`
           + `<td><button data-side="${f}" data-act="remove" data-i="${i}" title="Quitar">×</button></td></tr>`;

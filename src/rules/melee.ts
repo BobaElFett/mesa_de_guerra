@@ -1,3 +1,4 @@
+import { formation, formationModels } from "./leaders";
 import { GameState, Piece, PLAYERS } from "../core/state";
 import { rollDice } from "../core/rng";
 import { resolveOverlaps } from "../core/placement";
@@ -33,7 +34,7 @@ export interface ChargeOptions { blocked?: string; targets: ChargeTarget[]; done
 export function chargeOptions(s: GameState, unitId: string): ChargeOptions {
   const unit = s.units.find((u) => u.id === unitId);
   if (!unit) return { blocked: "Unidad desconocida.", targets: [] };
-  const models = unitModels(s, unitId);
+  const models = formationModels(s, unitId);
   if (!models.length) return { blocked: "La unidad ha sido destruida.", targets: [] };
   const done = s.turnLog.charges?.[unitId];
   if (done) return { targets: [], done };
@@ -67,8 +68,9 @@ export function applyCharge(s: GameState, unitId: string, targetId: string): Cha
   s.rolls.push({ player: s.active, turn: s.turn, sides: 6, results: dice });
   const success = roll >= t.distance - ENGAGEMENT;
   const rec: ChargeRecord = { target: targetId, roll, need: t.need, success };
-  s.turnLog.charges = { ...(s.turnLog.charges ?? {}), [unitId]: rec };
-  if (success) advanceInto(s, unitId, targetId, roll);
+  s.turnLog.charges = { ...(s.turnLog.charges ?? {}) };
+  for (const u of formation(s, unitId)) s.turnLog.charges[u] = rec;     // el líder carga con su escuadra
+  if (success) advanceInto(s, unitId, targetId, roll, false, true);
   return rec;
 }
 
@@ -76,10 +78,10 @@ export function applyCharge(s: GameState, unitId: string, targetId: string): Cha
  * Mueve cada miniatura de la unidad hacia la miniatura enemiga más cercana del objetivo,
  * como mucho `max` pulgadas, parando en contacto de peana. Sin solapes.
  */
-function advanceInto(s: GameState, unitId: string, targetId: string, max: number, onlyFree = false) {
+function advanceInto(s: GameState, unitId: string, targetId: string, max: number, onlyFree = false, whole = false) {
   const targets = unitModels(s, targetId);
   if (!targets.length) return;
-  const models = unitModels(s, unitId)
+  const models = (whole ? formationModels(s, unitId) : unitModels(s, unitId))
     .map((p) => ({ p, d: Math.min(...targets.map((q) => gap(disc(p), disc(q)))) }))
     .sort((a, b) => a.d - b.d || (a.p.id < b.p.id ? -1 : 1));
   const moves = [];
