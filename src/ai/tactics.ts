@@ -1,5 +1,6 @@
+import { overwatchBlocked, overwatchWeapons } from "../rules/reactions";
 import { CommandBus, PieceMove } from "../core/commands";
-import { Faction, GameState, Piece, PLAYERS } from "../core/state";
+import { BASE_RADIUS, Faction, GameState, Piece, PLAYERS } from "../core/state";
 import { DATASHEETS, hasAbility, WEAPONS } from "../rules/datasheets";
 import { allowance, checkMove, isEngaged, movedSoFar } from "../rules/movement";
 import { shootingOptions } from "../rules/shooting";
@@ -7,12 +8,12 @@ import { chargeOptions, fightOptions } from "../rules/melee";
 import { formation, formationModels, partnerOf, underCommand } from "../rules/leaders";
 import { OBJECTIVE_RADIUS, OBJECTIVE_RANGE, objectiveStatus } from "../rules/missions";
 import { hasStrat, stratBlocked } from "../rules/stratagems";
-import { disc, gap, sight } from "../rules/geometry";
+import { crossesSolid, disc, gap, sight } from "../rules/geometry";
 import {
   attackValue, centroid, expectedAttack, groupGap, meleeExpected, p2D6, pointsPerWound, unitCost,
 } from "./evaluate";
 import type { AiLevel } from "./settings";
-import { playPhase as simplePhase } from "./bot";
+import { playPhase as simplePhase, setReactHook } from "./bot";
 
 // IA táctica (#37). Juega con las mismas órdenes que un jugador, una acción cada vez
 // (`aiStep`), para que la interfaz pueda enseñar cada disparo con sus dados.
@@ -311,7 +312,15 @@ function planMove(s: GameState, unitId: string, W: Weights, claimed: Map<string,
       for (const frac of [1, 0.5]) {
         const d = Math.min(want * frac, lim);
         if (d < 0.3) continue;
-        cands.push({ dx: (vx / len) * d, dz: (vz / len) * d, kind, score: 0, why: "" });
+        const ux = vx / len, uz = vz / len;
+        cands.push({ dx: ux * d, dz: uz * d, kind, score: 0, why: "" });
+        // Si el camino recto choca con contenedores o el búnker, prueba a rodear (#49)
+        if (models.some((p) => crossesSolid(s.terrain, p.x, p.z, p.x + ux * d, p.z + uz * d, BASE_RADIUS[p.model]))) {
+          for (const ang of [0.6, -0.6, 1.1, -1.1]) {
+            const c = Math.cos(ang), sn = Math.sin(ang);
+            cands.push({ dx: (ux * c - uz * sn) * d, dz: (ux * sn + uz * c) * d, kind, score: 0, why: "" });
+          }
+        }
       }
     }
   }
@@ -327,6 +336,8 @@ function planMove(s: GameState, unitId: string, W: Weights, claimed: Map<string,
   for (const cnd of cands) {
     // Que la formación no se salga de la mesa
     if (models.some((p) => Math.abs(p.x + cnd.dx) > 29.5 || Math.abs(p.z + cnd.dz) > 21.5)) continue;
+    // Ni atravesar contenedores ni búnker (#49)
+    if (models.some((p) => crossesSolid(s.terrain, p.x, p.z, p.x + cnd.dx, p.z + cnd.dz, BASE_RADIUS[p.model]))) continue;
     const r = scorePosition(s, unitId, cnd.dx, cnd.dz, cnd.kind, W, claimed, assigned);
     let sc = r.score * jitter(s, W, `${unitId}|${cnd.dx.toFixed(1)}|${cnd.dz.toFixed(1)}|${cnd.kind}`);
     if (cnd.dx === 0 && cnd.dz === 0) sc += 0.5;                  // a igualdad, no moverse
@@ -497,6 +508,25 @@ function commandStep(bus: CommandBus, W: Weights): boolean {
   return true;
 }
 
+// --- Fuego defensivo (#50) ------------------------------------------------------
+
+/** ¿Hace fuego defensivo la IA del defensor? Fácil y Normal nunca; Difícil si compensa. */
+export function aiWantsOverwatch(s: GameState, level: AiLevel): boolean {
+  const pc = s.pendingCharge;
+  if (!pc || level === "facil" || !WEIGHTS[level].strats) return false;
+  if (overwatchBlocked(s, pc.unit, pc.target)) return false;
+  let v = 0;
+  for (const { weapon, shooters } of overwatchWeapons(s, pc.target, pc.unit)) {
+    v += attackValue(s, pc.unit, expectedAttack(s, weapon, shooters.length, pc.unit, { onlySixes: true }));
+  }
+  return v >= 6;
+}
+
+/** Si hay una carga en espera, decide el defensor (la IA de nivel `level`). */
+export function aiReact(bus: CommandBus, level: AiLevel) {
+  if (bus.state.pendingCharge) bus.dispatch({ type: "reactCharge", fire: aiWantsOverwatch(bus.state, level) });
+}
+
 // --- Entrada -------------------------------------------------------------------
 
 /**
@@ -506,7 +536,7 @@ function commandStep(bus: CommandBus, W: Weights): boolean {
  */
 export function aiStep(bus: CommandBus, level: AiLevel): boolean {
   const s = bus.state;
-  if (!s.rulesMode || s.gameOver || level === "facil") return false;
+  if (!s.rulesMode || s.gameOver || level === "facil" || s.pendingCharge) return false;
   const W = WEIGHTS[level];
   switch (s.phase) {
     case "mando": return commandStep(bus, W);
@@ -522,9 +552,10 @@ export function aiStep(bus: CommandBus, level: AiLevel): boolean {
  * Juega la fase entera por el jugador activo (y los combates de los dos bandos, alternando)
  * y pasa a la siguiente. Para partidas IA contra IA y para el botón IA.
  */
-export function aiPlayPhase(bus: CommandBus, level: AiLevel, other: AiLevel = level) {
+export function aiPlayPhase(bus: CommandBus, level: AiLevel, other: AiLevel = level, opts: { humanDefends?: boolean } = {}) {
   const s = bus.state;
   if (!s.rulesMode || s.gameOver) return;
+  setReactHook(opts.humanDefends ? () => {} : (b) => aiReact(b, other));
   if (level === "facil" && s.phase !== "combate") { simplePhase(bus); return; }
   if (s.phase === "combate") {
     const act = mine(s), opp: Faction = act === "legion" ? "swarm" : "legion";
@@ -536,7 +567,10 @@ export function aiPlayPhase(bus: CommandBus, level: AiLevel, other: AiLevel = le
       side = side === act ? opp : act;
     }
   } else {
-    for (let guard = 0; guard < 200 && aiStep(bus, level); guard++) { /* paso a paso */ }
+    for (let guard = 0; guard < 200; guard++) {
+      if (bus.state.pendingCharge) { if (opts.humanDefends) return; aiReact(bus, other); continue; }
+      if (!aiStep(bus, level)) break;
+    }
   }
-  bus.dispatch({ type: "nextPhase" });
+  if (!bus.state.pendingCharge) bus.dispatch({ type: "nextPhase" });
 }

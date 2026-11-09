@@ -184,6 +184,9 @@
   #chat.folded #chat-log, #chat.folded #chat-form { display: none; }
   #chat-form { display: flex; gap: 4px; }
   #chat-form input { flex: 1; min-width: 0; }
+  #react { left: 50%; top: 22%; transform: translateX(-50%); z-index: 9; width: 380px; padding: 12px 14px; font-size: 13px; border-color: #c9a23a; }
+  #react h3 { margin: 0 0 6px; font-size: 16px; color: var(--gold); }
+  #react .row { justify-content: flex-end; gap: 6px; margin-top: 10px; }
   #board-tip { position: fixed; z-index: 6; pointer-events: none; font-size: 12px; padding: 5px 8px; max-width: 300px; }
   #action-menu { position: fixed; z-index: 8; min-width: 240px; max-width: 340px; padding: 6px; font-size: 13px; }
   #action-menu .am-head { display: flex; align-items: center; font-weight: 600; margin: 0 2px 4px; }
@@ -357,6 +360,7 @@
   <div id="chat-log"></div>
   <form id="chat-form"><input id="chat-input" placeholder="Escribe al rival…" maxlength="400" autocomplete="off"><button>Enviar</button></form>
 </div>
+<div id="react" class="panel" hidden role="dialog" aria-label="Fuego defensivo"></div>
 <div id="board-tip" class="panel" hidden></div>
 <div id="action-menu" class="panel" hidden></div>
 <div id="toast" hidden></div>

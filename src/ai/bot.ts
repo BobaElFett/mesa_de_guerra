@@ -78,13 +78,17 @@ function shootPhase(bus: CommandBus) {
   }
 }
 
+/** Quién decide el fuego defensivo cuando el bot carga (por defecto: no se hace). */
+let reactHook: (bus: CommandBus) => void = (bus) => { if (bus.state.pendingCharge) bus.dispatch({ type: "reactCharge", fire: false }); };
+export function setReactHook(fn: (bus: CommandBus) => void) { reactHook = fn; }
+
 function chargePhase(bus: CommandBus) {
   for (const u of ownUnits(bus.state)) {
     if (formation(bus.state, u.id).some((id) => heavy(bus.state, id))) continue;
     const o = chargeOptions(bus.state, u.id);
     if (o.blocked || o.done) continue;
     const t = o.targets.find((x) => !x.blocked && x.need <= 9);
-    if (t) bus.dispatch({ type: "charge", unit: u.id, target: t.unit });
+    if (t) { bus.dispatch({ type: "charge", unit: u.id, target: t.unit }); reactHook(bus); }
   }
 }
 

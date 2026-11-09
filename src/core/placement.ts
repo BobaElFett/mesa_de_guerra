@@ -18,6 +18,8 @@ export interface PlaceOptions {
   avoid?: (id: string) => Disc[];
   /** Franja de z permitida para cada miniatura (p. ej. su zona de despliegue, ya descontado el radio). */
   zBand?: (id: string) => [number, number] | null;
+  /** Sitios prohibidos por la escenografía (contenedores, búnker…): true si la peana de radio r no cabe en (x, z). */
+  blocked?: (x: number, z: number, r: number) => boolean;
   /** Ids que no encontraron sitio válido y se quedaron donde estaban (salida). */
   rejected?: string[];
 }
@@ -46,13 +48,14 @@ export function resolveOverlaps(all: Piece[], moves: PieceMove[], opts: PlaceOpt
       && (!band || (z >= band[0] - 1e-6 && z <= band[1] + 1e-6))
       && (!lim || Math.hypot(x - lim.x, z - lim.z) <= lim.max + 1e-6)
       && placed.every((q) => Math.hypot(x - q.x, z - q.z) >= r + q.r + GAP)
-      && avoid.every((q) => Math.hypot(x - q.x, z - q.z) > r + q.r);
+      && avoid.every((q) => Math.hypot(x - q.x, z - q.z) > r + q.r)
+      && !opts.blocked?.(x, z, r);
     let x = clamp(m.x, -hw + r, hw - r), z = clamp(m.z, -hd + r, hd - r);
     if (band) z = clamp(z, band[0], band[1]);
     if (!free(x, z)) {
       const best = search(x, z, free);
       if (best) { x = best[0]; z = best[1]; }
-      else if (lim || avoid.length || band) {
+      else if (lim || avoid.length || band || opts.blocked) {
         // Sin sitio válido: se queda donde estaba
         const orig = all.find((p) => p.id === m.id);
         if (orig) { x = orig.x; z = orig.z; opts.rejected?.push(m.id); }

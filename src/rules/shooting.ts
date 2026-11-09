@@ -48,6 +48,8 @@ export interface AttackLogEntry {
   cover: boolean;
   hitOn: number | null;
   woundOn: number;
+  /** Fuego defensivo contra una carga (#50). */
+  overwatch?: boolean;
   result: Pick<AttackResult, "attacks" | "hitRolls" | "hits" | "criticalHits" | "woundRolls" | "wounds" | "saveTarget" | "saveRolls" | "failedSaves" | "damageRolls" | "slain">;
 }
 
@@ -153,7 +155,7 @@ export function applyShoot(s: GameState, unitId: string, weaponId: string, targe
  * (daño, bajas, RNG y registro). Lo usan el disparo y el combate.
  */
 export function performAttack(s: GameState, kind: AttackLogEntry["kind"], unitId: string, attackers: Piece[],
-  weapon: Weapon, targetId: string, extra: { distance?: number; stationary?: boolean; cover?: boolean } = {}): AttackLogEntry {
+  weapon: Weapon, targetId: string, extra: { distance?: number; stationary?: boolean; cover?: boolean; overwatch?: boolean } = {}): AttackLogEntry {
   const attacker = s.units.find((u) => u.id === unitId)!;
   const target = s.units.find((u) => u.id === targetId)!;
   const tds = DATASHEETS[target.datasheet];
@@ -170,8 +172,9 @@ export function performAttack(s: GameState, kind: AttackLogEntry["kind"], unitId
     weapon, attackers: attackers.length,
     target: { profile: tds.profile, models: targetModels, armored: tds.abilities.includes("blindado") },
     distance: extra.distance, stationary: extra.stationary, cover: extra.cover,
-    rerollHitOnes: underCommand(s, unitId),
-    woundMod: kind === "disparo" && hasStrat(s, "punteria", unitId) ? 1 : 0,
+    rerollHitOnes: underCommand(s, unitId) && !extra.overwatch,
+    onlySixes: extra.overwatch,
+    woundMod: kind === "disparo" && !extra.overwatch && hasStrat(s, "punteria", unitId) ? 1 : 0,
     hitMod: kind === "combate" && hasStrat(s, "furia", unitId) ? 1 : 0,
   }, dice);
   s.rng = dice.state;
@@ -184,7 +187,8 @@ export function performAttack(s: GameState, kind: AttackLogEntry["kind"], unitId
   const entry: AttackLogEntry = {
     kind, turn: s.turn, player: PLAYERS.indexOf(attacker.faction), attacker: unitId, target: targetId,
     weapon: weapon.id, attackers: attackers.length, cover: !!extra.cover,
-    hitOn: hasAbility(weapon, "torrente") ? null : weapon.skill, woundOn: woundTarget(weapon.strength, tds.profile.T),
+    hitOn: hasAbility(weapon, "torrente") ? null : extra.overwatch ? 6 : weapon.skill, woundOn: woundTarget(weapon.strength, tds.profile.T),
+    ...(extra.overwatch ? { overwatch: true } : {}),
     result: {
       attacks: res.attacks, hitRolls: res.hitRolls, hits: res.hits, criticalHits: res.criticalHits, woundRolls: res.woundRolls,
       wounds: res.wounds, saveTarget: res.saveTarget, saveRolls: res.saveRolls, failedSaves: res.failedSaves,

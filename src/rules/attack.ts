@@ -77,6 +77,8 @@ export interface AttackInput {
   woundMod?: number;
   /** Repetir los 1 al impactar (Al mando). */
   rerollHitOnes?: boolean;
+  /** Fuego defensivo: solo impacta con 6 (sin modificadores). Torrente sigue impactando solo. */
+  onlySixes?: boolean;
 }
 
 export interface AttackResult {
@@ -128,7 +130,7 @@ export function resolveAttack(input: AttackInput, dice: DiceSource): AttackResul
       if (r === 1 && input.rerollHitOnes) r = dice.d6();
       res.hitRolls.push(r);
       const crit = r === 6;
-      const ok = r !== 1 && (crit || r + mod >= weapon.skill);
+      const ok = input.onlySixes ? crit : r !== 1 && (crit || r + mod >= weapon.skill);
       if (!ok) continue;
       hits++;
       if (crit) crits++;

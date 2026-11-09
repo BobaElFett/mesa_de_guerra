@@ -1,5 +1,6 @@
+import { crossesSolid, onForbiddenTerrain } from "./geometry";
 import { formation } from "./leaders";
-import { BASE_RADIUS, GameState, Piece } from "../core/state";
+import { BASE_RADIUS, GameState, Piece, TERRAIN } from "../core/state";
 import type { PieceMove } from "../core/commands";
 import { DATASHEETS } from "./datasheets";
 import { ENGAGEMENT, engaged } from "./geometry";
@@ -96,11 +97,16 @@ export function checkMove(s: GameState, unitId: string, moves: PieceMove[], move
   const byId = new Map(s.pieces.map((p) => [p.id, p]));
   let clamped = false;
   const wanted: PieceMove[] = [];
+  const through: string[] = [];
+  let wall: string | null = null;
   for (const m of moves) {
     const p = byId.get(m.id);
     if (!p) continue;
     const [cx, cz] = clampToAllowance(originOf(s, p), m.x, m.z, max);
     if (Math.hypot(cx - m.x, cz - m.z) > 0.01) clamped = true;
+    // No se atraviesan contenedores ni búnker (#49): el camino desde donde está ahora
+    const t = crossesSolid(s.terrain, p.x, p.z, cx, cz, BASE_RADIUS[p.model]);
+    if (t) { through.push(m.id); wall = TERRAIN[t.kind].name; continue; }
     wanted.push({ ...m, x: cx, z: cz });
   }
   // Un solo paso de colocación con todas las condiciones: sin solapes, fuera del trabamiento
@@ -109,11 +115,14 @@ export function checkMove(s: GameState, unitId: string, moves: PieceMove[], move
   const placed = resolveOverlaps(s.pieces, wanted, {
     limit: (id) => { const p = byId.get(id)!; const [x, z] = originOf(s, p); return { x, z, max }; },
     avoid: () => enemies,
+    blocked: (x, z, r) => onForbiddenTerrain(s.terrain, x, z, r + 0.05) !== null,
     rejected,
   });
   const out = placed.filter((m) => !rejected.includes(m.id));
+  rejected.push(...through);
   let message: string | null = null;
-  if (rejected.length) message = `No se puede acabar a 1" de un enemigo ni encima de otra miniatura (${rejected.length === 1 ? "1 miniatura vuelve" : `${rejected.length} vuelven`} a su sitio).`;
+  if (through.length) message = `No se puede atravesar ${wall === "Búnker" ? "el búnker" : `los ${wall!.toLowerCase()}`}: rodéalo (arrastra en dos tramos). ${through.length === 1 ? "1 miniatura vuelve" : `${through.length} vuelven`} a su sitio.`;
+  else if (rejected.length) message = `No se puede acabar a 1" de un enemigo ni encima de otra miniatura (${rejected.length === 1 ? "1 miniatura vuelve" : `${rejected.length} vuelven`} a su sitio).`;
   else if (clamped) message = `Hasta ${fmt(max)} desde donde empezó la fase.`;
   return { moves: out, rejected, message };
 }

@@ -1,3 +1,4 @@
+import { onForbiddenTerrain } from "./geometry";
 import { hasStrat } from "./stratagems";
 import { formation, formationModels } from "./leaders";
 import { GameState, Piece, PLAYERS } from "../core/state";
@@ -101,7 +102,7 @@ function advanceInto(s: GameState, unitId: string, targetId: string, max: number
     moves.push({ id: p.id, x: p.x + (dx / len) * travel, z: p.z + (dz / len) * travel });
   }
   if (!moves.length) return;
-  const fixed = resolveOverlaps(s.pieces, moves);
+  const fixed = resolveOverlaps(s.pieces, moves, { blocked: (x, z, r) => onForbiddenTerrain(s.terrain, x, z, r + 0.05) !== null });
   const byId = new Map(fixed.map((m) => [m.id, m]));
   for (const p of s.pieces) {
     const m = byId.get(p.id);

@@ -1,7 +1,7 @@
 import { CommandBus } from "../core/commands";
 import { Faction, GameState, PLAYERS } from "../core/state";
 import { pendingChargers } from "../rules/melee";
-import { aiLastAction, aiPlayPhase, aiStep, canFight, fightStep } from "./tactics";
+import { aiLastAction, aiPlayPhase, aiStep, aiWantsOverwatch, canFight, fightStep } from "./tactics";
 import { AI_LEVEL_NAME, runtime, settings } from "./settings";
 
 // Jugar contra la IA (#38): cuando le toca al bando de la IA, juega sus fases paso a paso,
@@ -54,6 +54,18 @@ export class AiController {
     if (this.busy()) { this.wait = Math.max(this.wait, 250); return; }
     if (this.wait > 0) { this.wait -= dt * 1000; return; }
 
+    // Carga en espera de fuego defensivo: decide la IA si defiende ella; si no, espera al jugador
+    const pc = s.pendingCharge;
+    if (pc) {
+      if (PLAYERS[pc.defender] === side) {
+        const fire = aiWantsOverwatch(s, settings.aiLevel);
+        this.bus.dispatch({ type: "reactCharge", fire });
+        if (fire) this.onAction("Fuego defensivo contra la carga");
+        this.wait = STEP_MS;
+      } else this.onStatus("Te cargan: ¿fuego defensivo?");
+      return;
+    }
+
     if (s.phase === "combate") {
       if (this.aiFightTurn(s)) {
         this.onStatus(`${name} combate…`);
@@ -70,7 +82,7 @@ export class AiController {
     if (!aiTurn) { this.onStatus(null); return; }
     this.onStatus(`${name} juega…`);
     if (settings.aiLevel === "facil") {
-      aiPlayPhase(this.bus, "facil");
+      aiPlayPhase(this.bus, "facil", "facil", { humanDefends: true });
       this.wait = STEP_MS * 1.5;
       return;
     }

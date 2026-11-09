@@ -75,6 +75,7 @@ function cmdPermission(s: GameState, c: Command, host: boolean, side: Faction): 
       if (s.phase === "despliegue") return null;
       return active === side ? null : "No es tu turno.";
     case "spendCP": return PLAYERS[c.player] === side ? null : "Esos PM son del rival.";
+    case "reactCharge": return s.pendingCharge && PLAYERS[s.pendingCharge.defender] === side ? null : "No te toca decidir.";
     default: return null;                              // tiradas de dados sueltas, etc.
   }
 }

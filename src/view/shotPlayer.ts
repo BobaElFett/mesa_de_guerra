@@ -73,7 +73,7 @@ export class ShotPlayer {
     const tUnit = s.units.find((u) => u.id === entry.target)!;
     const aUnit = s.units.find((u) => u.id === entry.attacker)!;
     const tName = DATASHEETS[tUnit.datasheet].name;
-    const verb = entry.kind === "combate" ? "golpea con" : "dispara con";
+    const verb = entry.kind === "combate" ? "golpea con" : entry.overwatch ? "hace fuego defensivo con" : "dispara con";
     this.header = `<b>${DATASHEETS[aUnit.datasheet].name}</b> ${verb} <b>${w.name}</b> (${entry.attackers} ${entry.attackers === 1 ? "miniatura" : "miniaturas"}) a <b>${tName}</b>${entry.cover ? " · <span class=\"cov\">en cobertura</span>" : ""}`;
     this.steps = [];
     const hitOn = entry.hitOn;

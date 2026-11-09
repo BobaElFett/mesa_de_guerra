@@ -1,3 +1,6 @@
+import { onForbiddenTerrain } from "./geometry";
+import { resolveOverlaps } from "../core/placement";
+import { zoneBand } from "./deployment";
 import { DEFAULT_MISSION, MissionId, setupMission } from "./missions";
 import { BASE_RADIUS, BOARD, DEPLOY_DEPTH, Faction, GameState, Piece, Unit } from "../core/state";
 import { DATASHEETS, DatasheetId, unitPoints } from "./datasheets";
@@ -110,6 +113,14 @@ export function deployArmies(s: GameState, legion: ArmyList, swarm: ArmyList, mi
       x += b.width;
     });
   }
+  // Nadie empieza encima de contenedores, búnker o barricadas: al hueco más cercano de su zona
+  const mine = s.pieces.filter((p) => p.unit);
+  const fixed = resolveOverlaps(s.pieces, mine.map((p) => ({ id: p.id, x: p.x, z: p.z })), {
+    zBand: (id) => { const p = mine.find((x) => x.id === id)!; return zoneBand(p.faction, BASE_RADIUS[p.model]); },
+    blocked: (x, z, r) => onForbiddenTerrain(s.terrain, x, z, r + 0.05) !== null,
+  });
+  const at = new Map(fixed.map((m) => [m.id, m]));
+  s.pieces = s.pieces.map((p) => { const m = at.get(p.id); return m ? { ...p, x: m.x, z: m.z } : p; });
   // Partida nueva: empieza en la fase de despliegue, con los dos bandos a 1 PM
   s.turnLog = { moves: {}, origins: {} };
   s.turn = 1; s.active = 0; s.phase = "despliegue"; s.cp = [1, 1]; s.gameOver = false;

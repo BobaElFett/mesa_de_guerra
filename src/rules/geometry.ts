@@ -7,14 +7,35 @@ export const COHERENCY = 2;     // una miniatura debe estar a 2" de otra de su u
 export const ENGAGEMENT = 1;    // trabada a 1" o menos de una enemiga
 
 /** Qué hace cada tipo de escenografía con la visión. */
-export const TERRAIN_RULES: Record<TerrainKind, { blocks: boolean; cover: boolean }> = {
-  ruina: { blocks: true, cover: true },        // oculta: no se ve a través salvo estando dentro
-  ruinaGrande: { blocks: true, cover: true },
-  cajas: { blocks: true, cover: true },
-  bunker: { blocks: true, cover: true },
-  crater: { blocks: false, cover: true },      // baja: se ve por encima, pero da cobertura
-  barricada: { blocks: false, cover: true },
+// blocks: oculta (no se ve a través); cover: da cobertura; solid: no se puede atravesar ni ocupar
+// (#49); noEnd: se puede cruzar pero no acabar encima (una barricada).
+export const TERRAIN_RULES: Record<TerrainKind, { blocks: boolean; cover: boolean; solid: boolean; noEnd: boolean }> = {
+  ruina: { blocks: true, cover: true, solid: false, noEnd: false },        // oculta: no se ve a través salvo estando dentro
+  ruinaGrande: { blocks: true, cover: true, solid: false, noEnd: false },
+  cajas: { blocks: true, cover: true, solid: true, noEnd: true },
+  bunker: { blocks: true, cover: true, solid: true, noEnd: true },
+  crater: { blocks: false, cover: true, solid: false, noEnd: false },      // baja: se ve por encima, pero da cobertura
+  barricada: { blocks: false, cover: true, solid: false, noEnd: true },
 };
+
+/** ¿Pisa la peana (x, z, r) escenografía en la que no se puede acabar? */
+export function onForbiddenTerrain(terrain: TerrainPiece[], x: number, z: number, r: number): TerrainPiece | null {
+  for (const t of terrain) if (TERRAIN_RULES[t.kind].noEnd && insideTerrain(t, x, z, r * 0.85)) return t;
+  return null;
+}
+
+/** ¿Atraviesa el camino recto de a a b (con una peana de radio r) escenografía sólida? */
+export function crossesSolid(terrain: TerrainPiece[], ax: number, az: number, bx: number, bz: number, r: number): TerrainPiece | null {
+  const len = Math.hypot(bx - ax, bz - az);
+  if (len < 0.05) return null;
+  const nx = -(bz - az) / len, nz = (bx - ax) / len, o = r * 0.6;
+  for (const t of terrain) {
+    if (!TERRAIN_RULES[t.kind].solid) continue;
+    if (insideTerrain(t, ax, az, r * 0.5)) continue;           // ya estaba metida: que pueda salir
+    for (const k of [-o, 0, o]) if (segmentHitsTerrain(t, ax + nx * k, az + nz * k, bx + nx * k, bz + nz * k)) return t;
+  }
+  return null;
+}
 
 export interface Disc { x: number; z: number; r: number }
 

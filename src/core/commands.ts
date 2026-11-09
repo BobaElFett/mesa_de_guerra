@@ -1,3 +1,4 @@
+import { declareCharge, resolveReaction } from "../rules/reactions";
 import { applyStratagem, StratId } from "../rules/stratagems";
 import type { MissionId } from "../rules/missions";
 import { formation } from "../rules/leaders";
@@ -43,7 +44,9 @@ export type Command =
   /** Gastar puntos de mando (p. ej. 1 PM para repetir una tirada). */
   | { type: "spendCP"; player: 0 | 1; amount: number }
   /** Estratagema: gasta PM y da su efecto a una unidad del jugador activo. */
-  | { type: "stratagem"; id: StratId; unit: string };
+  | { type: "stratagem"; id: StratId; unit: string }
+  /** El defensor de una carga en espera decide si hace fuego defensivo (#50). */
+  | { type: "reactCharge"; fire: boolean };
 
 export interface PieceMove { id: string; x: number; z: number; rot?: number }
 
@@ -51,6 +54,8 @@ const MAX_ROLLS = 30;
 
 /** Aplica una orden y devuelve un estado nuevo. Pura: no modifica `state`. */
 export function applyCommand(state: GameState, cmd: Command): GameState {
+  // Con una carga en espera de la decisión del defensor, solo vale esa decisión (y dados sueltos)
+  if (state.pendingCharge && cmd.type !== "reactCharge" && cmd.type !== "roll" && cmd.type !== "reroll") return state;
   const s = cloneState(state);
   switch (cmd.type) {
     case "move": {
@@ -143,7 +148,11 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
       break;
     }
     case "charge": {
-      applyCharge(s, cmd.unit, cmd.target);
+      declareCharge(s, cmd.unit, cmd.target);      // con fuego defensivo posible, queda en espera
+      break;
+    }
+    case "reactCharge": {
+      resolveReaction(s, cmd.fire);
       break;
     }
     case "fight": {

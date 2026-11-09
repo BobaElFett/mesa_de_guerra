@@ -5,7 +5,7 @@ import { TEST_LEGION, TEST_SWARM } from "../src/rules/armies";
 import { NetSession } from "../src/net/session";
 import { ChunkedTransport } from "../src/net/transport";
 import { NetMsg, stateHash } from "../src/net/protocol";
-import { aiPlayPhase } from "../src/ai/tactics";
+import { aiPlayPhase, aiReact } from "../src/ai/tactics";
 import { PLAYERS } from "../src/core/state";
 
 // Par de transportes en memoria, síncrono (el mensaje llega en el acto)
@@ -83,13 +83,14 @@ test("partida entera: la Legión en un navegador, el Enjambre en otro, acaban ig
     const s = hb.state;
     const busOf = (i: 0 | 1) => (i === 0 ? hb : gb);
     if (s.phase === "despliegue") { hb.dispatch({ type: "nextPhase" }); continue; }
+    if (s.pendingCharge) { aiReact(busOf(s.pendingCharge.defender), "dificil"); continue; }
     if (s.phase === "combate") {
       // Cada navegador combate con lo suyo: el bot del activo hace la fase entera, los dos bandos;
       // aquí lo repartimos: el activo juega su fase y sus combates; los del otro se mandan desde el otro bus
       aiPlayPhaseSplit(hb, gb);
       continue;
     }
-    aiPlayPhase(busOf(s.active), "dificil");
+    aiPlayPhase(busOf(s.active), "dificil", "dificil", { humanDefends: true });
   }
   assert.ok(hb.state.gameOver);
   assert.equal(stateHash(gb.state), stateHash(hb.state));

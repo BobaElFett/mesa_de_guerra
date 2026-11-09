@@ -1,3 +1,4 @@
+import { onForbiddenTerrain } from "./geometry";
 import { BASE_RADIUS, BOARD, DEPLOY_DEPTH, Faction, GameState } from "../core/state";
 import { PieceMove } from "../core/commands";
 import { resolveOverlaps } from "../core/placement";
@@ -29,6 +30,7 @@ export function checkDeploy(s: GameState, moves: PieceMove[]): { moves: PieceMov
   const rejected: string[] = [];
   const placed = resolveOverlaps(s.pieces, wanted, {
     zBand: (id) => { const p = byId.get(id)!; return zoneBand(p.faction, BASE_RADIUS[p.model]); },
+    blocked: (x, z, r) => onForbiddenTerrain(s.terrain, x, z, r + 0.05) !== null,
     rejected,
   });
   const out = placed.filter((m) => !rejected.includes(m.id));

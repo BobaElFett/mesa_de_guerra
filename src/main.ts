@@ -24,6 +24,8 @@ import { stateHash } from "./net/protocol";
 import { fightOptions } from "./rules/melee";
 import { NetDialog } from "./ui/netDialog";
 import { ActionMenu } from "./ui/actionMenu";
+import { overwatchWeapons } from "./rules/reactions";
+import { expectedAttack } from "./ai/evaluate";
 import { actionsAgainst, pendingText, pendingUnits, selectedFormation, validTargets } from "./rules/actions";
 import { ChatPanel } from "./ui/chat";
 import { runtime } from "./ai/settings";
@@ -244,7 +246,7 @@ document.getElementById("bot-phase")!.addEventListener("click", () => {
   if (!bus.state.rulesMode || bus.state.gameOver) return;
   if (settings.aiSide) { ai.paused = !ai.paused; refresh(); return; }
   if (bus.state.phase === "despliegue") { bus.dispatch({ type: "nextPhase" }); return; }
-  aiPlayPhase(bus, settings.aiLevel);
+  aiPlayPhase(bus, settings.aiLevel, settings.aiLevel, { humanDefends: true });
 });
 // Acciones sobre el tablero (#46) y guía de la fase (#47)
 /** ¿Puede este jugador mandar sobre ese bando? (no sobre el de la IA ni, en línea, el del rival) */
@@ -322,6 +324,30 @@ window.addEventListener("keydown", (e) => {
   cam.panTo(ms.reduce((n, p) => n + p.x, 0) / ms.length, ms.reduce((n, p) => n + p.z, 0) / ms.length, 40);
 });
 let confirmAdvance = 0;
+/** Fuego defensivo (#50): si cargan a una unidad de un bando que manda este jugador, pregunta. */
+function updateReaction() {
+  const el = document.getElementById("react")!;
+  const s = bus.state;
+  const pc = s.pendingCharge;
+  const show = !!pc && controllable(PLAYERS[pc.defender]);
+  el.hidden = !show;
+  if (!show || !pc) return;
+  const key = `${bus.length}`;
+  if (el.dataset.key === key) return;
+  el.dataset.key = key;
+  const nm = (u: string) => DATASHEETS[s.units.find((x) => x.id === u)!.datasheet].name;
+  let dmg = 0;
+  for (const { weapon, shooters } of overwatchWeapons(s, pc.target, pc.unit)) dmg += expectedAttack(s, weapon, shooters.length, pc.unit, { onlySixes: true }).damage;
+  el.innerHTML = `<h3>¡Te cargan!</h3>
+    <div><b>${nm(pc.unit)}</b> declara una carga contra tu <b>${nm(pc.target)}</b>.</div>
+    <div style="margin-top:4px">¿Fuego defensivo? Disparas con todo lo que llegue, pero solo impactan los 6 (Torrente impacta igual). Cuesta 1 PM (te quedan ${s.cp[pc.defender]}).
+    <span class="dim">Daño esperado: ~${dmg.toLocaleString("es-ES", { maximumFractionDigits: 1 })} heridas.</span></div>
+    <div class="row"><button data-fire="0">No</button><button data-fire="1" class="primary">Fuego defensivo · 1 PM</button></div>`;
+}
+document.getElementById("react")!.addEventListener("click", (e) => {
+  const b = (e.target as HTMLElement).closest("button[data-fire]") as HTMLButtonElement | null;
+  if (b) bus.dispatch({ type: "reactCharge", fire: b.dataset.fire === "1" });
+});
 hud.guideText = () => {
   const s = bus.state;
   if (!s.rulesMode || s.phase === "despliegue" || s.phase === "mando") return null;
@@ -462,6 +488,7 @@ function refresh(_s?: unknown, cmd?: Command | null) {
   controls.prune((id) => !!pieces.placedOf(id));
   hud.render(bus.state);
   netStatus();
+  updateReaction();
   const aiBtn = $btn("bot-phase");
   aiBtn.textContent = settings.aiSide ? (ai.paused ? "Reanudar IA" : "Pausar IA") : "IA";
   aiBtn.title = settings.aiSide ? `La IA (${AI_LEVEL_NAME[settings.aiLevel]}) lleva ${FACTIONS[settings.aiSide].of.replace(/^de /, "").replace(/^del /, "el ")}` : "La IA juega esta fase por el bando activo";

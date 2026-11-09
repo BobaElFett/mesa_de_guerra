@@ -32,6 +32,8 @@ export interface AttackContext {
   hitMod?: number;
   woundMod?: number;
   rerollHitOnes?: boolean;
+  /** Fuego defensivo: solo impactan los 6. */
+  onlySixes?: boolean;
 }
 
 /**
@@ -53,8 +55,8 @@ export function expectedAttack(s: GameState, weapon: Weapon, attackers: number, 
   if (hasAbility(weapon, "torrente") || weapon.skill === null) { hits = attacks; crits = 0; }
   else {
     const mod = clamp1((ctx.hitMod ?? 0) + (hasAbility(weapon, "pesada") && ctx.stationary ? 1 : 0));
-    let p = pD6(weapon.skill - mod);
-    if (ctx.rerollHitOnes) p += p / 6;
+    let p = ctx.onlySixes ? 1 / 6 : pD6(weapon.skill - mod);
+    if (ctx.rerollHitOnes && !ctx.onlySixes) p += p / 6;
     hits = attacks * p;
     crits = attacks * (1 / 6) * (ctx.rerollHitOnes ? 7 / 6 : 1);
     if (hasAbility(weapon, "sostenida")) hits += crits * abilityX(weapon, "sostenida");

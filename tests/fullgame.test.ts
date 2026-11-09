@@ -1,3 +1,4 @@
+import { onForbiddenTerrain } from "../src/rules/geometry";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { CommandBus } from "../src/core/commands";
@@ -16,7 +17,8 @@ export function invariants(s: GameState, where: string) {
     assert.ok(Math.abs(p.x) <= BOARD.w / 2 + 1e-6 && Math.abs(p.z) <= BOARD.d / 2 + 1e-6, `${where}: ${p.id} fuera de la mesa`);
     assert.ok(p.unit && units.has(p.unit), `${where}: ${p.id} sin unidad`);
     assert.ok((p.damage ?? 0) >= 0, `${where}: ${p.id} daño negativo`);
-    void r;
+    const t = onForbiddenTerrain(s.terrain, p.x, p.z, r);
+    assert.ok(!t, `${where}: ${p.id} (${p.model}) encima de ${t?.kind} en ${p.x},${p.z}`);
   }
   for (let i = 0; i < s.pieces.length; i++) for (let j = i + 1; j < s.pieces.length; j++) {
     const a = s.pieces[i], b = s.pieces[j];

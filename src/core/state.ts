@@ -109,7 +109,9 @@ export interface GameState {
   vp?: [number, number];     // puntos de victoria de cada jugador
   vpLog?: VpEntry[];
   kills?: KillEntry[];       // unidades destruidas, en orden
-  killPts?: [number, number]; // puntos de miniaturas enemigas eliminadas por cada jugador (Caza de presas)
+  killPts?: [number, number];
+  /** Carga declarada esperando a que el defensor decida si hace fuego defensivo. */
+  pendingCharge?: { unit: string; target: string; defender: 0 | 1 } | null; // puntos de miniaturas enemigas eliminadas por cada jugador (Caza de presas)
 }
 
 export const PLAYERS: Faction[] = ["legion", "swarm"];
