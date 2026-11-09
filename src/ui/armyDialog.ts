@@ -1,3 +1,5 @@
+import { MISSIONS, MissionId } from "../rules/missions";
+import { AiLevel, saveSettings, settings } from "../ai/settings";
 import { CommandBus } from "../core/commands";
 import { Faction, FACTIONS } from "../core/state";
 import { DATASHEETS, DatasheetId, unitPoints } from "../rules/datasheets";
@@ -30,6 +32,8 @@ export class ArmyDialog {
   private lists: Record<Faction, ArmyList> = { legion: clone(TEST_LEGION), swarm: clone(TEST_SWARM) };
   onDeployed: () => void = () => {};
   onClosed: () => void = () => {};
+  /** Cambió la misión o la IA. */
+  onSettings: () => void = () => {};
 
   constructor(private bus: CommandBus, private notify: (m: string) => void) {
     $("armies-open").addEventListener("click", () => this.show());
@@ -39,6 +43,23 @@ export class ArmyDialog {
     window.addEventListener("keydown", (e) => { if (e.code === "Escape" && !$("armies-backdrop").hidden) this.hide(); });
     $("armies").addEventListener("click", (e) => this.click(e));
     $("armies").addEventListener("change", (e) => this.change(e));
+    // Misión y rival (IA) de la próxima partida
+    const pick = $<HTMLSelectElement>("mission-pick");
+    pick.innerHTML = Object.values(MISSIONS).map((m) => `<option value="${m.id}">${m.name}</option>`).join("");
+    pick.value = settings.mission;
+    $<HTMLSelectElement>("ai-side").value = settings.aiSide ?? "";
+    $<HTMLSelectElement>("ai-level").value = settings.aiLevel;
+    const desc = () => { $("mission-desc").textContent = MISSIONS[settings.mission].summary; };
+    desc();
+    $("armies-setup").addEventListener("change", (e) => {
+      e.stopPropagation();
+      settings.mission = pick.value as MissionId;
+      settings.aiSide = ($<HTMLSelectElement>("ai-side").value || null) as Faction | null;
+      settings.aiLevel = $<HTMLSelectElement>("ai-level").value as AiLevel;
+      saveSettings();
+      desc();
+      this.onSettings();
+    });
     $("armies").addEventListener("input", (e) => {
       const t = e.target as HTMLInputElement;
       if (t.dataset.name) this.lists[t.dataset.name as Faction].name = t.value;
@@ -63,7 +84,7 @@ export class ArmyDialog {
   private deploy() {
     const errs = SIDES.flatMap((f) => validateList(this.lists[f], f));
     if (errs.length) { this.notify("Corrige las listas antes de desplegar."); return; }
-    this.bus.dispatch({ type: "setArmies", legion: clone(this.lists.legion), swarm: clone(this.lists.swarm) });
+    this.bus.dispatch({ type: "setArmies", legion: clone(this.lists.legion), swarm: clone(this.lists.swarm), mission: settings.mission });
     if (!this.bus.state.rulesMode) this.bus.dispatch({ type: "setRulesMode", on: true });
     this.hide();
     this.notify(`Ejércitos desplegados: ${listPoints(this.lists.legion)} y ${listPoints(this.lists.swarm)} puntos`);

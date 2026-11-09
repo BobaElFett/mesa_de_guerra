@@ -1,3 +1,5 @@
+import { applyStratagem, StratId } from "../rules/stratagems";
+import type { MissionId } from "../rules/missions";
 import { formation } from "../rules/leaders";
 import { GameState, BOARD, cloneState, createInitialState, TerrainKind, TERRAIN } from "./state";
 import { rollDice } from "./rng";
@@ -21,7 +23,7 @@ export type Command =
   | { type: "addTerrain"; kind: TerrainKind; x: number; z: number; rot: number }
   | { type: "removeTerrain"; ids: string[] }
   /** Sustituye los ejércitos por dos listas desplegadas en sus zonas. */
-  | { type: "setArmies"; legion: ArmyList; swarm: ArmyList }
+  | { type: "setArmies"; legion: ArmyList; swarm: ArmyList; mission?: MissionId }
   /** Mesa libre: retirar miniaturas a mano (bajas, recolocar…). */
   | { type: "removePieces"; ids: string[] }
   /** Volver a tirar algunos dados de la última tirada (por índice). */
@@ -39,7 +41,9 @@ export type Command =
   /** Fase de movimiento: la unidad elige mover, avanzar (tira 1D6) o retirarse. */
   | { type: "declareMove"; unit: string; kind: MoveKind }
   /** Gastar puntos de mando (p. ej. 1 PM para repetir una tirada). */
-  | { type: "spendCP"; player: 0 | 1; amount: number };
+  | { type: "spendCP"; player: 0 | 1; amount: number }
+  /** Estratagema: gasta PM y da su efecto a una unidad del jugador activo. */
+  | { type: "stratagem"; id: StratId; unit: string };
 
 export interface PieceMove { id: string; x: number; z: number; rot?: number }
 
@@ -90,7 +94,7 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
       break;
     }
     case "setArmies": {
-      deployArmies(s, cmd.legion, cmd.swarm);
+      deployArmies(s, cmd.legion, cmd.swarm, cmd.mission);
       break;
     }
     case "removePieces": {
@@ -148,6 +152,10 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
     }
     case "setRulesMode": {
       s.rulesMode = !!cmd.on;
+      break;
+    }
+    case "stratagem": {
+      applyStratagem(s, cmd.id, cmd.unit);
       break;
     }
     case "spendCP": {

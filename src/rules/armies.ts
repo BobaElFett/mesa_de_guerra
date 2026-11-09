@@ -1,3 +1,4 @@
+import { DEFAULT_MISSION, MissionId, setupMission } from "./missions";
 import { BASE_RADIUS, BOARD, DEPLOY_DEPTH, Faction, GameState, Piece, Unit } from "../core/state";
 import { DATASHEETS, DatasheetId, unitPoints } from "./datasheets";
 
@@ -54,7 +55,7 @@ export function validateList(list: ArmyList, faction: Faction, limit = POINTS_LI
  * sus zonas: cada unidad en un bloque de filas de hasta 5, unidades una al lado de otra.
  * Muta `s`. Determinista.
  */
-export function deployArmies(s: GameState, legion: ArmyList, swarm: ArmyList) {
+export function deployArmies(s: GameState, legion: ArmyList, swarm: ArmyList, mission: MissionId = DEFAULT_MISSION) {
   s.units = [];
   s.pieces = [];
   let unitN = 0;
@@ -113,6 +114,7 @@ export function deployArmies(s: GameState, legion: ArmyList, swarm: ArmyList) {
   s.turnLog = { moves: {}, origins: {} };
   s.turn = 1; s.active = 0; s.phase = "despliegue"; s.cp = [1, 1]; s.gameOver = false;
   s.combatLog = []; s.moraleLog = [];
+  setupMission(s, mission);
 }
 
 /** Listas de la partida de prueba (#25): unos 450 puntos por bando. */

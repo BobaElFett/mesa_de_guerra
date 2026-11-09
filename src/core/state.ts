@@ -3,6 +3,7 @@ import type { Phase } from "../rules/turn";
 import type { TurnLog } from "../rules/movement";
 import type { AttackLogEntry } from "../rules/shooting";
 import type { MoraleEntry } from "../rules/morale";
+import type { KillEntry, MissionId, Objective, VpEntry } from "../rules/missions";
 
 // Estado de la partida: todo lo que hay en la mesa, serializable a JSON.
 // La vista Three.js solo lo lee; nada lo cambia salvo applyCommand (commands.ts).
@@ -102,6 +103,12 @@ export interface GameState {
   terrain: TerrainPiece[];
   nextTerrainId: number;     // para dar ids nuevos (T1, T2…) sin repetir
   rolls: RollRecord[];       // últimas tiradas, la más reciente al final
+  /** Misión en juego (null: ninguna, mesa libre). */
+  mission?: MissionId | null;
+  objectives?: Objective[];
+  vp?: [number, number];     // puntos de victoria de cada jugador
+  vpLog?: VpEntry[];
+  kills?: KillEntry[];       // unidades destruidas, en orden
 }
 
 export const PLAYERS: Faction[] = ["legion", "swarm"];
@@ -129,6 +136,7 @@ export function createInitialState(seed: number): GameState {
     version: 1, seed, rng: seed, turn: 1, active: 0, phase: "mando", cp: [1, 1], rulesMode: false, gameOver: false,
     turnLog: { moves: {}, origins: {} }, combatLog: [], moraleLog: [],
     pieces, units, terrain, nextTerrainId: terrain.length + 1, rolls: [],
+    mission: null, objectives: [], vp: [0, 0], vpLog: [], kills: [],
   };
 }
 

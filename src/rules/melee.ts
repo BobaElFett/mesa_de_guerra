@@ -1,3 +1,4 @@
+import { hasStrat } from "./stratagems";
 import { formation, formationModels } from "./leaders";
 import { GameState, Piece, PLAYERS } from "../core/state";
 import { rollDice } from "../core/rng";
@@ -62,11 +63,18 @@ export function applyCharge(s: GameState, unitId: string, targetId: string): Cha
   const o = chargeOptions(s, unitId);
   const t = o.targets.find((x) => x.unit === targetId);
   if (o.blocked || o.done || !t || t.blocked) return null;
-  const [dice, rng] = rollDice(s.rng, 2, 6);
+  let [dice, rng] = rollDice(s.rng, 2, 6);
   s.rng = rng;
-  const roll = dice[0] + dice[1];
+  let roll = dice[0] + dice[1];
   s.rolls.push({ player: s.active, turn: s.turn, sides: 6, results: dice });
-  const success = roll >= t.distance - ENGAGEMENT;
+  let success = roll >= t.distance - ENGAGEMENT;
+  if (!success && hasStrat(s, "impetu", unitId)) {          // Ímpetu: se repite la tirada fallada
+    [dice, rng] = rollDice(s.rng, 2, 6);
+    s.rng = rng;
+    roll = dice[0] + dice[1];
+    s.rolls.push({ player: s.active, turn: s.turn, sides: 6, results: dice });
+    success = roll >= t.distance - ENGAGEMENT;
+  }
   const rec: ChargeRecord = { target: targetId, roll, need: t.need, success };
   s.turnLog.charges = { ...(s.turnLog.charges ?? {}) };
   for (const u of formation(s, unitId)) s.turnLog.charges[u] = rec;     // el líder carga con su escuadra

@@ -1,3 +1,5 @@
+import { outcome } from "../rules/missions";
+import { hasStrat, STRAT_IDS, StratId, STRATAGEMS, stratBlocked } from "../rules/stratagems";
 import { formation, partnerOf, underCommand } from "../rules/leaders";
 import { CommandBus } from "../core/commands";
 import { FACTIONS, GameState, PLAYERS, RollRecord, TERRAIN } from "../core/state";
@@ -170,7 +172,22 @@ function phaseActions(s: GameState, uid: string, inFormation = false): string {
     const first = pendingChargers(s);
     if (first.length && !first.includes(uid)) html += `<div class="dim">Pendientes de combatir primero: ${first.map((u) => DATASHEETS[s.units.find((x) => x.id === u)!.datasheet].name).join(", ")}.</div>`;
   }
+  html += stratButtons(s, uid);
   return html;
+}
+
+/** Estratagemas de la fase en curso para esta unidad (solo en el turno de su bando). */
+function stratButtons(s: GameState, uid: string): string {
+  const unit = s.units.find((u) => u.id === uid)!;
+  if (s.gameOver || unit.faction !== PLAYERS[s.active]) return "";
+  const list = STRAT_IDS.filter((id) => STRATAGEMS[id].phase === s.phase);
+  if (!list.length) return "";
+  return `<div class="strats">` + list.map((id) => {
+    const st = STRATAGEMS[id];
+    if (hasStrat(s, id, uid)) return `<span class="badge lead" title="${st.text}">${st.name} activa</span>`;
+    const why = stratBlocked(s, id, uid);
+    return `<button data-strat="${id}|${uid}"${why ? " disabled" : ""} title="${st.text}${why ? ` — ${why}` : ""}">${st.name} · ${st.cost} PM</button>`;
+  }).join(" ") + `</div>`;
 }
 
 const fmtIn = (v: number) => `${v.toFixed(1).replace(".", ",")}"`;
@@ -207,6 +224,8 @@ export class Hud {
       if (ch && !ch.disabled) { const [u, t] = ch.dataset.charge!.split("|"); this.onCharge(u, t); }
       const fi = (e.target as HTMLElement).closest("button[data-fight]") as HTMLButtonElement | null;
       if (fi && !fi.disabled) { const [u, t] = fi.dataset.fight!.split("|"); this.onFight(u, t); }
+      const st = (e.target as HTMLElement).closest("button[data-strat]") as HTMLButtonElement | null;
+      if (st && !st.disabled) { const [id, u] = st.dataset.strat!.split("|"); bus.dispatch({ type: "stratagem", id: id as StratId, unit: u }); }
     });
     $("sel").addEventListener("mouseover", (e) => {
       const b = (e.target as HTMLElement).closest("button[data-target]") as HTMLButtonElement | null;
@@ -255,7 +274,10 @@ export class Hud {
     const who = f.of.replace(/(Legión Astral|Enjambre)/, `<b style="color:${f.color}">$1</b>`);
     const rounds = s.rulesMode ? `${s.turn}/${MAX_ROUNDS}` : `${s.turn}`;
     const deploying = s.phase === "despliegue" && !s.gameOver;
-    $("turn-text").innerHTML = s.gameOver ? `<b>Fin de la partida</b> · 5 rondas jugadas`
+    const res = outcome(s);
+    const endText = !s.mission ? "5 rondas jugadas"
+      : res.winner ? `gana ${FACTIONS[res.winner].name.replace(/^(.*)$/, `<b style="color:${FACTIONS[res.winner].color}">$1</b>`)} ${res.vp[0]}–${res.vp[1]}` : `empate ${res.vp[0]}–${res.vp[1]}`;
+    $("turn-text").innerHTML = s.gameOver ? `<b>Fin de la partida</b> · ${endText}`
       : deploying ? `<b>Despliegue</b> · los dos bandos colocan` : `Ronda ${rounds} · Turno ${who}`;
     $("mode").textContent = s.rulesMode ? "Modo reglas" : "Mesa libre";
     $("mode").classList.toggle("on", s.rulesMode);
@@ -269,7 +291,8 @@ export class Hud {
     phases.hidden = !s.rulesMode;
     if (s.rulesMode) {
       phases.innerHTML = (deploying ? [<Phase>"despliegue", ...PHASES] : PHASES).map((p) => `<span class="ph${p === s.phase && !s.gameOver ? " now" : ""}">${PHASE_INFO[p].name}</span>`).join("")
-        + `<span class="cp" title="Puntos de mando">PM <b style="color:${FACTIONS.legion.color}">${s.cp[0]}</b> · <b style="color:${FACTIONS.swarm.color}">${s.cp[1]}</b></span>`;
+        + `<span class="cp" title="Puntos de mando">PM <b style="color:${FACTIONS.legion.color}">${s.cp[0]}</b> · <b style="color:${FACTIONS.swarm.color}">${s.cp[1]}</b></span>`
+        + (s.mission ? `<span class="cp" title="Puntos de victoria">PV <b style="color:${FACTIONS.legion.color}">${res.vp[0]}</b> · <b style="color:${FACTIONS.swarm.color}">${res.vp[1]}</b></span>` : "");
       $("phase-hint").textContent = s.gameOver ? "Partida terminada. Deshacer (Ctrl+Z) vuelve atrás; Nueva mesa empieza otra." : PHASE_INFO[s.phase].hint;
     }
     $("phase-hint").hidden = !s.rulesMode;

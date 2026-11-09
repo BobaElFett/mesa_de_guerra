@@ -1,3 +1,5 @@
+import { hasStrat } from "./stratagems";
+import { recordKill } from "./missions";
 import { isGuarded, underCommand } from "./leaders";
 import { GameState, Piece, PLAYERS } from "../core/state";
 import { DATASHEETS, Weapon, WEAPONS, hasAbility } from "./datasheets";
@@ -169,12 +171,15 @@ export function performAttack(s: GameState, kind: AttackLogEntry["kind"], unitId
     target: { profile: tds.profile, models: targetModels, armored: tds.abilities.includes("blindado") },
     distance: extra.distance, stationary: extra.stationary, cover: extra.cover,
     rerollHitOnes: underCommand(s, unitId),
+    woundMod: kind === "disparo" && hasStrat(s, "punteria", unitId) ? 1 : 0,
+    hitMod: kind === "combate" && hasStrat(s, "furia", unitId) ? 1 : 0,
   }, dice);
   s.rng = dice.state;
 
   for (const p of s.pieces) if (p.unit === targetId && res.woundsLeft[p.id] !== undefined) p.damage = tds.profile.W - res.woundsLeft[p.id];
   const slain = new Set(res.slain);
   s.pieces = s.pieces.filter((p) => !slain.has(p.id));
+  if (slain.size && !s.pieces.some((p) => p.unit === targetId)) recordKill(s, PLAYERS.indexOf(attacker.faction) as 0 | 1, targetId);
 
   const entry: AttackLogEntry = {
     kind, turn: s.turn, player: PLAYERS.indexOf(attacker.faction), attacker: unitId, target: targetId,

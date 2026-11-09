@@ -29,6 +29,11 @@ import { TERRAIN, TerrainKind, BOARD as B } from "./core/state";
 import { Hud } from "./ui/hud";
 import { TablesDialog } from "./ui/tablesDialog";
 import { modal } from "./ui/modal";
+import { ObjectivesView } from "./view/objectivesView";
+import { MissionPanel } from "./ui/missionPanel";
+import { EndDialog } from "./ui/endDialog";
+import { MISSIONS } from "./rules/missions";
+import { settings } from "./ai/settings";
 
 // --- Renderer y escena ---------------------------------------------------
 const app = document.getElementById("app")!;
@@ -69,6 +74,10 @@ const bus = saved ? CommandBus.restore(saved) : new CommandBus(freshSeed());
 
 const pieces = new PiecesView();
 scene.add(pieces.group);
+const objectives = new ObjectivesView();
+scene.add(objectives.group);
+const missionPanel = new MissionPanel();
+const endDialog = new EndDialog();
 
 const cam = new TableCamera(renderer.domElement);
 const picker = new Picker(renderer.domElement, cam.camera, pieces);
@@ -173,6 +182,8 @@ function setTerrainEdit(on: boolean) {
   pieces.terrainLocked = !on;
   terrainBtn.classList.toggle("on", on);
   terrainPanel.hidden = !on;
+  missionPanel.hiddenByTerrain = on;
+  missionPanel.render(bus.state);
   if (!on) controls.prune((id) => !!pieces.pieceOf(id));
 }
 terrainBtn.addEventListener("click", () => setTerrainEdit(pieces.terrainLocked));
@@ -219,12 +230,15 @@ const armies = new ArmyDialog(bus, toast);
 armies.onDeployed = () => { cam.reset(); controls.selected.clear(); controls.onSelectionChange(); };
 // Partida de prueba: despliega las dos listas de prueba (se puede deshacer)
 document.getElementById("test-armies")!.addEventListener("click", () => {
-  bus.dispatch({ type: "setArmies", legion: TEST_LEGION, swarm: TEST_SWARM });
+  bus.dispatch({ type: "setArmies", legion: TEST_LEGION, swarm: TEST_SWARM, mission: settings.mission });
   if (!bus.state.rulesMode) bus.dispatch({ type: "setRulesMode", on: true });
   tables.hide();
   cam.reset();
-  toast("Ejércitos de prueba desplegados (460 y 450 puntos)");
+  toast(`Ejércitos de prueba desplegados (460 y 450 puntos) · ${MISSIONS[settings.mission].name}`);
 });
+missionPanel.onShowSummary = () => endDialog.show(bus.state);
+endDialog.onNewGame = () => armies.show();
+let wasOver = bus.state.gameOver;
 hud.onSheetToggle = () => hud.renderSelection(bus.state, controls.selected, coherencyWarnings());
 hud.onTargetHover = (u) => { targetHover = u; };
 
@@ -243,6 +257,10 @@ function refresh(_s?: unknown, cmd?: Command | null) {
   }
   renderTray();
   pieces.sync(bus.state);
+  objectives.sync(bus.state);
+  missionPanel.render(bus.state);
+  if (bus.state.gameOver && !wasOver && bus.state.mission) setTimeout(() => endDialog.show(bus.state), shots.playing ? 2500 : 600);
+  wasOver = bus.state.gameOver;
   if (newAttacks.length) shots.playAll(newAttacks, bus.state);
   // Chequeos de moral nuevos (al empezar una fase de mando)
   const ml = bus.state.moraleLog;
@@ -308,6 +326,7 @@ renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 0.1);
   cam.update(dt);
   pieces.update(dt);
+  objectives.update(dt);
   const targets = targetHover ? new Set(bus.state.pieces.filter((p) => p.unit === targetHover).map((p) => p.id)) : undefined;
   const shockedIds = bus.state.rulesMode ? new Set(bus.state.pieces.filter((p) => bus.state.units.find((u) => u.id === p.unit)?.shocked).map((p) => p.id)) : undefined;
   pieces.highlight(controls.selected, controls.hovered, controls.selected.size ? coherencyWarnings() : undefined, targets, shockedIds);
