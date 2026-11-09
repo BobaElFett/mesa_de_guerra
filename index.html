@@ -195,6 +195,9 @@
   #log-body .e .dot { flex: none; width: 7px; height: 7px; border-radius: 50%; margin-top: 4px; }
   #log-body .e.pv { font-weight: 600; }
   #log-body .e.moral, #log-body .e.mover { color: var(--dim); }
+  #tutorial { left: 12px; top: 64px; width: min(380px, 90vw); z-index: 7; padding: 10px 14px; font-size: 13px; border-color: #c9a23a; box-shadow: 0 0 0 1px rgba(201,162,58,.4), 0 6px 24px rgba(0,0,0,.5); }
+  #tutorial h3 { margin: 4px 0; font-size: 16px; color: var(--gold); }
+  #tutorial kbd { font-size: 11px; }
   #board-tip { position: fixed; z-index: 6; pointer-events: none; font-size: 12px; padding: 5px 8px; max-width: 300px; }
   #action-menu { position: fixed; z-index: 8; min-width: 240px; max-width: 340px; padding: 6px; font-size: 13px; }
   #action-menu .am-head { display: flex; align-items: center; font-weight: 600; margin: 0 2px 4px; }
@@ -228,7 +231,8 @@
 <div id="help" class="panel">
   <h1 class="title">Mesa de Guerra</h1>
   <button id="help-toggle">Ocultar</button>
-  <div class="sub">Fase 5 · en línea (v0.21)</div>
+  <div class="sub">Jugabilidad (v0.22)</div>
+  <button id="tutorial-start" class="primary" style="width:100%;margin:4px 0 6px">Tutorial: aprende a jugar (5 min)</button>
   <h2>Cámara</h2>
   <ul>
     <li><kbd>WASD</kbd> o botón central: desplazar</li>
@@ -256,6 +260,8 @@
     <li>Objetivos: los controla quien sume más CO a 3"; los PV, arriba a la derecha</li>
     <li>Estratagemas (1 PM): botones en la ficha de la unidad, en tu turno</li>
     <li><b>Pausar IA</b> para tomar el control de su bando</li>
+    <li>Con una unidad tuya elegida, <b>clic en un enemigo</b>: disparar, cargar o combatir, con probabilidades</li>
+    <li><kbd>Tab</kbd> siguiente unidad que aún puede actuar (anillo verde) · <kbd>L</kbd> registro</li>
     <li><b>En línea</b>: crear sala o unirse (código, copiar y pegar u otra pestaña); chat abajo a la izquierda</li>
   </ul>
   <h2>Guardado</h2>
@@ -378,6 +384,7 @@
   <div class="row"><b>Registro de la batalla</b><button id="log-close" style="margin-left:auto;padding:0 7px">×</button></div>
   <div id="log-body"></div>
 </div>
+<div id="tutorial" class="panel" hidden></div>
 <div id="board-tip" class="panel" hidden></div>
 <div id="action-menu" class="panel" hidden></div>
 <div id="toast" hidden></div>

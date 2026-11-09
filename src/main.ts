@@ -25,6 +25,7 @@ import { fightOptions } from "./rules/melee";
 import { NetDialog } from "./ui/netDialog";
 import { ActionMenu } from "./ui/actionMenu";
 import { Effects } from "./view/effects";
+import { Tutorial } from "./ui/tutorial";
 import { BattleLog } from "./ui/battleLog";
 import { sfx, weaponSound } from "./audio/sfx";
 import { saveSettings } from "./ai/settings";
@@ -385,9 +386,9 @@ hud.beforeAdvance = () => {
   const s = bus.state;
   if (runtime.online && s.rulesMode && s.phase !== "despliegue" && PLAYERS[s.active] !== runtime.localSide) { toast("Es el turno de tu rival."); return false; }
   if (ai.isAiTurn() && !ai.paused) { toast("Es el turno de la IA (pulsa Pausar IA para tomar el control)."); return false; }
-  // Aviso si aún queda algo por hacer en la fase (segunda pulsación en 3 s: pasa)
+  // Aviso si aún queda algo por hacer en la fase (segunda pulsación en 5 s: pasa)
   const f = PLAYERS[s.active];
-  if (s.rulesMode && !s.gameOver && controllable(f) && s.phase !== "combate" && Date.now() - confirmAdvance > 3000) {
+  if (s.rulesMode && !s.gameOver && controllable(f) && s.phase !== "combate" && Date.now() - confirmAdvance > 5000) {
     const left = pendingUnits(s, f);
     if (left.length && s.phase !== "mando") {
       confirmAdvance = Date.now();
@@ -575,6 +576,17 @@ renderer.setAnimationLoop(() => {
   tray.update(dt);
   renderer.render(scene, cam.camera);
 });
+
+// Tutorial (#48)
+const tutorial = new Tutorial(bus);
+tutorial.onStart = () => {
+  const help = document.getElementById("help")!;
+  if (!help.classList.contains("folded")) document.getElementById("help-toggle")!.click();
+  cam.reset(); controls.selected.clear(); controls.onSelectionChange(); ai.paused = false; armies.hide?.(); tables.hide(); refresh(); };
+const tutorialTick = () => tutorial.check({ s: bus.state, selected: controls.selected });
+bus.onChange(() => tutorialTick());
+const prevSel = controls.onSelectionChange;
+controls.onSelectionChange = () => { prevSel(); tutorialTick(); };
 
 // Sensación de juego (#53): trazadoras, sonidos, velocidad de los ataques y registro
 battleLog.onToggle = (on) => { missionPanel.hiddenByLog = on; missionPanel.render(bus.state); battleLog.render(bus.state); };
