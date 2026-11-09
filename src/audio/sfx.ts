@@ -20,6 +20,11 @@ class Audio {
     }
   }
 
+  setVolume(v: number) {
+    this.volume = Math.max(0, Math.min(1, v));
+    if (this.master) this.master.gain.value = this.on ? this.volume : 0;
+  }
+
   setOn(v: boolean) {
     this.on = v;
     try { localStorage.setItem(KEY, v ? "1" : "0"); } catch { /* nada */ }

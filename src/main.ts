@@ -27,6 +27,8 @@ import { ActionMenu } from "./ui/actionMenu";
 import { Effects } from "./view/effects";
 import { SolidsView } from "./view/solidsView";
 import { Tutorial } from "./ui/tutorial";
+import { SettingsDialog, StartMenu } from "./ui/menu";
+import { validateList } from "./rules/armies";
 import { BattleLog } from "./ui/battleLog";
 import { sfx, weaponSound } from "./audio/sfx";
 import { saveSettings } from "./ai/settings";
@@ -252,6 +254,7 @@ hud.onFight = (unit, target) => bus.dispatch({ type: "fight", unit, target });
 const ai = new AiController(bus, () => shots.playing || endDialog.open || modal.open);
 ai.onAction = (t) => toast(`IA · ${t}`);
 ai.onFocus = (u) => {
+  if (!settings.followAi) return;
   const ms = bus.state.pieces.filter((p) => p.unit === u);
   if (ms.length) cam.panTo(ms.reduce((n, p) => n + p.x, 0) / ms.length, ms.reduce((n, p) => n + p.z, 0) / ms.length);
 };
@@ -307,7 +310,7 @@ controls.onHover = (id, x, y) => {
   const s = bus.state;
   const a = id && s.rulesMode && ["disparo", "carga", "combate"].includes(s.phase) && !actionMenu.isOpen ? actor() : null;
   const target = a && id ? enemyAt(id, a) : null;
-  if (!a || !target) { actionMenu.hideTip(); if (hoverFromBoard) { targetHover = null; hoverFromBoard = false; } return; }
+  if (!a || !target || !settings.hoverTips) { actionMenu.hideTip(); if (hoverFromBoard) { targetHover = null; hoverFromBoard = false; } return; }
   targetHover = target; hoverFromBoard = true;
   actionMenu.tip(DATASHEETS[s.units.find((u) => u.id === target)!.datasheet].name, actionsAgainst(s, a, target), x, y);
 };
@@ -316,10 +319,12 @@ let hoverFromBoard = false;
 function updateGuide() {
   const s = bus.state;
   const a = actor();
-  const key = `${bus.length}|${[...controls.selected].join(",")}|${s.phase}|${s.active}|${ai.paused}`;
+  const key = `${bus.length}|${[...controls.selected].join(",")}|${s.phase}|${s.active}|${ai.paused}|${settings.guideRings}`;
   if (key === guideKey) return;
   guideKey = key;
   canTargetIds = new Set();
+  pendingIds = new Set();
+  if (!settings.guideRings) return;
   if (a) for (const u of validTargets(s, a)) for (const p of s.pieces) if (p.unit === u) canTargetIds.add(p.id);
   pendingIds = new Set();
   for (const f of ["legion", "swarm"] as const) if (controllable(f)) for (const u of pendingUnits(s, f)) for (const p of s.pieces) if (p.unit === u) pendingIds.add(p.id);
@@ -391,7 +396,7 @@ hud.beforeAdvance = () => {
   if (ai.isAiTurn() && !ai.paused) { toast("Es el turno de la IA (pulsa Pausar IA para tomar el control)."); return false; }
   // Aviso si aún queda algo por hacer en la fase (segunda pulsación en 5 s: pasa)
   const f = PLAYERS[s.active];
-  if (s.rulesMode && !s.gameOver && controllable(f) && s.phase !== "combate" && Date.now() - confirmAdvance > 5000) {
+  if (settings.confirmAdvance && s.rulesMode && !s.gameOver && controllable(f) && s.phase !== "combate" && Date.now() - confirmAdvance > 5000) {
     const left = pendingUnits(s, f);
     if (left.length && s.phase !== "mando") {
       confirmAdvance = Date.now();
@@ -655,6 +660,45 @@ function soundFor(cmd: Command | null) {
   if (s.rulesMode && s.phase === "mando" && tk !== lastTurnSound) { sfx.play("turno"); }
   lastTurnSound = tk;
 }
+
+// Pantalla de inicio (#54) y ajustes (#55)
+const menu = new StartMenu();
+const settingsDlg = new SettingsDialog();
+sfx.setVolume(settings.volume);
+settingsDlg.sound = { get: () => sfx.on, set: (v) => { if (v !== sfx.on) { sfx.setOn(v); paintSound(); } }, volume: (v) => sfx.setVolume(v) };
+settingsDlg.onChange = () => { speedSel.value = settings.diceSpeed; applySpeed(); guideKey = ""; refresh(); };
+menu.continueInfo = () => {
+  const s = bus.state;
+  if (!s.pieces.length && !bus.length) return null;
+  if (s.rulesMode && s.units.length) return s.gameOver ? "partida terminada" : `ronda ${s.turn} · ${s.mission ? MISSIONS[s.mission].name : "sin misión"}`;
+  return `${s.pieces.length} miniaturas en la mesa`;
+};
+menu.onTutorial = () => tutorial.start();
+menu.onArmies = () => armies.show();
+menu.onOnline = () => net.show();
+menu.onSettings = () => settingsDlg.show();
+menu.onFree = () => { if (bus.state.rulesMode) bus.dispatch({ type: "setRulesMode", on: false }); toast("Mesa libre: mueve lo que quieras, tira dados y mide. «Modo reglas» activa el reglamento."); };
+menu.onQuick = (q) => {
+  settings.aiSide = q.side === "legion" ? "swarm" : "legion";
+  settings.aiLevel = q.level; settings.mission = q.mission; settings.map = q.map;
+  saveSettings();
+  let lists = { legion: TEST_LEGION, swarm: TEST_SWARM };
+  if (q.lists === "mias") {
+    const mine = armies.current();
+    const bad = (["legion", "swarm"] as const).some((f) => validateList(mine[f], f).length);
+    if (bad) toast("Tus listas de Ejércitos no son válidas: se usan las de prueba.");
+    else lists = { legion: mine.legion, swarm: mine.swarm };
+  }
+  applyMap(bus);
+  bus.dispatch({ type: "setArmies", legion: lists.legion, swarm: lists.swarm, mission: q.mission });
+  if (!bus.state.rulesMode) bus.dispatch({ type: "setRulesMode", on: true });
+  ai.paused = false;
+  controls.selected.clear(); controls.onSelectionChange();
+  cam.reset();
+  if (q.side === "swarm") cam.sideOf(1);
+  toast(`${MISSIONS[q.mission].name} contra la IA (${AI_LEVEL_NAME[q.level]}). Coloca tu ejército y pulsa Empezar partida.`);
+};
+if (settings.showMenu) menu.show();
 
 // Para pruebas desde la consola
 (window as unknown as { mesa: unknown }).mesa = { bus, cam, pieces, controls, tape, ranges, tray, tables, shots, armies, ai, endDialog, fightOptions, net, tactics: { aiStep, fightStep, canFight }, stateHash };

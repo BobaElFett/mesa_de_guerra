@@ -198,6 +198,26 @@
   #tutorial { left: 12px; top: 64px; width: min(380px, 90vw); z-index: 7; padding: 10px 14px; font-size: 13px; border-color: #c9a23a; box-shadow: 0 0 0 1px rgba(201,162,58,.4), 0 6px 24px rgba(0,0,0,.5); }
   #tutorial h3 { margin: 4px 0; font-size: 16px; color: var(--gold); }
   #tutorial kbd { font-size: 11px; }
+  #menu-backdrop, #settings-backdrop { position: fixed; inset: 0; z-index: 12; background: radial-gradient(ellipse at center, rgba(10,11,14,.55), rgba(5,6,8,.85)); display: flex; align-items: center; justify-content: center; }
+  #menu-backdrop[hidden], #settings-backdrop[hidden] { display: none; }
+  #menu { position: relative; width: min(820px, 94vw); padding: 22px 26px; }
+  #menu h1 { font-size: 40px; margin: 0; color: var(--gold); letter-spacing: .08em; }
+  #menu .menu-sub { margin-bottom: 14px; }
+  #menu .menu-grid { display: grid; grid-template-columns: 1fr 1.1fr; gap: 20px; }
+  #menu .menu-col { display: flex; flex-direction: column; gap: 6px; }
+  #menu button.big { text-align: left; padding: 9px 12px; font-size: 15px; font-weight: 600; }
+  #menu button.big span { display: block; font-size: 12px; font-weight: 400; color: var(--dim); }
+  #menu .quick { border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; }
+  #menu .quick h2 { font-size: 16px; margin: 0 0 4px; color: var(--gold); }
+  #menu .quick label { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 13px; }
+  #menu .quick select { width: 60%; }
+  #menu .quick .primary { text-align: center; margin-top: 6px; }
+  #q-desc { font-size: 12px; min-height: 32px; }
+  #menu .menu-foot { display: block; margin-top: 12px; font-size: 12px; color: var(--dim); }
+  #settings { position: relative; width: min(460px, 92vw); padding: 14px 18px; font-size: 13px; }
+  #settings h3 { font-size: 13px; margin: 12px 0 4px; color: var(--gold); }
+  #settings label { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+  #settings input[type=range] { flex: 1; }
   #board-tip { position: fixed; z-index: 6; pointer-events: none; font-size: 12px; padding: 5px 8px; max-width: 300px; }
   #action-menu { position: fixed; z-index: 8; min-width: 240px; max-width: 340px; padding: 6px; font-size: 13px; }
   #action-menu .am-head { display: flex; align-items: center; font-weight: 600; margin: 0 2px 4px; }
@@ -285,16 +305,18 @@
 <div id="tools" class="panel">
   <button id="mode" title="Mesa libre: todo se mueve a mano. Modo reglas: el juego guía las fases.">Mesa libre</button>
   <button id="armies-open" title="Listas de ejército de 500 puntos y despliegue">Ejércitos</button>
+  <button id="menu-open" title="Pantalla de inicio">Menú</button>
   <button id="tables-open" title="Ctrl+S guarda con el nombre actual">Mesas</button>
   <button id="net-open" title="Jugar contra otra persona en otro ordenador">En línea</button>
   <button id="log-open" title="Registro de la batalla (L)">Registro</button>
-  <button id="sound-btn" title="Sonido (activar o silenciar)">Sonido</button>
+  <button id="sound-btn" title="Sonido (activar o silenciar)" hidden>Sonido</button>
+  <button id="settings-open" title="Ajustes">Ajustes</button>
   <button id="undo" title="Ctrl+Z">Deshacer</button>
   <button id="redo" title="Ctrl+Y">Rehacer</button>
   <button id="terrain-edit" title="T: desbloquea la escenografía para moverla, añadirla o borrarla">Escenografía</button>
   <button id="tape" title="M">Cinta</button>
   <button id="range" title="C: cambia el alcance alrededor de la selección">Alcance</button>
-  <button id="grid" class="on" title="G">Rejilla</button>
+  <button id="grid" class="on" title="G" hidden>Rejilla</button>
   <button id="topdown" title="V">Cenital</button>
   <button id="new">Nueva mesa</button>
 </div>
@@ -384,6 +406,51 @@
 <div id="battle-log" class="panel" hidden>
   <div class="row"><b>Registro de la batalla</b><button id="log-close" style="margin-left:auto;padding:0 7px">×</button></div>
   <div id="log-body"></div>
+</div>
+<div id="menu-backdrop" hidden>
+  <div id="menu" class="panel" role="dialog" aria-label="Mesa de Guerra">
+    <h1 class="title">Mesa de Guerra</h1>
+    <div class="dim menu-sub">Legión Astral contra El Enjambre · un wargame de mesa en 3D</div>
+    <div class="menu-grid">
+      <div class="menu-col">
+        <button data-m="continue" class="big" id="menu-continue">Continuar la partida<span id="menu-continue-info"></span></button>
+        <button data-m="tutorial" class="big">Tutorial<span>aprende a jugar en 5 minutos</span></button>
+        <button data-m="free" class="big">Mesa libre<span>como en una mesa de verdad, sin reglas automáticas</span></button>
+        <button data-m="armies" class="big">Ejércitos<span>prepara tus listas de 500 puntos</span></button>
+        <button data-m="online" class="big">En línea<span>contra otra persona</span></button>
+        <button data-m="settings" class="big">Ajustes</button>
+      </div>
+      <div class="menu-col quick">
+        <h2>Partida rápida contra la IA</h2>
+        <label>Tu ejército <select id="q-side"><option value="legion">Legión Astral</option><option value="swarm">El Enjambre</option></select></label>
+        <label>IA <select id="q-level"><option value="facil">Fácil</option><option value="normal">Normal</option><option value="dificil">Difícil</option></select></label>
+        <label>Misión <select id="q-mission"></select></label>
+        <label>Mapa <select id="q-map"><option value="aleatorio">Aleatorio (simétrico)</option><option value="ejemplo">Mapa de ejemplo</option></select></label>
+        <label>Listas <select id="q-lists"><option value="prueba">Las de prueba (unos 470 puntos)</option><option value="mias">Las mías (Ejércitos)</option></select></label>
+        <div id="q-desc" class="dim"></div>
+        <button data-m="quick" class="primary big">Jugar</button>
+      </div>
+    </div>
+    <label class="menu-foot"><input type="checkbox" id="menu-show"> Mostrar al abrir el juego</label>
+  </div>
+</div>
+<div id="settings-backdrop" hidden>
+  <div id="settings" class="panel" role="dialog" aria-label="Ajustes">
+    <div style="display:flex;align-items:center"><span class="title" style="font-size:18px">Ajustes</span><button id="settings-close" style="margin-left:auto">Cerrar</button></div>
+    <h3>Sonido</h3>
+    <label><input type="checkbox" id="set-sound"> Sonido</label>
+    <label>Volumen <input type="range" id="set-volume" min="0" max="1" step="0.05"></label>
+    <h3>Mesa</h3>
+    <label><input type="checkbox" id="set-grid"> Rejilla de pulgadas en el tapete (<kbd>G</kbd>)</label>
+    <h3>Partida</h3>
+    <label>Velocidad de los ataques <select id="set-speed"><option value="normal">Normal</option><option value="rapido">Rápida</option><option value="instante">Al instante</option></select></label>
+    <label><input type="checkbox" id="set-follow"> La cámara sigue a la IA</label>
+    <label><input type="checkbox" id="set-confirm"> Avisar al pasar de fase si queda algo por hacer</label>
+    <h3>Ayudas en la mesa</h3>
+    <label><input type="checkbox" id="set-rings"> Anillos de las unidades que aún pueden actuar y de los objetivos posibles</label>
+    <label><input type="checkbox" id="set-tips"> Probabilidades al pasar el ratón por un enemigo</label>
+    <label><input type="checkbox" id="set-menu"> Pantalla de inicio al abrir el juego</label>
+  </div>
 </div>
 <div id="tutorial" class="panel" hidden></div>
 <div id="board-tip" class="panel" hidden></div>
