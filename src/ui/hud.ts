@@ -1,6 +1,6 @@
 import { CommandBus } from "../core/commands";
 import { FACTIONS, GameState, PLAYERS, RollRecord, TERRAIN } from "../core/state";
-import { PHASES, PHASE_INFO, MAX_ROUNDS } from "../rules/turn";
+import { PHASES, PHASE_INFO, MAX_ROUNDS, Phase } from "../rules/turn";
 import { DATASHEETS } from "../rules/datasheets";
 import { allowance, isEngaged, movedSoFar, MoveKind } from "../rules/movement";
 import { shootingOptions } from "../rules/shooting";
@@ -230,11 +230,13 @@ export class Hud {
     const f = FACTIONS[PLAYERS[s.active]];
     const who = f.of.replace(/(Legión Astral|Enjambre)/, `<b style="color:${f.color}">$1</b>`);
     const rounds = s.rulesMode ? `${s.turn}/${MAX_ROUNDS}` : `${s.turn}`;
-    $("turn-text").innerHTML = s.gameOver ? `<b>Fin de la partida</b> · 5 rondas jugadas` : `Ronda ${rounds} · Turno ${who}`;
+    const deploying = s.phase === "despliegue" && !s.gameOver;
+    $("turn-text").innerHTML = s.gameOver ? `<b>Fin de la partida</b> · 5 rondas jugadas`
+      : deploying ? `<b>Despliegue</b> · los dos bandos colocan` : `Ronda ${rounds} · Turno ${who}`;
     $("mode").textContent = s.rulesMode ? "Modo reglas" : "Mesa libre";
     $("mode").classList.toggle("on", s.rulesMode);
     const btn = $<HTMLButtonElement>("end-turn");
-    btn.textContent = s.rulesMode ? (s.phase === "combate" ? "Terminar turno" : "Siguiente fase") : "Pasar turno";
+    btn.textContent = deploying ? "Empezar partida" : s.rulesMode ? (s.phase === "combate" ? "Terminar turno" : "Siguiente fase") : "Pasar turno";
     btn.disabled = s.gameOver;
     const bot = $<HTMLButtonElement>("bot-phase");
     bot.hidden = !s.rulesMode;
@@ -242,7 +244,7 @@ export class Hud {
     const phases = $("phases");
     phases.hidden = !s.rulesMode;
     if (s.rulesMode) {
-      phases.innerHTML = PHASES.map((p) => `<span class="ph${p === s.phase && !s.gameOver ? " now" : ""}">${PHASE_INFO[p].name}</span>`).join("")
+      phases.innerHTML = (deploying ? [<Phase>"despliegue", ...PHASES] : PHASES).map((p) => `<span class="ph${p === s.phase && !s.gameOver ? " now" : ""}">${PHASE_INFO[p].name}</span>`).join("")
         + `<span class="cp" title="Puntos de mando">PM <b style="color:${FACTIONS.legion.color}">${s.cp[0]}</b> · <b style="color:${FACTIONS.swarm.color}">${s.cp[1]}</b></span>`;
       $("phase-hint").textContent = s.gameOver ? "Partida terminada. Deshacer (Ctrl+Z) vuelve atrás; Nueva mesa empieza otra." : PHASE_INFO[s.phase].hint;
     }

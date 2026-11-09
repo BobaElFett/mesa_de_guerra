@@ -9,6 +9,11 @@ Plan completo (visión, facciones, roadmap y backlog): documento *Mesa de Guerra
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor.
 
+## Novedades 0.18 · fase 3 (fase de despliegue, #31)
+- **Despliegue antes de la ronda 1:** al desplegar listas (*Ejércitos* o *Partida de prueba*) la partida empieza en la fase **Despliegue**: ronda 1, 1 PM por bando y registros de combate y moral vacíos.
+- **Recolocar:** en esta fase los dos bandos pueden arrastrar y girar sus miniaturas, pero solo dentro de su zona (la franja de su color): al arrastrar no pasan del borde de la zona y, al soltar, cada peana va al hueco libre más cercano dentro de ella. Lo que no cabe vuelve a su sitio.
+- **Empezar partida:** el botón del panel del turno pasa al mando de la ronda 1 (también *Bot* y, en mesa libre, *Pasar turno*). Se puede deshacer.
+
 ## Novedades 0.17 · fase 3 (editor de listas de ejército, #30)
 - **Ejércitos:** el botón *Ejércitos* abre un editor con una lista por bando. Se añaden unidades de las hojas de datos de ese bando (el desplegable dice los tamaños y su coste), se elige el número de miniaturas y se quitan con ×.
 - **Puntos y validación al momento:** total sobre 500 (en rojo si se pasa) y los fallos del reglamento: tamaños válidos, como mucho 3 unidades iguales, 1 Andador o Tirano y al menos un personaje.

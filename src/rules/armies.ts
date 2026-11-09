@@ -82,7 +82,10 @@ export function deployArmies(s: GameState, legion: ArmyList, swarm: ArmyList) {
       x += b.width + gapBetween;
     }
   }
+  // Partida nueva: empieza en la fase de despliegue, con los dos bandos a 1 PM
   s.turnLog = { moves: {}, origins: {} };
+  s.turn = 1; s.active = 0; s.phase = "despliegue"; s.cp = [1, 1]; s.gameOver = false;
+  s.combatLog = []; s.moraleLog = [];
 }
 
 /** Listas de la partida de prueba (#25): unos 450 puntos por bando. */

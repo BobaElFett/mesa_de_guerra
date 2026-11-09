@@ -16,6 +16,8 @@ export interface PlaceOptions {
   limit?: (id: string) => { x: number; z: number; max: number } | null;
   /** Zonas prohibidas extra para cada miniatura (p. ej. enemigos agrandados 1" de trabamiento). */
   avoid?: (id: string) => Disc[];
+  /** Franja de z permitida para cada miniatura (p. ej. su zona de despliegue, ya descontado el radio). */
+  zBand?: (id: string) => [number, number] | null;
   /** Ids que no encontraron sitio válido y se quedaron donde estaban (salida). */
   rejected?: string[];
 }
@@ -39,15 +41,18 @@ export function resolveOverlaps(all: Piece[], moves: PieceMove[], opts: PlaceOpt
     const inside = (x: number, z: number) => x >= -hw + r && x <= hw - r && z >= -hd + r && z <= hd - r;
     const lim = opts.limit?.(m.id) ?? null;
     const avoid = opts.avoid?.(m.id) ?? [];
+    const band = opts.zBand?.(m.id) ?? null;
     const free = (x: number, z: number) => inside(x, z)
+      && (!band || (z >= band[0] - 1e-6 && z <= band[1] + 1e-6))
       && (!lim || Math.hypot(x - lim.x, z - lim.z) <= lim.max + 1e-6)
       && placed.every((q) => Math.hypot(x - q.x, z - q.z) >= r + q.r + GAP)
       && avoid.every((q) => Math.hypot(x - q.x, z - q.z) > r + q.r);
     let x = clamp(m.x, -hw + r, hw - r), z = clamp(m.z, -hd + r, hd - r);
+    if (band) z = clamp(z, band[0], band[1]);
     if (!free(x, z)) {
       const best = search(x, z, free);
       if (best) { x = best[0]; z = best[1]; }
-      else if (lim || avoid.length) {
+      else if (lim || avoid.length || band) {
         // Sin sitio válido: se queda donde estaba
         const orig = all.find((p) => p.id === m.id);
         if (orig) { x = orig.x; z = orig.z; opts.rejected?.push(m.id); }
