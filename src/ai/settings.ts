@@ -5,10 +5,10 @@ import type { MissionId } from "../rules/missions";
 // elegida para la próxima partida. Se recuerdan en el navegador.
 
 export type AiLevel = "facil" | "normal" | "dificil";
-export interface GameSettings { aiSide: Faction | null; aiLevel: AiLevel; mission: MissionId; map: "actual" | "ejemplo" | "aleatorio" }
+export interface GameSettings { aiSide: Faction | null; aiLevel: AiLevel; mission: MissionId; map: "actual" | "ejemplo" | "aleatorio"; diceSpeed: "normal" | "rapido" | "instante" }
 
 const KEY = "mesa-de-guerra.ajustes";
-const DEFAULTS: GameSettings = { aiSide: "swarm", aiLevel: "normal", mission: "tomar", map: "actual" };
+const DEFAULTS: GameSettings = { aiSide: "swarm", aiLevel: "normal", mission: "tomar", map: "actual", diceSpeed: "normal" };
 
 export const AI_LEVEL_NAME: Record<AiLevel, string> = { facil: "Fácil", normal: "Normal", dificil: "Difícil" };
 

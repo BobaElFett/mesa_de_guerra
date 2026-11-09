@@ -67,8 +67,11 @@ const mine = (s: GameState) => PLAYERS[s.active];
 const nameOf = (s: GameState, id: string) => DATASHEETS[s.units.find((u) => u.id === id)!.datasheet].name;
 
 let lastAction = "";
+let lastActor: string | null = null;
 /** Qué hizo la IA en su último paso (para enseñarlo en pantalla). */
 export const aiLastAction = () => lastAction;
+/** La unidad que actuó en el último paso (para llevar la cámara). */
+export const aiLastActor = () => lastActor;
 const alive = (s: GameState, id: string) => s.pieces.some((p) => p.unit === id);
 const enemiesOf = (s: GameState, f: Faction) => s.units.filter((u) => u.faction !== f && alive(s, u.id));
 
@@ -358,6 +361,7 @@ function moveStep(bus: CommandBus, W: Weights): boolean {
   const plan = planMove(s, u.id, W, claimed, W.assign ? assignObjectives(s, f).get(u.id) ?? null : null);
   bus.dispatch({ type: "declareMove", unit: u.id, kind: plan.kind });
   const verb = plan.kind === "avanzar" ? "avanza" : plan.kind === "retirarse" ? "se retira" : "mueve";
+  lastActor = u.id;
   lastAction = plan.dx === 0 && plan.dz === 0 ? `${nameOf(s, u.id)} se queda (${plan.why})` : `${nameOf(s, u.id)} ${verb} (${plan.why})`;
   if (plan.dx === 0 && plan.dz === 0) return true;
   const s2 = bus.state;
@@ -411,6 +415,7 @@ function shootStep(bus: CommandBus, W: Weights): boolean {
     }
     if (best && best.v >= 10) {
       bus.dispatch({ type: "stratagem", id: "granadas", unit: best.u, target: best.t });
+      lastActor = best.u;
       lastAction = `${nameOf(s, best.u)} lanza granadas a ${nameOf(s, best.t)}`;
       return true;
     }
@@ -424,6 +429,7 @@ function shootStep(bus: CommandBus, W: Weights): boolean {
     if (total >= 25) { bus.dispatch({ type: "stratagem", id: "punteria", unit: pick.unit }); lastAction = `Estratagema Puntería en ${nameOf(s, pick.unit)}`; return true; }
   }
   bus.dispatch({ type: "shoot", unit: pick.unit, weapon: pick.weapon, target: pick.target });
+  lastActor = pick.unit;
   lastAction = `${nameOf(s, pick.unit)} dispara ${WEAPONS[pick.weapon].name} a ${nameOf(s, pick.target)}`;
   return true;
 }
@@ -478,6 +484,7 @@ function chargeStep(bus: CommandBus, W: Weights): boolean {
   }
   bus.dispatch({ type: "charge", unit: best.unit, target: best.target });
   const rec = bus.state.turnLog.charges?.[best.unit];
+  lastActor = best.unit;
   lastAction = `${nameOf(s, best.unit)} carga a ${nameOf(s, best.target)}${rec ? `: 2D6 = ${rec.roll} (necesita ${rec.need}) — ${rec.success ? "¡llega!" : "no llega"}` : ""}`;
   return true;
 }
@@ -502,6 +509,7 @@ export function fightStep(bus: CommandBus, f: Faction, level: AiLevel = "normal"
     bus.dispatch({ type: "stratagem", id: "furia", unit: best.unit });
   }
   bus.dispatch({ type: "fight", unit: best.unit, target: best.target });
+  lastActor = best.unit;
   lastAction = `${nameOf(s, best.unit)} combate contra ${nameOf(s, best.target)}`;
   return true;
 }

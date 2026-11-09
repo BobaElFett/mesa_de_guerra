@@ -1,3 +1,4 @@
+import { note, unitName } from "./history";
 import { onForbiddenTerrain } from "./geometry";
 import { hasStrat } from "./stratagems";
 import { formation, formationModels } from "./leaders";
@@ -77,6 +78,7 @@ export function applyCharge(s: GameState, unitId: string, targetId: string): Cha
     success = roll >= t.distance - ENGAGEMENT;
   }
   const rec: ChargeRecord = { target: targetId, roll, need: t.need, success };
+  note(s, "carga", `${unitName(s, unitId)} carga a ${unitName(s, targetId)}: 2D6 = ${roll} (necesita ${t.need}) — ${success ? "llega" : "no llega"}${hasStrat(s, "impetu", unitId) ? " · con Ímpetu" : ""}`);
   s.turnLog.charges = { ...(s.turnLog.charges ?? {}) };
   for (const u of formation(s, unitId)) s.turnLog.charges[u] = rec;     // el líder carga con su escuadra
   if (success) advanceInto(s, unitId, targetId, roll, false, true);

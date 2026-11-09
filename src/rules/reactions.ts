@@ -1,3 +1,4 @@
+import { note, unitName } from "./history";
 import { GameState, PLAYERS } from "../core/state";
 import { DATASHEETS, WEAPONS } from "./datasheets";
 import { disc, gap } from "./geometry";
@@ -67,6 +68,7 @@ export function resolveReaction(s: GameState, fire: boolean) {
     s.cp = [...s.cp] as [number, number];
     s.cp[pc.defender] -= OVERWATCH_COST;
     s.turnLog.strats = [...(s.turnLog.strats ?? []), { id: "fuegoDefensivo", unit: pc.target }];
+    note(s, "estratagema", `Fuego defensivo (1 PM) de ${unitName(s, pc.target)} contra la carga`, pc.defender);
     for (const { weapon, shooters } of overwatchWeapons(s, pc.target, pc.unit)) {
       if (!s.pieces.some((p) => p.unit === pc.unit)) break;
       const models = s.pieces.filter((p) => shooters.includes(p.id));

@@ -1,3 +1,4 @@
+import { note } from "./history";
 import { hasStrat } from "./stratagems";
 import { recordCasualties } from "./missions";
 import { isGuarded, underCommand } from "./leaders";
@@ -200,6 +201,14 @@ export function performAttack(s: GameState, kind: AttackLogEntry["kind"], unitId
     },
   };
   s.combatLog = [...(s.combatLog ?? []), entry];
+  {
+    const tn = DATASHEETS[target.datasheet].name, an = DATASHEETS[attacker.datasheet].name;
+    const what = extra.mortal ? `lanza granadas a ${tn}` : kind === "combate" ? `golpea a ${tn} con ${weapon.name}` : `${extra.overwatch ? "hace fuego defensivo contra" : "dispara a"} ${tn} con ${weapon.name}`;
+    const gone = !s.pieces.some((p) => p.unit === targetId);
+    note(s, kind === "combate" ? "combate" : "disparo",
+      `${an} ${what}: ${res.hits} impacto${res.hits === 1 ? "" : "s"}, ${res.failedSaves} sin salvar, ${res.slain.length} baja${res.slain.length === 1 ? "" : "s"}${gone && res.slain.length ? " — unidad destruida" : ""}`,
+      PLAYERS.indexOf(attacker.faction) as 0 | 1);
+  }
   return entry;
 }
 

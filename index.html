@@ -187,6 +187,14 @@
   #react { left: 50%; top: 22%; transform: translateX(-50%); z-index: 9; width: 380px; padding: 12px 14px; font-size: 13px; border-color: #c9a23a; }
   #react h3 { margin: 0 0 6px; font-size: 16px; color: var(--gold); }
   #react .row { justify-content: flex-end; gap: 6px; margin-top: 10px; }
+  #battle-log { right: 12px; top: 60px; width: 330px; max-height: calc(100vh - 380px); min-height: 160px; display: flex; flex-direction: column; padding: 8px 10px; font-size: 12px; z-index: 4; }
+  #battle-log[hidden] { display: none; }
+  #log-body { overflow-y: auto; margin-top: 4px; }
+  #log-body h4 { margin: 8px 0 2px; font-size: 12px; color: var(--gold); font-weight: 600; }
+  #log-body .e { display: flex; gap: 6px; padding: 1px 0; }
+  #log-body .e .dot { flex: none; width: 7px; height: 7px; border-radius: 50%; margin-top: 4px; }
+  #log-body .e.pv { font-weight: 600; }
+  #log-body .e.moral, #log-body .e.mover { color: var(--dim); }
   #board-tip { position: fixed; z-index: 6; pointer-events: none; font-size: 12px; padding: 5px 8px; max-width: 300px; }
   #action-menu { position: fixed; z-index: 8; min-width: 240px; max-width: 340px; padding: 6px; font-size: 13px; }
   #action-menu .am-head { display: flex; align-items: center; font-weight: 600; margin: 0 2px 4px; }
@@ -272,6 +280,8 @@
   <button id="armies-open" title="Listas de ejército de 500 puntos y despliegue">Ejércitos</button>
   <button id="tables-open" title="Ctrl+S guarda con el nombre actual">Mesas</button>
   <button id="net-open" title="Jugar contra otra persona en otro ordenador">En línea</button>
+  <button id="log-open" title="Registro de la batalla (L)">Registro</button>
+  <button id="sound-btn" title="Sonido (activar o silenciar)">Sonido</button>
   <button id="undo" title="Ctrl+Z">Deshacer</button>
   <button id="redo" title="Ctrl+Y">Rehacer</button>
   <button id="terrain-edit" title="T: desbloquea la escenografía para moverla, añadirla o borrarla">Escenografía</button>
@@ -289,6 +299,8 @@
     <button id="roll" class="primary">Tirar 5D6</button>
   </div>
   <div id="dice-result"></div>
+  <div class="row" style="font-size:12px;margin:2px 0"><span class="dim">Velocidad de los ataques</span>
+    <select id="dice-speed" style="margin-left:auto;font-size:12px"><option value="normal">Normal</option><option value="rapido">Rápida</option><option value="instante">Al instante</option></select></div>
   <div class="row tray-row">
     <button id="tray-sort" title="En filas por resultado">Ordenar</button>
     <button id="tray-ones" title="Marca todos los 1">Marcar unos</button>
@@ -362,6 +374,10 @@
   <form id="chat-form"><input id="chat-input" placeholder="Escribe al rival…" maxlength="400" autocomplete="off"><button>Enviar</button></form>
 </div>
 <div id="react" class="panel" hidden role="dialog" aria-label="Fuego defensivo"></div>
+<div id="battle-log" class="panel" hidden>
+  <div class="row"><b>Registro de la batalla</b><button id="log-close" style="margin-left:auto;padding:0 7px">×</button></div>
+  <div id="log-body"></div>
+</div>
 <div id="board-tip" class="panel" hidden></div>
 <div id="action-menu" class="panel" hidden></div>
 <div id="toast" hidden></div>

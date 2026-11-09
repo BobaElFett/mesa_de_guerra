@@ -1,3 +1,4 @@
+import { note } from "./history";
 import type { GameState } from "../core/state";
 import { runMoraleTests } from "./morale";
 import { scoreObjectives } from "./missions";
@@ -23,6 +24,7 @@ export const PHASE_INFO: Record<Phase, { name: string; hint: string }> = {
 function enterCommand(s: GameState) {
   s.cp = [s.cp[0] + 1, s.cp[1] + 1];
   s.turnLog = { moves: {}, origins: {} };
+  if (s.rulesMode) note(s, "turno", `Ronda ${s.turn}: turno ${s.active === 0 ? "de la Legión Astral" : "del Enjambre"} (PM ${s.cp[s.active]})`);
   if (s.rulesMode) runMoraleTests(s);
   scoreObjectives(s, "inicio");
 }
@@ -52,6 +54,7 @@ export function advancePhase(s: GameState) {
 
 /** Fin del despliegue: ronda 1, mando de la Legión (los PM iniciales ya están puestos). */
 function startBattle(s: GameState) {
+  if (s.rulesMode) note(s, "turno", "Empieza la batalla. Ronda 1: turno de la Legión Astral", 0);
   s.turn = 1;
   s.active = 0;
   s.phase = "mando";

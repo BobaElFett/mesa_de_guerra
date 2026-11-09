@@ -110,6 +110,8 @@ export interface GameState {
   vpLog?: VpEntry[];
   kills?: KillEntry[];       // unidades destruidas, en orden
   killPts?: [number, number];
+  /** Registro de la batalla (#53). */
+  history?: import("../rules/history").HistoryEntry[];
   /** Carga declarada esperando a que el defensor decida si hace fuego defensivo. */
   pendingCharge?: { unit: string; target: string; defender: 0 | 1 } | null; // puntos de miniaturas enemigas eliminadas por cada jugador (Caza de presas)
 }

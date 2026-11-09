@@ -2,7 +2,7 @@ import { aiDeploy } from "./deploy";
 import { CommandBus } from "../core/commands";
 import { Faction, GameState, PLAYERS } from "../core/state";
 import { pendingChargers } from "../rules/melee";
-import { aiLastAction, aiPlayPhase, aiStep, aiWantsOverwatch, canFight, fightStep } from "./tactics";
+import { aiLastAction, aiLastActor, aiPlayPhase, aiStep, aiWantsOverwatch, canFight, fightStep } from "./tactics";
 import { AI_LEVEL_NAME, runtime, settings } from "./settings";
 
 // Jugar contra la IA (#38): cuando le toca al bando de la IA, juega sus fases paso a paso,
@@ -16,6 +16,8 @@ export class AiController {
   set paused(v: boolean) { runtime.aiPaused = v; }
   private wait = 0;
   onAction: (text: string) => void = () => {};
+  /** La IA acaba de actuar con esta unidad (para llevar la cámara). */
+  onFocus: (unit: string) => void = () => {};
   onStatus: (text: string | null) => void = () => {};
 
   constructor(private bus: CommandBus, private busy: () => boolean) {}
@@ -84,7 +86,7 @@ export class AiController {
     if (s.phase === "combate") {
       if (this.aiFightTurn(s)) {
         this.onStatus(`${name} combate…`);
-        if (fightStep(this.bus, side, settings.aiLevel)) { this.onAction(aiLastAction()); this.wait = STEP_MS; }
+        if (fightStep(this.bus, side, settings.aiLevel)) { { this.onAction(aiLastAction()); const u = aiLastActor(); if (u) this.onFocus(u); } this.wait = STEP_MS; }
         return;
       }
       if (!aiTurn) { this.onStatus(null); return; }
@@ -102,7 +104,7 @@ export class AiController {
       return;
     }
     if (aiStep(this.bus, settings.aiLevel)) {
-      this.onAction(aiLastAction());
+      { this.onAction(aiLastAction()); const u = aiLastActor(); if (u) this.onFocus(u); }
       this.wait = s.phase === "movimiento" ? STEP_MS * 0.8 : STEP_MS;
     } else {
       this.bus.dispatch({ type: "nextPhase" });

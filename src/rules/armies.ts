@@ -124,7 +124,7 @@ export function deployArmies(s: GameState, legion: ArmyList, swarm: ArmyList, mi
   // Partida nueva: empieza en la fase de despliegue, con los dos bandos a 1 PM
   s.turnLog = { moves: {}, origins: {} };
   s.turn = 1; s.active = 0; s.phase = "despliegue"; s.cp = [1, 1]; s.gameOver = false;
-  s.combatLog = []; s.moraleLog = [];
+  s.combatLog = []; s.moraleLog = []; s.history = [];
   setupMission(s, mission);
 }
 

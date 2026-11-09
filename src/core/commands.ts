@@ -1,3 +1,4 @@
+import { note, unitName } from "../rules/history";
 import { declareCharge, resolveReaction } from "../rules/reactions";
 import { applyStratagem, StratId } from "../rules/stratagems";
 import type { MissionId } from "../rules/missions";
@@ -141,12 +142,14 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
     }
     case "declareMove": {
       if (!s.units.some((u) => u.id === cmd.unit)) break;
+      if (s.rulesMode && cmd.kind === "retirarse") note(s, "mover", `${unitName(s, cmd.unit)} se retira del combate`);
       const move: { kind: MoveKind; advance?: number } = { kind: cmd.kind };
       if (cmd.kind === "avanzar") {
         const [[d], rng] = rollDice(s.rng, 1, 6);
         s.rng = rng;
         move.advance = d;
         s.rolls.push({ player: s.active, turn: s.turn, sides: 6, results: [d] });
+        if (s.rulesMode) note(s, "mover", `${unitName(s, cmd.unit)} avanza: D6 = ${d}`);
       }
       for (const u of formation(s, cmd.unit)) s.turnLog.moves[u] = move;   // el líder y su escuadra, juntos
       break;

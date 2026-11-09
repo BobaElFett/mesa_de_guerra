@@ -11,6 +11,7 @@ export class MissionPanel {
   private folded = false;
   onShowSummary: () => void = () => {};
   hiddenByTerrain = false;
+  hiddenByLog = false;
 
   constructor() {
     $("mission").addEventListener("click", (e) => {
@@ -24,7 +25,7 @@ export class MissionPanel {
   render(s: GameState) {
     const el = $("mission");
     const m = s.mission ? MISSIONS[s.mission] : null;
-    el.hidden = !m || this.hiddenByTerrain;
+    el.hidden = !m || this.hiddenByTerrain || this.hiddenByLog;
     if (!m) return;
     const vp = s.vp ?? [0, 0];
     const C = (i: 0 | 1) => FACTIONS[PLAYERS[i]].color;

@@ -185,9 +185,12 @@ export class DiceTray {
     });
   }
 
+  /** Multiplicador de velocidad de la animación. */
+  speed = 1;
+
   update(dt: number) {
     if (this.playing) {
-      this.t += dt;
+      this.t += dt * this.speed;
       const f = Math.floor(this.t / DT);
       let done = true;
       for (const d of this.dice) {

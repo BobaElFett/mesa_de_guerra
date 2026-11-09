@@ -1,3 +1,4 @@
+import { note } from "./history";
 import { BASE_RADIUS, Faction, GameState, PLAYERS } from "../core/state";
 import { DATASHEETS, unitPoints } from "./datasheets";
 import { gap } from "./geometry";
@@ -122,6 +123,7 @@ function addVp(s: GameState, player: 0 | 1, vp: number, why: string) {
   s.vp = [s.vp?.[0] ?? 0, s.vp?.[1] ?? 0];
   s.vp[player] += vp;
   s.vpLog = [...(s.vpLog ?? []), { turn: s.turn, player, vp, why }];
+  note(s, "pv", `+${vp} PV: ${why}`, player);
 }
 
 /**

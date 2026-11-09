@@ -24,6 +24,12 @@ import { stateHash } from "./net/protocol";
 import { fightOptions } from "./rules/melee";
 import { NetDialog } from "./ui/netDialog";
 import { ActionMenu } from "./ui/actionMenu";
+import { Effects } from "./view/effects";
+import { BattleLog } from "./ui/battleLog";
+import { sfx, weaponSound } from "./audio/sfx";
+import { saveSettings } from "./ai/settings";
+import { WEAPONS } from "./rules/datasheets";
+import type { AttackLogEntry } from "./rules/shooting";
 import { overwatchWeapons } from "./rules/reactions";
 import { expectedAttack } from "./ai/evaluate";
 import { actionsAgainst, pendingText, pendingUnits, selectedFormation, validTargets } from "./rules/actions";
@@ -89,6 +95,10 @@ const pieces = new PiecesView();
 scene.add(pieces.group);
 const objectives = new ObjectivesView();
 scene.add(objectives.group);
+const effects = new Effects();
+scene.add(effects.group);
+const battleLog = new BattleLog();
+let lastVp = 0, lastTurnSound = "";
 const missionPanel = new MissionPanel();
 const endDialog = new EndDialog();
 
@@ -237,6 +247,10 @@ hud.onFight = (unit, target) => bus.dispatch({ type: "fight", unit, target });
 // en curso por el bando activo (para probar o para ver una partida entera)
 const ai = new AiController(bus, () => shots.playing || endDialog.open || modal.open);
 ai.onAction = (t) => toast(`IA · ${t}`);
+ai.onFocus = (u) => {
+  const ms = bus.state.pieces.filter((p) => p.unit === u);
+  if (ms.length) cam.panTo(ms.reduce((n, p) => n + p.x, 0) / ms.length, ms.reduce((n, p) => n + p.z, 0) / ms.length);
+};
 ai.onStatus = (t) => {
   const el = document.getElementById("ai-status")!;
   el.hidden = !t;
@@ -456,7 +470,7 @@ hud.onTargetHover = (u) => { targetHover = u; };
 function refresh(_s?: unknown, cmd?: Command | null) {
   const last = bus.state.rolls.at(-1);
   const log = bus.state.combatLog;
-  const newAttacks = (cmd?.type === "shoot" || cmd?.type === "fight") && log.length > logLen ? log.slice(logLen) : [];
+  const newAttacks = cmd && log.length > logLen ? log.slice(logLen) : [];
   logLen = log.length;
   if (newAttacks.length) {
     pieces.hold(newAttacks.flatMap((e) => e.result.slain));
@@ -472,7 +486,9 @@ function refresh(_s?: unknown, cmd?: Command | null) {
   missionPanel.render(bus.state);
   if (bus.state.gameOver && !wasOver && bus.state.mission) setTimeout(() => endDialog.show(bus.state), shots.playing ? 2500 : 600);
   wasOver = bus.state.gameOver;
-  if (newAttacks.length) shots.playAll(newAttacks, bus.state);
+  if (newAttacks.length) { playAttackFx(newAttacks); shots.playAll(newAttacks, bus.state); }
+  soundFor(cmd ?? null);
+  battleLog.render(bus.state);
   // Chequeos de moral nuevos (al empezar una fase de mando)
   const ml = bus.state.moraleLog;
   if ((cmd?.type === "nextPhase" || cmd?.type === "endTurn") && ml.length > moraleLen) {
@@ -545,6 +561,7 @@ renderer.setAnimationLoop(() => {
   cam.update(dt);
   pieces.update(dt);
   objectives.update(dt);
+  effects.update(dt);
   ai.update(dt);
   const targets = targetHover ? new Set(bus.state.pieces.filter((p) => p.unit === targetHover).map((p) => p.id)) : undefined;
   const shockedIds = bus.state.rulesMode ? new Set(bus.state.pieces.filter((p) => bus.state.units.find((u) => u.id === p.unit)?.shocked).map((p) => p.id)) : undefined;
@@ -558,6 +575,69 @@ renderer.setAnimationLoop(() => {
   tray.update(dt);
   renderer.render(scene, cam.camera);
 });
+
+// Sensación de juego (#53): trazadoras, sonidos, velocidad de los ataques y registro
+battleLog.onToggle = (on) => { missionPanel.hiddenByLog = on; missionPanel.render(bus.state); battleLog.render(bus.state); };
+const soundBtn = document.getElementById("sound-btn")!;
+const paintSound = () => { soundBtn.textContent = sfx.on ? "Sonido" : "Sin sonido"; soundBtn.classList.toggle("on", sfx.on); };
+soundBtn.addEventListener("click", () => { sfx.setOn(!sfx.on); paintSound(); sfx.play("clic"); });
+paintSound();
+const speedSel = document.getElementById("dice-speed") as HTMLSelectElement;
+const applySpeed = () => {
+  const v = settings.diceSpeed;
+  const k = v === "rapido" ? 2.5 : 1;
+  shots.speed = k; tray.speed = k; effects.speed = v === "rapido" ? 1.6 : 1;
+  shots.instant = v === "instante";
+};
+speedSel.value = settings.diceSpeed;
+applySpeed();
+speedSel.addEventListener("change", () => { settings.diceSpeed = speedSel.value as typeof settings.diceSpeed; saveSettings(); applySpeed(); });
+shots.onStep = (n) => sfx.play("dados", 1 + Math.min(2, Math.floor(n / 10)));
+
+/** Trazadoras y sonidos de los ataques recién resueltos. */
+function playAttackFx(entries: AttackLogEntry[]) {
+  let t = 0;
+  for (const e of entries) {
+    const shooters = bus.state.pieces.filter((p) => p.unit === e.attacker);
+    const targets = [...bus.state.pieces.filter((p) => p.unit === e.target).map((p) => p.id), ...e.result.slain];
+    const posOf = (id: string) => { const g = pieces.groupOf(id); return g ? new THREE.Vector3(g.position.x, 0.9, g.position.z) : null; };
+    const aUnit = bus.state.units.find((u) => u.id === e.attacker);
+    const fac = aUnit?.faction ?? "legion";
+    const melee = e.kind === "combate";
+    const kind = WEAPONS[e.weapon]?.id === "granadas" ? "pesado" : fac === "swarm" ? "acido" : /plasma/i.test(e.weapon) ? "plasma" : /canon|cañon|pesad/i.test(e.weapon) ? "pesado" : "bala";
+    const n = Math.min(12, e.result.attacks);
+    for (let i = 0; i < n; i++) {
+      const a = shooters[i % Math.max(1, shooters.length)];
+      const tid = i < e.result.slain.length ? e.result.slain[i] : targets[i % Math.max(1, targets.length)];
+      const pa = a ? posOf(a.id) : null, pb = tid ? posOf(tid) : null;
+      if (!pb) continue;
+      pb.x += (Math.random() - 0.5) * 0.5; pb.z += (Math.random() - 0.5) * 0.5;
+      const delay = t + i * (melee ? 0.08 : 0.06);
+      if (melee || !pa) effects.sparks(pb, delay, fac === "swarm" ? "#c9a3ff" : "#ffd27a");
+      else {
+        const arrive = effects.shot(pa, pb, kind, delay);
+        const hit = i < e.result.hits;
+        if (hit) effects.impact(pb, arrive, i < e.result.slain.length, kind === "acido" ? "#c8ff9a" : "#fff3c4");
+      }
+    }
+    sfx.play(weaponSound(e.weapon, melee, fac), Math.max(1, Math.min(8, Math.ceil(e.result.attacks / 2))), t);
+    if (e.result.slain.length) sfx.play("baja", Math.min(3, e.result.slain.length), t + 0.5);
+    t += 0.35;
+  }
+}
+
+/** Sonidos de las órdenes que no son ataques. */
+function soundFor(cmd: Command | null) {
+  const s = bus.state;
+  if (cmd?.type === "roll" || cmd?.type === "reroll") sfx.play("dados");
+  if (cmd?.type === "charge" || (cmd?.type === "reactCharge")) { const c = Object.values(s.turnLog.charges ?? {}).at(-1); if (c) sfx.play("carga"); }
+  const vp = (s.vp?.[0] ?? 0) + (s.vp?.[1] ?? 0);
+  if (vp > lastVp) sfx.play("pv", 1, 0.2);
+  lastVp = vp;
+  const tk = `${s.turn}-${s.active}`;
+  if (s.rulesMode && s.phase === "mando" && tk !== lastTurnSound) { sfx.play("turno"); }
+  lastTurnSound = tk;
+}
 
 // Para pruebas desde la consola
 (window as unknown as { mesa: unknown }).mesa = { bus, cam, pieces, controls, tape, ranges, tray, tables, shots, armies, ai, endDialog, fightOptions, net, tactics: { aiStep, fightStep, canFight }, stateHash };

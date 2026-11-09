@@ -1,3 +1,4 @@
+import { note, unitName } from "./history";
 import { BASE_RADIUS, Faction, GameState, Piece, PLAYERS } from "../core/state";
 import type { Phase } from "./turn";
 import { DATASHEETS, WEAPONS } from "./datasheets";
@@ -86,6 +87,7 @@ export function applyStratagem(s: GameState, id: StratId, unitId: string, target
   s.cp = [...s.cp] as [number, number];
   s.cp[s.active] -= STRATAGEMS[id].cost;
   s.turnLog.strats = [...(s.turnLog.strats ?? []), { id, unit: unitId }];
+  note(s, "estratagema", `Estratagema ${STRATAGEMS[id].name} (${STRATAGEMS[id].cost} PM) en ${unitName(s, unitId)}${target ? ` contra ${unitName(s, target)}` : ""}`);
   if (id === "reagrupar") s.units.find((x) => x.id === unitId)!.shocked = false;
   if (id === "granadas") throwGrenades(s, unitId, target!);
   if (id === "oleada") endlessWave(s, unitId);

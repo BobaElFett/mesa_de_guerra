@@ -1,3 +1,4 @@
+import { note, unitName } from "./history";
 import { GameState, PLAYERS } from "../core/state";
 import { rollDice } from "../core/rng";
 import { DATASHEETS } from "./datasheets";
@@ -73,6 +74,7 @@ export function runMoraleTests(s: GameState): MoraleEntry[] {
     out.push({ turn: s.turn, player: s.active, unit: u.id, dice: [d[0], d[1]], need, passed });
   }
   s.moraleLog = [...(s.moraleLog ?? []), ...out];
+  for (const m of out) note(s, "moral", `${unitName(s, m.unit)} ${m.dice === null ? "supera la moral por sinapsis" : `chequea moral: ${m.dice[0] + m.dice[1]} (necesita ${m.need}) — ${m.passed ? "aguanta" : "desmoralizada"}`}`, m.player as 0 | 1);
   return out;
 }
 

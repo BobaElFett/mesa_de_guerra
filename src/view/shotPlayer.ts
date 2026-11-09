@@ -33,6 +33,12 @@ export class ShotPlayer {
   private lines: string[] = [];
   private footer = "";
   onDone: () => void = () => {};
+  /** Multiplicador de velocidad (Rápida = 2,5). */
+  speed = 1;
+  /** Al instante: se resuelve sin animación. */
+  instant = false;
+  /** Cada vez que empieza un paso con dados. */
+  onStep: (dice: number) => void = () => {};
 
   constructor(private tray: DiceTray, private panel: HTMLElement) {
     panel.addEventListener("click", (e) => {
@@ -64,6 +70,7 @@ export class ShotPlayer {
     this.queue = entries.slice(1);
     this.stateRef = s;
     this.play(entries[0], s);
+    if (this.instant) this.finish();
   }
 
   play(entry: AttackLogEntry, s: GameState) {
@@ -162,7 +169,7 @@ export class ShotPlayer {
       this.wait = PAUSE;
       return;
     }
-    this.wait -= dt;
+    this.wait -= dt * this.speed;
     if (this.wait <= 0) this.next();
   }
 
@@ -172,7 +179,7 @@ export class ShotPlayer {
     const step = this.steps[this.i];
     this.settled = false;
     this.tray.setGood(null);
-    if (step.dice.length) this.tray.show(this.record(step.dice), true);
+    if (step.dice.length) { this.tray.show(this.record(step.dice), true); this.onStep(step.dice.length); }
     else { this.settled = true; this.lines.push(step.line); this.wait = 0.3; }
     this.render(true);
   }
