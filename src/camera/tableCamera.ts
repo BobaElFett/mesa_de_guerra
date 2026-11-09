@@ -44,6 +44,14 @@ export class TableCamera {
     this.topDown = false;
   }
 
+  /** Desliza suavemente el punto de mira hasta (x, z), sin cambiar la distancia (o acercándose hasta `maxDist`). */
+  panTo(x: number, z: number, maxDist?: number) {
+    this.goal = new THREE.Vector3(x, 0, z);
+    if (maxDist !== undefined && this.targetDistance > maxDist) this.targetDistance = maxDist;
+    this.topDown = false;
+  }
+  private goal: THREE.Vector3 | null = null;
+
   /** Mira desde el lado de un jugador (0 = Legión, +z; 1 = Enjambre, −z). */
   sideOf(player: 0 | 1) {
     this.yaw = player === 0 ? 0 : Math.PI;
@@ -104,6 +112,10 @@ export class TableCamera {
     this.distance += (this.targetDistance - this.distance) * Math.min(1, dt * 10);
 
     let mx = 0, mz = 0;
+    if (this.goal) {
+      this.target.lerp(this.goal, Math.min(1, dt * 4));
+      if (this.target.distanceTo(this.goal) < 0.05 || this.keys.size) this.goal = null;
+    }
     if (this.keys.has("KeyW") || this.keys.has("ArrowUp")) mz -= 1;
     if (this.keys.has("KeyS") || this.keys.has("ArrowDown")) mz += 1;
     if (this.keys.has("KeyA") || this.keys.has("ArrowLeft")) mx -= 1;

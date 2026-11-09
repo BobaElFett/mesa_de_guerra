@@ -50,6 +50,11 @@ export class PieceControls {
   /** Reglas activas (modo reglas) o null (mesa libre). */
   gate: () => RulesGate | null = () => null;
 
+  /** Clic sobre una miniatura: si devuelve true, se lo queda otro (p. ej. el menú de acciones sobre un enemigo). */
+  interceptClick: (id: string, clientX: number, clientY: number) => boolean = () => false;
+  /** Al pasar el ratón por encima de una miniatura (o null al salir). */
+  onHover: (id: string | null, clientX: number, clientY: number) => void = () => {};
+
   /** Mientras devuelva true (p. ej. con la cinta métrica), el botón izquierdo no es nuestro. */
   blocked: () => boolean = () => false;
 
@@ -80,6 +85,7 @@ export class PieceControls {
       this.g = { kind: "box", sx: e.clientX, sy: e.clientY, additive: e.shiftKey };
       return;
     }
+    if (!e.shiftKey && this.interceptClick(id, e.clientX, e.clientY)) { this.g = { kind: "none" }; return; }
     // Mayús+clic sobre una seleccionada la quita (sin arrastre)
     if (e.shiftKey && this.selected.has(id)) {
       this.selected.delete(id);
@@ -112,6 +118,7 @@ export class PieceControls {
     if (g.kind === "none") {
       this.hovered = this.blocked() ? null : this.pick();
       if (!this.blocked()) this.dom.style.cursor = this.hovered ? "grab" : "default";
+      this.onHover(this.hovered, e.clientX, e.clientY);
       return;
     }
     if (g.kind === "box") {

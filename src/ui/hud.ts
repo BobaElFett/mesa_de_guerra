@@ -269,6 +269,8 @@ export class Hud {
   rollNow() { this.bus.dispatch({ type: "roll", count: this.diceCount, sides: 6 }); }
 
   /** Intro / botón: siguiente fase en modo reglas; siguiente turno en mesa libre. */
+  /** Lo que queda por hacer en la fase (lo pone main, que sabe qué bandos manda el jugador). */
+  guideText: () => string | null = () => null;
   /** ¿Puede el jugador dar órdenes a esta unidad? (no a las de la IA) */
   canAct: (unit: string) => boolean = () => true;
   /** Antes de pasar de fase o de turno; false lo impide. */
@@ -303,7 +305,9 @@ export class Hud {
       phases.innerHTML = (deploying ? [<Phase>"despliegue", ...PHASES] : PHASES).map((p) => `<span class="ph${p === s.phase && !s.gameOver ? " now" : ""}">${PHASE_INFO[p].name}</span>`).join("")
         + `<span class="cp" title="Puntos de mando">PM <b style="color:${FACTIONS.legion.color}">${s.cp[0]}</b> · <b style="color:${FACTIONS.swarm.color}">${s.cp[1]}</b></span>`
         + (s.mission ? `<span class="cp" title="Puntos de victoria">PV <b style="color:${FACTIONS.legion.color}">${res.vp[0]}</b> · <b style="color:${FACTIONS.swarm.color}">${res.vp[1]}</b></span>` : "");
-      $("phase-hint").textContent = s.gameOver ? "Partida terminada. Deshacer (Ctrl+Z) vuelve atrás; Nueva mesa empieza otra." : PHASE_INFO[s.phase].hint;
+      const guide = s.gameOver ? null : this.guideText();
+      $("phase-hint").innerHTML = s.gameOver ? "Partida terminada. Deshacer (Ctrl+Z) vuelve atrás; Nueva mesa empieza otra."
+        : PHASE_INFO[s.phase].hint + (guide ? `<br><b class="guide">${guide}</b>` : "");
     }
     $("phase-hint").hidden = !s.rulesMode;
     ($("undo") as HTMLButtonElement).disabled = !this.bus.canUndo;

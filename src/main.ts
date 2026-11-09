@@ -23,6 +23,8 @@ import { aiPlayPhase, aiStep, canFight, fightStep } from "./ai/tactics";
 import { stateHash } from "./net/protocol";
 import { fightOptions } from "./rules/melee";
 import { NetDialog } from "./ui/netDialog";
+import { ActionMenu } from "./ui/actionMenu";
+import { actionsAgainst, pendingText, pendingUnits, selectedFormation, validTargets } from "./rules/actions";
 import { ChatPanel } from "./ui/chat";
 import { runtime } from "./ai/settings";
 import { PLAYERS } from "./core/state";
@@ -244,6 +246,95 @@ document.getElementById("bot-phase")!.addEventListener("click", () => {
   if (bus.state.phase === "despliegue") { bus.dispatch({ type: "nextPhase" }); return; }
   aiPlayPhase(bus, settings.aiLevel);
 });
+// Acciones sobre el tablero (#46) y guía de la fase (#47)
+/** ¿Puede este jugador mandar sobre ese bando? (no sobre el de la IA ni, en línea, el del rival) */
+function controllable(f: "legion" | "swarm"): boolean {
+  if (runtime.online) return runtime.localSide === f;
+  return !(settings.aiSide === f && !ai.paused);
+}
+const actionMenu = new ActionMenu(bus);
+actionMenu.canRun = (a) => !a.cmd || !("unit" in a.cmd) || hud.canAct((a.cmd as { unit: string }).unit);
+let canTargetIds = new Set<string>();
+let pendingIds = new Set<string>();
+let guideKey = "";
+/** La formación elegida, si es de un bando que manda este jugador. */
+function actor(): string[] | null {
+  const s = bus.state;
+  const f = selectedFormation(s, controls.selected);
+  if (!f) return null;
+  const fac = s.units.find((u) => u.id === f[0])!.faction;
+  return controllable(fac) ? f : null;
+}
+const enemyAt = (id: string, a: string[]) => {
+  const s = bus.state;
+  const p = s.pieces.find((x) => x.id === id);
+  const mine = s.units.find((u) => u.id === a[0])?.faction;
+  return p?.unit && p.faction !== mine ? p.unit : null;
+};
+controls.interceptClick = (id, x, y) => {
+  const s = bus.state;
+  if (!s.rulesMode || s.gameOver || !["disparo", "carga", "combate"].includes(s.phase)) return false;
+  const a = actor();
+  if (!a) return false;
+  const target = enemyAt(id, a);
+  if (!target) return false;
+  const acts = actionsAgainst(s, a, target);
+  if (!acts.length) return false;
+  actionMenu.open(DATASHEETS[s.units.find((u) => u.id === target)!.datasheet].name, acts, x, y);
+  return true;
+};
+controls.onHover = (id, x, y) => {
+  const s = bus.state;
+  const a = id && s.rulesMode && ["disparo", "carga", "combate"].includes(s.phase) && !actionMenu.isOpen ? actor() : null;
+  const target = a && id ? enemyAt(id, a) : null;
+  if (!a || !target) { actionMenu.hideTip(); if (hoverFromBoard) { targetHover = null; hoverFromBoard = false; } return; }
+  targetHover = target; hoverFromBoard = true;
+  actionMenu.tip(DATASHEETS[s.units.find((u) => u.id === target)!.datasheet].name, actionsAgainst(s, a, target), x, y);
+};
+let hoverFromBoard = false;
+/** Recalcula los resaltados de la guía (unidades pendientes y objetivos posibles). */
+function updateGuide() {
+  const s = bus.state;
+  const a = actor();
+  const key = `${bus.length}|${[...controls.selected].join(",")}|${s.phase}|${s.active}|${ai.paused}`;
+  if (key === guideKey) return;
+  guideKey = key;
+  canTargetIds = new Set();
+  if (a) for (const u of validTargets(s, a)) for (const p of s.pieces) if (p.unit === u) canTargetIds.add(p.id);
+  pendingIds = new Set();
+  for (const f of ["legion", "swarm"] as const) if (controllable(f)) for (const u of pendingUnits(s, f)) for (const p of s.pieces) if (p.unit === u) pendingIds.add(p.id);
+}
+/** Tab: elige la siguiente unidad pendiente y la centra. */
+window.addEventListener("keydown", (e) => {
+  if (e.code !== "Tab" || modal.open || (e.target as HTMLElement)?.tagName === "INPUT") return;
+  const s = bus.state;
+  const units: string[] = [];
+  for (const f of ["legion", "swarm"] as const) if (controllable(f)) units.push(...pendingUnits(s, f));
+  if (!units.length) return;
+  e.preventDefault();
+  const cur = selectedFormation(s, controls.selected)?.[0];
+  const i = cur ? units.indexOf(cur) : -1;
+  const next = units[(i + 1) % units.length];
+  controls.selected.clear();
+  for (const p of formationModels(s, next)) controls.selected.add(p.id);
+  controls.onSelectionChange();
+  const ms = formationModels(s, next);
+  cam.panTo(ms.reduce((n, p) => n + p.x, 0) / ms.length, ms.reduce((n, p) => n + p.z, 0) / ms.length, 40);
+});
+let confirmAdvance = 0;
+hud.guideText = () => {
+  const s = bus.state;
+  if (!s.rulesMode || s.phase === "despliegue" || s.phase === "mando") return null;
+  const parts: string[] = [];
+  for (const f of ["legion", "swarm"] as const) {
+    if (!controllable(f) || (s.phase !== "combate" && PLAYERS[s.active] !== f)) continue;
+    const t = pendingText(s, f);
+    if (t) parts.push(t);
+  }
+  if (!parts.length) return null;
+  const hint = ["disparo", "carga", "combate"].includes(s.phase) ? " Elige una unidad y haz clic en un enemigo." : "";
+  return parts.join(" ") + (parts.some((p) => !p.startsWith("Nada")) ? `${hint} <span class="dim">(Tab: siguiente)</span>` : "");
+};
 hud.canAct = (unit) => {
   const u = bus.state.units.find((x) => x.id === unit);
   if (u && runtime.online && runtime.localSide && u.faction !== runtime.localSide) { toast("Esa unidad es de tu rival."); return false; }
@@ -254,6 +345,17 @@ hud.beforeAdvance = () => {
   const s = bus.state;
   if (runtime.online && s.rulesMode && s.phase !== "despliegue" && PLAYERS[s.active] !== runtime.localSide) { toast("Es el turno de tu rival."); return false; }
   if (ai.isAiTurn() && !ai.paused) { toast("Es el turno de la IA (pulsa Pausar IA para tomar el control)."); return false; }
+  // Aviso si aún queda algo por hacer en la fase (segunda pulsación en 3 s: pasa)
+  const f = PLAYERS[s.active];
+  if (s.rulesMode && !s.gameOver && controllable(f) && s.phase !== "combate" && Date.now() - confirmAdvance > 3000) {
+    const left = pendingUnits(s, f);
+    if (left.length && s.phase !== "mando") {
+      confirmAdvance = Date.now();
+      toast(`${pendingText(s, f)} Pulsa otra vez para pasar igualmente.`);
+      return false;
+    }
+  }
+  confirmAdvance = 0;
   ai.flushFights();
   return true;
 };
@@ -418,7 +520,9 @@ renderer.setAnimationLoop(() => {
   ai.update(dt);
   const targets = targetHover ? new Set(bus.state.pieces.filter((p) => p.unit === targetHover).map((p) => p.id)) : undefined;
   const shockedIds = bus.state.rulesMode ? new Set(bus.state.pieces.filter((p) => bus.state.units.find((u) => u.id === p.unit)?.shocked).map((p) => p.id)) : undefined;
-  pieces.highlight(controls.selected, controls.hovered, controls.selected.size ? coherencyWarnings() : undefined, targets, shockedIds);
+  updateGuide();
+  pieces.matPending.opacity = 0.35 + 0.3 * Math.sin(performance.now() / 260);
+  pieces.highlight(controls.selected, controls.hovered, controls.selected.size ? coherencyWarnings() : undefined, targets, shockedIds, canTargetIds, pendingIds);
   shots.update(dt);
   ranges.update(pieces, controls.selected);
   tape.update();

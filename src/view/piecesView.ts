@@ -32,6 +32,9 @@ export class PiecesView {
   private matHover = new THREE.MeshBasicMaterial({ color: RING_HOVER, transparent: true, opacity: 0.55, depthWrite: false });
   private matShocked = new THREE.MeshBasicMaterial({ color: "#9a2b2b", transparent: true, opacity: 0.8, depthWrite: false });
   private matTarget = new THREE.MeshBasicMaterial({ color: "#ff9a3d", transparent: true, opacity: 0.95, depthWrite: false });
+  private matCanTarget = new THREE.MeshBasicMaterial({ color: "#ff9a3d", transparent: true, opacity: 0.35, depthWrite: false });
+  /** Unidades que aún pueden actuar en la fase: anillo verde que late. */
+  readonly matPending = new THREE.MeshBasicMaterial({ color: "#7be08a", transparent: true, opacity: 0.6, depthWrite: false });
   private matWarn = new THREE.MeshBasicMaterial({ color: RING_WARN, transparent: true, opacity: 0.95, depthWrite: false });
 
   sync(state: GameState) {
@@ -124,7 +127,8 @@ export class PiecesView {
   }
 
   /** Anillos bajo las miniaturas y marcos bajo la escenografía: dorado = seleccionado, tenue = ratón. */
-  highlight(selected: Iterable<string>, hovered: string | null, warn: Set<string> = new Set(), targets: Set<string> = new Set(), shocked: Set<string> = new Set()) {
+  highlight(selected: Iterable<string>, hovered: string | null, warn: Set<string> = new Set(), targets: Set<string> = new Set(), shocked: Set<string> = new Set(),
+    canTarget: Set<string> = new Set(), pending: Set<string> = new Set()) {
     let n = 0;
     const put = (id: string, mat: THREE.Material) => {
       const e = this.entries.get(id);
@@ -156,6 +160,8 @@ export class PiecesView {
     for (const id of warn) if (!sel.has(id)) put(id, this.matWarn);
     for (const id of targets) if (!sel.has(id) && !warn.has(id)) put(id, this.matTarget);
     for (const id of shocked) if (!sel.has(id) && !warn.has(id) && !targets.has(id)) put(id, this.matShocked);
+    for (const id of canTarget) if (!sel.has(id) && !warn.has(id) && !targets.has(id)) put(id, this.matCanTarget);
+    for (const id of pending) if (!sel.has(id) && !warn.has(id) && !targets.has(id) && !shocked.has(id)) put(id, this.matPending);
     if (hovered && !sel.has(hovered) && !warn.has(hovered)) put(hovered, this.matHover);
     for (let i = n; i < this.marks.length; i++) this.marks[i].visible = false;
   }
