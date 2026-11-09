@@ -61,7 +61,7 @@ export function runMoraleTests(s: GameState): MoraleEntry[] {
   for (const u of s.units) {
     if (u.faction !== faction) continue;
     u.shocked = false;
-    if (!belowHalf(s, u.id)) continue;
+    if (u.reserve || !belowHalf(s, u.id)) continue;   // en reserva no chequea
     const need = DATASHEETS[u.datasheet].profile.Ld;
     if (isSynaptic(s, u.id) || inSynapse(s, u.id)) {
       out.push({ turn: s.turn, player: s.active, unit: u.id, dice: null, need, passed: true });

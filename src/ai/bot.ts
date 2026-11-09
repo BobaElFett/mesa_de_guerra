@@ -1,3 +1,4 @@
+import { arriveStep } from "./arrival";
 import { formation, formationModels, partnerOf } from "../rules/leaders";
 import { CommandBus, PieceMove } from "../core/commands";
 import { GameState, Piece, PLAYERS } from "../core/state";
@@ -34,6 +35,7 @@ function nearestEnemy(s: GameState, p: Piece): Piece | null {
 }
 
 function movePhase(bus: CommandBus) {
+  while (arriveStep(bus, false)) { /* las reservas llegan primero (#56) */ }
   for (const u of ownUnits(bus.state)) {
     const s = bus.state;
     if (u.attachedTo && partnerOf(s, u.id)) continue;    // el líder se mueve con su escuadra

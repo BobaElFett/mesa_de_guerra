@@ -1,3 +1,4 @@
+import { applyArrival } from "../rules/reserves";
 import { note, unitName } from "../rules/history";
 import { declareCharge, resolveReaction } from "../rules/reactions";
 import { applyStratagem, StratId } from "../rules/stratagems";
@@ -48,6 +49,8 @@ export type Command =
   | { type: "spendCP"; player: 0 | 1; amount: number }
   /** Estratagema: gasta PM y da su efecto a una unidad del jugador activo. */
   | { type: "stratagem"; id: StratId; unit: string; target?: string }
+  /** Una unidad en reserva llega a la mesa con centro en (x, z) (#56). */
+  | { type: "arrive"; unit: string; x: number; z: number }
   /** El defensor de una carga en espera decide si hace fuego defensivo (#50). */
   | { type: "reactCharge"; fire: boolean };
 
@@ -160,6 +163,10 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
     }
     case "charge": {
       declareCharge(s, cmd.unit, cmd.target);      // con fuego defensivo posible, queda en espera
+      break;
+    }
+    case "arrive": {
+      applyArrival(s, cmd.unit, cmd.x, cmd.z);
       break;
     }
     case "reactCharge": {

@@ -37,7 +37,7 @@ export interface Profile {
   OC: number;   // control de objetivo
 }
 
-export type UnitAbility = "alMando" | "sargento" | "blindado" | "sinaptico" | "rapidez";
+export type UnitAbility = "alMando" | "sargento" | "blindado" | "sinaptico" | "rapidez" | "despliegueProfundo" | "tuneles";
 
 export interface Datasheet {
   id: DatasheetId;
@@ -61,8 +61,8 @@ export interface Datasheet {
 }
 
 export type DatasheetId =
-  | "capitan" | "asalto" | "fuegoPesado" | "andador"
-  | "tirano" | "garras" | "escupidores" | "nodo";
+  | "capitan" | "asalto" | "fuegoPesado" | "andador" | "exterminadores"
+  | "tirano" | "garras" | "escupidores" | "nodo" | "acechadores";
 
 const w = (id: string, name: string, range: number | "CC", attacks: Dice, skill: number | null,
   strength: number, ap: number, damage: Dice, abilities: WeaponAbility[] = []): Weapon =>
@@ -87,6 +87,10 @@ export const WEAPONS: Record<string, Weapon> = Object.fromEntries([
   w("mordiscos", "Mordiscos", "CC", 1, 4, 3, 0, 1),
   w("canonBio", "Cañón bio", 24, 3, 4, 5, -1, 1),
   w("garrasAfiladas", "Garras afiladas", "CC", 4, 3, 5, -2, 1),
+  // Unidades nuevas (#57)
+  w("bolterAsalto", "Bólter de asalto", 24, 2, 3, 4, 0, 1, [{ kind: "rafaga", x: 2 }]),
+  w("punoEnergia", "Puño de energía", "CC", 3, 4, 8, -2, 2),
+  w("cuchillasDobles", "Cuchillas dobles", "CC", 5, 3, 6, -2, 1, [{ kind: "sostenida", x: 1 }]),
 ].map((x) => [x.id, x]));
 
 export const DATASHEETS: Record<DatasheetId, Datasheet> = {
@@ -114,6 +118,18 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
     profile: { M: 8, T: 9, Sv: 2, W: 12, Ld: 6, OC: 4 },
     sizes: [{ models: 1, points: 150 }], weapons: ["canonAsalto", "punoCombate"],
     abilities: ["blindado"], model: "andador",
+  },
+  exterminadores: {
+    id: "exterminadores", name: "Exterminadores", faction: "legion",
+    profile: { M: 5, T: 5, Sv: 2, Inv: 4, W: 3, Ld: 6, OC: 1 },
+    sizes: [{ models: 5, points: 200 }], weapons: ["bolterAsalto", "punoEnergia"],
+    abilities: ["despliegueProfundo"], model: "exterminador",
+  },
+  acechadores: {
+    id: "acechadores", name: "Acechadores", faction: "swarm",
+    profile: { M: 8, T: 5, Sv: 4, W: 3, Ld: 8, OC: 1 },
+    sizes: [{ models: 3, points: 75 }, { models: 6, points: 150 }], weapons: ["cuchillasDobles"],
+    abilities: ["tuneles", "rapidez"], model: "acechador",
   },
   tirano: {
     id: "tirano", name: "Tirano Sináptico", faction: "swarm", character: true, big: true,
@@ -170,4 +186,6 @@ export const UNIT_ABILITY_TEXT: Record<UnitAbility, { name: string; text: string
   blindado: { name: "Blindado", text: "Cada ataque que lo daña quita 1 herida menos (mínimo 1)." },
   sinaptico: { name: "Sináptico", text: "Las unidades del Enjambre a 12\" superan solas los chequeos de moral." },
   rapidez: { name: "Rapidez", text: "Puede declarar una carga después de avanzar." },
+  despliegueProfundo: { name: "Despliegue profundo", text: "Puede empezar en reserva y teletransportarse en la fase de movimiento (desde la ronda 2) a cualquier punto a más de 9\" de los enemigos. Si al acabar la ronda 3 no ha llegado, se pierde." },
+  tuneles: { name: "Túneles", text: "Puede empezar en reserva y salir de un túnel en la fase de movimiento (desde la ronda 2) a más de 9\" de los enemigos. Si al acabar la ronda 3 no ha llegado, se pierde." },
 };

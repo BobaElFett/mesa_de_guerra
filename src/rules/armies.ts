@@ -1,3 +1,4 @@
+import { canReserve, reserveErrors, sendToReserves } from "./reserves";
 import { onForbiddenTerrain } from "./geometry";
 import { resolveOverlaps } from "../core/placement";
 import { zoneBand } from "./deployment";
@@ -12,6 +13,8 @@ export interface ArmyEntry {
   models: number;
   /** Personaje: índice (en la lista) de la escuadra que lidera. */
   leads?: number;
+  /** Empieza en reserva (#56): solo unidades con Despliegue profundo o Túneles. */
+  reserve?: boolean;
 }
 export interface ArmyList { name?: string; units: ArmyEntry[] }
 
@@ -35,6 +38,7 @@ export function validateList(list: ArmyList, faction: Faction, limit = POINTS_LI
     if (ds.big) big++;
     if (ds.character) characters++;
   }
+  errs.push(...reserveErrors(list));
   // Líderes: solo a escuadras que puedan liderar, y una escuadra con un líder como mucho
   const led = new Set<number>();
   for (const u of list.units) {
@@ -61,6 +65,8 @@ export function validateList(list: ArmyList, faction: Faction, limit = POINTS_LI
 export function deployArmies(s: GameState, legion: ArmyList, swarm: ArmyList, mission: MissionId = DEFAULT_MISSION) {
   s.units = [];
   s.pieces = [];
+  s.reserves = [];
+  const reserved: string[] = [];
   let unitN = 0;
   for (const [faction, list] of [["legion", legion], ["swarm", swarm]] as [Faction, ArmyList][]) {
     const prefix = faction === "legion" ? "L" : "E";
@@ -95,6 +101,7 @@ export function deployArmies(s: GameState, legion: ArmyList, swarm: ArmyList, mi
       const unit: Unit = { id: `U${++unitN}`, datasheet: b.u.datasheet, faction, startingModels: b.u.models };
       if (b.attached) unit.attachedTo = unitIdOf.get(b.u.leads!);
       unitIdOf.set(b.i, unit.id);
+      if (b.u.reserve && canReserve(b.ds)) reserved.push(unit.id);
       s.units.push(unit);
       for (let i = 0; i < b.u.models; i++) {
         const col = i % b.perRow, row = Math.floor(i / b.perRow);
@@ -113,6 +120,8 @@ export function deployArmies(s: GameState, legion: ArmyList, swarm: ArmyList, mi
       x += b.width;
     });
   }
+  // Reservas (#56): fuera de la mesa hasta que lleguen
+  sendToReserves(s, reserved);
   // Nadie empieza encima de contenedores, búnker o barricadas: al hueco más cercano de su zona
   const mine = s.pieces.filter((p) => p.unit);
   const fixed = resolveOverlaps(s.pieces, mine.map((p) => ({ id: p.id, x: p.x, z: p.z })), {

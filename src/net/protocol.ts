@@ -71,6 +71,9 @@ function cmdPermission(s: GameState, c: Command, host: boolean, side: Faction): 
       if (sideOfUnit(s, c.unit) !== side) return "Esa unidad es del rival.";
       return active === side ? null : "No es tu turno.";
     case "fight": return sideOfUnit(s, c.unit) === side ? null : "Esa unidad es del rival.";
+    case "arrive":
+      if (sideOfUnit(s, c.unit) !== side) return "Esa unidad es del rival.";
+      return PLAYERS[s.active] === side ? null : "No es tu turno.";
     case "nextPhase": case "endTurn":
       if (s.phase === "despliegue") return null;
       return active === side ? null : "No es tu turno.";

@@ -54,6 +54,10 @@ export class PieceControls {
 
   /** Clic sobre una miniatura: si devuelve true, se lo queda otro (p. ej. el menú de acciones sobre un enemigo). */
   interceptClick: (id: string, clientX: number, clientY: number) => boolean = () => false;
+  /** Clic en la mesa vacía; true = ya se ha atendido (p. ej. colocar una unidad que llega de la reserva). */
+  interceptBoard: (x: number, z: number) => boolean = () => false;
+  /** El ratón se mueve sobre la mesa sin gesto en curso (vista previa de colocación). */
+  onBoardHover: (x: number, z: number) => void = () => {};
   /** Al pasar el ratón por encima de una miniatura (o null al salir). */
   onHover: (id: string | null, clientX: number, clientY: number) => void = () => {};
 
@@ -83,6 +87,7 @@ export class PieceControls {
     const id = this.pick();
     const p = this.tablePoint();
     this.dom.setPointerCapture(e.pointerId);
+    if (!id && p && this.interceptBoard(p.x, p.z)) { this.g = { kind: "none" }; return; }
     if (!id || !p) {
       this.g = { kind: "box", sx: e.clientX, sy: e.clientY, additive: e.shiftKey };
       return;
@@ -123,6 +128,8 @@ export class PieceControls {
       this.hovered = this.blocked() ? null : this.pick();
       if (!this.blocked()) this.dom.style.cursor = this.hovered ? "grab" : "default";
       this.onHover(this.hovered, e.clientX, e.clientY);
+      const tp = this.tablePoint();
+      if (tp) this.onBoardHover(tp.x, tp.z);
       return;
     }
     if (g.kind === "box") {

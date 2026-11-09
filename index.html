@@ -225,6 +225,12 @@
   #action-menu > button, #action-menu .off { display: block; width: 100%; text-align: left; margin: 2px 0; padding: 4px 8px; box-sizing: border-box; }
   #action-menu span { display: block; font-size: 11.5px; color: var(--dim); font-weight: 400; }
   #action-menu .off { opacity: .55; border: 1px dashed var(--line); border-radius: 4px; }
+  #reserves { font-size: 12px; text-align: center; padding: 4px 0 2px; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; align-items: center; }
+  #reserves button { font-size: 12px; padding: 3px 8px; border-color: #7dff9a88; }
+  #reserves .warn { color: #ffb36b; }
+  body.placing #view canvas, body.placing canvas { cursor: crosshair !important; }
+  .reserve-pick { display: flex !important; align-items: center; gap: 4px; font-size: 12px; color: #b9c3d6; margin-top: 2px; }
+  .reserve-pick input { width: auto !important; flex: none; margin: 0; }
   #phase-hint .guide { color: #9fe0a6; font-weight: 600; }
   .sel-hint { font-size: 12px; margin-top: 6px; }
   #ai-status { font-size: 12px; color: var(--gold); margin-left: 6px; white-space: nowrap; }
@@ -280,6 +286,7 @@
     <li><b>Ejércitos</b>: listas, misión, rival (IA o dos jugadores) y dificultad</li>
     <li>Objetivos: los controla quien sume más CO a 3"; los PV, arriba a la derecha</li>
     <li>Estratagemas (1 PM): botones en la ficha de la unidad, en tu turno</li>
+    <li><b>Reservas</b>: Exterminadores y Acechadores pueden empezar fuera (casilla en Ejércitos). Desde la ronda 2, <b>Llegar</b> en el panel de turno y clic en la mesa, a más de 9" de los enemigos; si al acabar la ronda 3 no han llegado, se pierden</li>
     <li><b>Pausar IA</b> para tomar el control de su bando</li>
     <li>Con una unidad tuya elegida, <b>clic en un enemigo</b>: disparar, cargar o combatir, con probabilidades</li>
     <li><kbd>Tab</kbd> siguiente unidad que aún puede actuar (anillo verde) · <kbd>L</kbd> registro</li>
@@ -300,6 +307,7 @@
   </div>
   <div id="phases" hidden></div>
   <div id="phase-hint" class="dim" hidden></div>
+  <div id="reserves" hidden></div>
 </div>
 
 <div id="tools" class="panel">

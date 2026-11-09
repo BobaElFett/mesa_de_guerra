@@ -1,3 +1,4 @@
+import { arrivalBlocked, LAST_ARRIVAL_ROUND, reserveUnits } from "./reserves";
 import type { Command } from "../core/commands";
 import { Faction, GameState, PLAYERS } from "../core/state";
 import { DATASHEETS } from "./datasheets";
@@ -119,7 +120,10 @@ export function pendingUnits(s: GameState, f: Faction): string[] {
   const enemyIds = s.units.filter((u) => u.faction !== f).map((u) => u.id);
   switch (s.phase) {
     case "movimiento":
-      return PLAYERS[s.active] === f ? heads.filter((u) => !s.turnLog.moves[u.id]).map((u) => u.id) : [];
+      if (PLAYERS[s.active] !== f) return [];
+      // En la última ronda de llegada, las reservas que no lleguen se pierden: cuentan como pendientes
+      return [...heads.filter((u) => !s.turnLog.moves[u.id]).map((u) => u.id),
+        ...(s.turn === LAST_ARRIVAL_ROUND ? reserveUnits(s, f).filter((u) => !arrivalBlocked(s, u.id)).map((u) => u.id) : [])];
     case "disparo":
       if (PLAYERS[s.active] !== f) return [];
       return own.filter((u) => {

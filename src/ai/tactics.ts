@@ -1,3 +1,4 @@
+import { arriveStep } from "./arrival";
 import { overwatchBlocked, overwatchWeapons } from "../rules/reactions";
 import { CommandBus, PieceMove } from "../core/commands";
 import { BASE_RADIUS, Faction, GameState, Piece, PLAYERS } from "../core/state";
@@ -351,6 +352,9 @@ function planMove(s: GameState, unitId: string, W: Weights, claimed: Map<string,
 }
 
 function moveStep(bus: CommandBus, W: Weights): boolean {
+  // Primero, lo que llega desde la reserva (#56)
+  const arrived = arriveStep(bus, true);
+  if (arrived) { lastActor = arrived; lastAction = `${nameOf(bus.state, arrived)} llega desde la reserva`; return true; }
   const s = bus.state;
   const f = mine(s);
   const todo = heads(s, f).filter((u) => !s.turnLog.moves[u.id]);

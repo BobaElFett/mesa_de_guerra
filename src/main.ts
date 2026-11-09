@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { CommandBus } from "./core/commands";
 import { freshSeed } from "./core/rng";
 import { readTable, writeTable } from "./core/save";
-import { BOARD } from "./core/state";
+import { BOARD, BASE_RADIUS } from "./core/state";
 import { TableCamera } from "./camera/tableCamera";
 import { Table } from "./world/table";
 import { PiecesView } from "./view/piecesView";
@@ -26,6 +26,8 @@ import { NetDialog } from "./ui/netDialog";
 import { ActionMenu } from "./ui/actionMenu";
 import { Effects } from "./view/effects";
 import { SolidsView } from "./view/solidsView";
+import { ArrivalView } from "./view/arrivalView";
+import { arrivalBlocked, arrivalPlacement } from "./rules/reserves";
 import { Tutorial } from "./ui/tutorial";
 import { SettingsDialog, StartMenu } from "./ui/menu";
 import { validateList } from "./rules/armies";
@@ -315,6 +317,46 @@ controls.onHover = (id, x, y) => {
   actionMenu.tip(DATASHEETS[s.units.find((u) => u.id === target)!.datasheet].name, actionsAgainst(s, a, target), x, y);
 };
 let hoverFromBoard = false;
+
+// --- Llegada desde la reserva (#56) ---------------------------------------
+const arrival = new ArrivalView();
+scene.add(arrival.group);
+let arriving: string | null = null;
+function stopArrival() {
+  if (!arriving) return;
+  arriving = null;
+  arrival.show(null);
+  document.body.classList.remove("placing");
+}
+hud.onArrive = (unit) => {
+  const s = bus.state;
+  const why = arrivalBlocked(s, unit);
+  if (why) { toast(why); return; }
+  if (arriving === unit) { stopArrival(); return; }
+  arriving = unit;
+  controls.selected.clear();
+  arrival.show(s, s.units.find((u) => u.id === unit)!.faction);
+  document.body.classList.add("placing");
+  toast("Haz clic en la mesa donde quieras que llegue (fuera de lo rojo: 9\" de cualquier enemigo). Esc cancela.");
+};
+controls.interceptBoard = (x, z) => {
+  if (!arriving) return false;
+  const unit = arriving;
+  if (!arrivalPlacement(bus.state, unit, x, z)) { toast("No cabe ahí: tiene que quedar a más de 9\" de todo enemigo y fuera de la escenografía sólida."); return true; }
+  stopArrival();
+  bus.dispatch({ type: "arrive", unit, x, z });
+  return true;
+};
+let lastPreview = 0;
+controls.onBoardHover = (x, z) => {
+  if (!arriving) return;
+  const now = performance.now();
+  if (now - lastPreview < 60) return;
+  lastPreview = now;
+  const s = bus.state;
+  const m = (s.reserves ?? []).find((p) => p.unit === arriving);
+  arrival.preview(x, z, arrivalPlacement(s, arriving, x, z), m ? BASE_RADIUS[m.model] : 0.6);
+};
 /** Recalcula los resaltados de la guía (unidades pendientes y objetivos posibles). */
 function updateGuide() {
   const s = bus.state;
@@ -340,6 +382,7 @@ window.addEventListener("keydown", (e) => {
   const cur = selectedFormation(s, controls.selected)?.[0];
   const i = cur ? units.indexOf(cur) : -1;
   const next = units[(i + 1) % units.length];
+  if (s.units.find((u) => u.id === next)?.reserve) { hud.onArrive(next); return; }
   controls.selected.clear();
   for (const p of formationModels(s, next)) controls.selected.add(p.id);
   controls.onSelectionChange();
@@ -493,6 +536,7 @@ function refresh(_s?: unknown, cmd?: Command | null) {
   pieces.sync(bus.state);
   objectives.sync(bus.state);
   solids.sync(bus.state.terrain);
+  if (arriving && arrivalBlocked(bus.state, arriving)) stopArrival();
   missionPanel.render(bus.state);
   if (bus.state.gameOver && !wasOver && bus.state.mission) setTimeout(() => endDialog.show(bus.state), shots.playing ? 2500 : 600);
   wasOver = bus.state.gameOver;
@@ -542,7 +586,7 @@ window.addEventListener("keydown", (e) => {
   if (e.code === "Enter") hud.advance();
   if (e.code === "KeyM") tape.toggle();
   if (e.code === "KeyC") cycleRange(e.shiftKey ? -1 : 1);
-  if (e.code === "Escape") tape.escape();
+  if (e.code === "Escape") { if (arriving) stopArrival(); else tape.escape(); }
   if (e.code === "KeyB") cam.focus(TRAY.x, TRAY.z, 24);
   if (e.code === "KeyT") setTerrainEdit(pieces.terrainLocked);
   if (e.code === "Delete" || e.code === "Backspace") {

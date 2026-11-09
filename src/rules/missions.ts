@@ -175,7 +175,7 @@ export function pointsLost(s: GameState, faction: Faction): number {
   for (const u of s.units) if (u.faction === faction) {
     const ds = DATASHEETS[u.datasheet];
     const pts = unitPoints(ds, u.startingModels) ?? 0;
-    const alive = s.pieces.filter((p) => p.unit === u.id).length;
+    const alive = s.pieces.filter((p) => p.unit === u.id).length + (s.reserves ?? []).filter((p) => p.unit === u.id).length;
     n += pts * (1 - alive / u.startingModels);
   }
   return Math.round(n);

@@ -13,12 +13,13 @@ export const BOARD = { w: 60, d: 44 } as const;   // tapete de 60" × 44"
 export const DEPLOY_DEPTH = 10;                   // zona de despliegue desde cada borde largo
 
 export type Faction = "legion" | "swarm";
-export type ModelKind = "legionario" | "garra" | "capitan" | "pesado" | "andador" | "tirano" | "nodo" | "escupidor";
+export type ModelKind = "legionario" | "garra" | "capitan" | "pesado" | "andador" | "tirano" | "nodo" | "escupidor" | "exterminador" | "acechador";
 
 /** Radio de la peana en pulgadas: 32 mm para la Legión, 25 mm para las Garras. */
 export const BASE_RADIUS: Record<ModelKind, number> = {
   legionario: 0.63, pesado: 0.63, capitan: 0.79, andador: 1.6,     // 32 mm, 32 mm, 40 mm, 90 mm
   garra: 0.49, escupidor: 0.49, nodo: 0.79, tirano: 1.18,          // 25 mm, 25 mm, 40 mm, 60 mm
+  exterminador: 0.79, acechador: 0.79,                             // 40 mm (#57)
 };
 
 export const FACTIONS: Record<Faction, { name: string; of: string; color: string }> = {
@@ -54,6 +55,8 @@ export interface Unit {
   shocked?: boolean;
   /** Personaje unido a esta escuadra (id de la unidad que lidera). */
   attachedTo?: string;
+  /** Fuera de la mesa, en reserva (#56): sus miniaturas están en `GameState.reserves`. */
+  reserve?: boolean;
 }
 
 export type TerrainKind = "ruina" | "ruinaGrande" | "cajas" | "crater" | "bunker" | "barricada";
@@ -110,6 +113,8 @@ export interface GameState {
   vpLog?: VpEntry[];
   kills?: KillEntry[];       // unidades destruidas, en orden
   killPts?: [number, number];
+  /** Miniaturas de las unidades en reserva, fuera de la mesa (#56). */
+  reserves?: Piece[];
   /** Registro de la batalla (#53). */
   history?: import("../rules/history").HistoryEntry[];
   /** Carga declarada esperando a que el defensor decida si hace fuego defensivo. */

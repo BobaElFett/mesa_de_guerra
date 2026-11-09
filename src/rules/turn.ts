@@ -1,3 +1,4 @@
+import { LAST_ARRIVAL_ROUND, loseLateReserves } from "./reserves";
 import { note } from "./history";
 import type { GameState } from "../core/state";
 import { runMoraleTests } from "./morale";
@@ -48,6 +49,7 @@ export function advancePhase(s: GameState) {
   }
   // Fin del turno del jugador activo: puntúa la misión
   scoreObjectives(s, "final");
+  if (s.active === 1 && s.turn === LAST_ARRIVAL_ROUND) loseLateReserves(s);
   if (s.active === 1 && s.turn >= MAX_ROUNDS) { s.gameOver = true; return; }
   endTurn(s);
 }

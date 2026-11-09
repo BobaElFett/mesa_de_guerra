@@ -1,3 +1,4 @@
+import { canReserve } from "../rules/reserves";
 import { mapFor } from "../rules/maps";
 import { MISSIONS, MissionId } from "../rules/missions";
 import { AiLevel, saveSettings, settings } from "../ai/settings";
@@ -169,6 +170,13 @@ export class ArmyDialog {
 
   private change(e: Event) {
     const t = e.target as HTMLSelectElement;
+    if (t.dataset.reserve !== undefined) {
+      const [f, i] = t.dataset.reserve.split("|");
+      const u = this.lists[f as Faction].units[Number(i)];
+      if ((t as unknown as HTMLInputElement).checked) u.reserve = true; else delete u.reserve;
+      this.render();
+      return;
+    }
     if (t.dataset.leads !== undefined) {
       const [f, i] = t.dataset.leads.split("|");
       const u = this.lists[f as Faction].units[Number(i)];
@@ -200,7 +208,7 @@ export class ArmyDialog {
         const leads = ds.leads ? `<div class="lead-pick">Lidera a <select data-leads="${f}|${i}"><option value="">— nadie —</option>`
           + squads.map(({ x, j }) => `<option value="${j}"${u.leads === j ? " selected" : ""}>${j + 1}. ${DATASHEETS[x.datasheet].name} (${x.models})</option>`).join("")
           + `</select></div>` : "";
-        return `<tr><td><span class="dim">${i + 1}.</span> ${ds.name}${ds.character ? ' <span class="dim">(personaje)</span>' : ""}${leads}</td>`
+        return `<tr><td><span class="dim">${i + 1}.</span> ${ds.name}${ds.character ? ' <span class="dim">(personaje)</span>' : ""}${leads}${(canReserve(ds) ? `<label class="reserve-pick" title="Empieza fuera de la mesa y llega desde la ronda 2 a más de 9&quot; de los enemigos. Si al acabar la ronda 3 no ha llegado, se pierde."><input type="checkbox" data-reserve="${f}|${i}"${u.reserve ? " checked" : ""}> En reserva (llega desde la ronda 2)</label>` : "")}</td>`
           + `<td>${ds.sizes.length > 1 ? `<select data-size="${f}|${i}">${sizes}</select>` : u.models}</td>`
           + `<td class="pts">${unitPoints(ds, u.models) ?? "—"}</td>`
           + `<td><button data-side="${f}" data-act="remove" data-i="${i}" title="Quitar">×</button></td></tr>`;

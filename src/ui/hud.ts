@@ -1,4 +1,5 @@
 import { outcome } from "../rules/missions";
+import { arrivalBlocked, reserveUnits, LAST_ARRIVAL_ROUND } from "../rules/reserves";
 import { hasStrat, STRAT_IDS, StratId, STRATAGEMS, stratBlocked } from "../rules/stratagems";
 import { formation, partnerOf, underCommand } from "../rules/leaders";
 import { CommandBus } from "../core/commands";
@@ -242,6 +243,10 @@ export class Hud {
       const st = (e.target as HTMLElement).closest("button[data-strat]") as HTMLButtonElement | null;
       if (st && !st.disabled) { const [id, u] = st.dataset.strat!.split("|"); bus.dispatch({ type: "stratagem", id: id as StratId, unit: u }); }
     });
+    $("reserves").addEventListener("click", (e) => {
+      const b = (e.target as HTMLElement).closest("button[data-arrive]") as HTMLButtonElement | null;
+      if (b && !b.disabled) this.onArrive(b.dataset.arrive!);
+    });
     $("sel").addEventListener("mouseover", (e) => {
       const b = (e.target as HTMLElement).closest("button[data-target]") as HTMLButtonElement | null;
       this.onTargetHover(b ? b.dataset.target! : null);
@@ -321,6 +326,7 @@ export class Hud {
         : PHASE_INFO[s.phase].hint + (guide ? `<br><b class="guide">${guide}</b>` : "");
     }
     $("phase-hint").hidden = !s.rulesMode;
+    this.renderReserves(s);
     ($("undo") as HTMLButtonElement).disabled = !this.bus.canUndo;
     ($("redo") as HTMLButtonElement).disabled = !this.bus.canRedo;
 
@@ -329,6 +335,32 @@ export class Hud {
     $("dice-history").innerHTML = s.rolls.slice(-6, -1).reverse()
       .map((r) => `<li>${rollHtml(r, false)}</li>`).join("");
   }
+
+  /** Unidades en reserva: en el despliegue, solo se avisa; en el movimiento, botón «Llegar». */
+  private renderReserves(s: GameState) {
+    const el = $("reserves");
+    const list = s.rulesMode && !s.gameOver ? reserveUnits(s) : [];
+    if (!list.length) { el.hidden = true; el.innerHTML = ""; return; }
+    const name = (u: (typeof list)[number]) => `<b style="color:${FACTIONS[u.faction].color}">${DATASHEETS[u.datasheet]?.name ?? u.datasheet}</b>`;
+    let html = "";
+    if (s.phase === "despliegue") {
+      html = `<span>En reserva (llegan desde la ronda 2): ${list.map(name).join(", ")}</span>`;
+    } else {
+      const mine = list.filter((u) => u.faction === PLAYERS[s.active] && this.canAct(u.id));
+      const ready = mine.filter((u) => !arrivalBlocked(s, u.id));
+      if (ready.length) {
+        html = `<span>En reserva${s.turn === LAST_ARRIVAL_ROUND ? ` (<b class="warn">última ronda: si no llegan, se pierden</b>)` : ""}:</span> `
+          + ready.map((u) => `<button data-arrive="${u.id}" title="Elige en la mesa dónde llega: a más de 9&quot; de todo enemigo">Llegar: ${DATASHEETS[u.datasheet]?.name ?? u.datasheet}</button>`).join(" ");
+      } else {
+        html = `<span class="dim">En reserva: ${list.map(name).join(", ")}</span>`;
+      }
+    }
+    if (el.innerHTML !== html) el.innerHTML = html;
+    el.hidden = false;
+  }
+
+  /** El jugador quiere traer una unidad de la reserva (main entra en modo colocación). */
+  onArrive: (unit: string) => void = () => {};
 
   /** Resumen de la selección, abajo a la izquierda. */
   /** El jugador elige cómo mueve una unidad (botones del panel de unidad). */

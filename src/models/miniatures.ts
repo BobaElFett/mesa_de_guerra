@@ -61,7 +61,7 @@ const LEG_POSES: LegPose[] = [
     handR: [0.18, y(0.64), 0.14], handL: [0.06, y(0.66), 0.42], torsoLean: 0.08, headTurn: -0.2 },
 ];
 
-export type LegionVariant = "tactico" | "pesado" | "capitan";
+export type LegionVariant = "tactico" | "pesado" | "capitan" | "exterminador";
 
 function legionario(pose: number, leader: boolean, variant: LegionVariant = "tactico"): Part[] {
   const P = LEG_POSES[pose % LEG_POSES.length];
@@ -128,6 +128,22 @@ function legionario(pose: number, leader: boolean, variant: LegionVariant = "tac
     p.push(place(new THREE.CylinderGeometry(0.13, 0.13, 0.12, 8), A.metal, drum[0] + 0.17, drum[1] - 0.04, drum[2], 0, 0, Math.PI / 2));
     p.push(segment([0.2, hipY + 0.2, chestZ - 0.3], [drum[0] + 0.2, drum[1], drum[2] - 0.05], 0.06, 0.04, A.trim));   // cinta
     p.push(box(0.5, 0.12, 0.22, A.trim, 0, hipY + 0.06, chestZ - 0.27));      // cinturón de cargadores
+  } else if (variant === "exterminador") {
+    // Exterminador: bólter de asalto al frente y puño de combate enorme
+    const gun: V3 = [0.3, y(0.86), 0.44];
+    const fist: V3 = [-0.38, y(0.6), 0.3];
+    arm(1, gun);
+    arm(-1, fist);
+    // Bólter de asalto: dos cañones cortos sobre la mano
+    for (const dx of [-0.04, 0.04]) p.push(segment([gun[0] + dx, gun[1] + 0.05, gun[2] - 0.12], [gun[0] + dx, gun[1] + 0.05, gun[2] + 0.26], 0.06, 0.06, A.dark));
+    p.push(box(0.16, 0.14, 0.2, A.metal, gun[0], gun[1] - 0.04, gun[2] - 0.04));
+    // Puño: guantelete grande con nudillos y cables de energía
+    p.push(box(0.26, 0.26, 0.28, A.armorD, fist[0], fist[1] - 0.14, fist[2]));
+    for (let i = 0; i < 4; i++) p.push(box(0.05, 0.06, 0.06, A.trim, fist[0] - 0.09 + i * 0.06, fist[1] - 0.02, fist[2] + 0.15));
+    p.push(place(new THREE.BoxGeometry(0.2, 0.03, 0.03), "#7fd8ff", fist[0], fist[1] - 0.22, fist[2] + 0.15, 0, 0, 0, true));
+    // Blindaje extra: placa pectoral y hombreras dobles
+    p.push(box(0.6, 0.18, 0.06, A.trim, 0, hipY + 0.3, chestZ + 0.2));
+    for (const s of [-1, 1]) p.push(place(new THREE.CylinderGeometry(0.26, 0.26, 0.46, 7, 1, false, Math.PI / 2, Math.PI), A.armorD, s * 0.44, shY - 0.02, chestZ, Math.PI / 2));
   } else if (variant === "capitan") {
     // Capitán: espada de energía en alto y pistola de plasma
     const pistol: V3 = [0.28, y(0.98), 0.46];
@@ -183,7 +199,7 @@ function legionario(pose: number, leader: boolean, variant: LegionVariant = "tac
     return p;
   }
   // Casco con rejilla y visor; el sargento lo lleva rojo con cresta y laurel
-  const helm = leader ? A.red : variant === "pesado" ? A.armorD : A.armor;
+  const helm = leader ? A.red : variant === "pesado" || variant === "exterminador" ? A.armorD : A.armor;
   p.push(box(0.21, 0.22, 0.23, helm, hx, hipY + 0.6, hz, 0, P.headTurn));
   p.push(box(0.14, 0.09, 0.06, A.dark, hx + Math.sin(P.headTurn) * 0.11, hipY + 0.6, hz + Math.cos(P.headTurn) * 0.11, 0, P.headTurn));
   p.push(place(new THREE.BoxGeometry(0.17, 0.04, 0.03), A.visor,
@@ -420,6 +436,8 @@ function bodyOf(kind: ModelKind, pose: number, leader: boolean): [Part[], number
     case "escupidor": return [garra(pose, leader, { scythes: false, gun: "escupidor" }), 0.95];
     case "nodo": return [garra(pose, leader, { gun: "bio", crown: true }), 1.6];
     case "tirano": return [garra(pose, true, { gun: "bio", crown: true, monster: true }), 2.5];
+    case "exterminador": return [legionario(pose, false, "exterminador"), 1.22];
+    case "acechador": return [garra(pose, true, { monster: true }), 1.55];
   }
 }
 

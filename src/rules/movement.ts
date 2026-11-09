@@ -15,6 +15,8 @@ export interface UnitMove {
   kind: MoveKind;
   /** D6 del avance. */
   advance?: number;
+  /** Acaba de llegar desde la reserva: ya no mueve este turno (#56). */
+  arrived?: boolean;
 }
 
 /** Registro del turno en curso: qué hizo cada unidad y desde dónde empezó a mover cada miniatura. */
@@ -53,6 +55,7 @@ export function allowance(s: GameState, unitId: string, move: UnitMove | undefin
   if (!u) return 0;
   const M = Math.min(...formation(s, unitId).map((id) => DATASHEETS[s.units.find((x) => x.id === id)!.datasheet].profile.M));
   if (!move) return M;
+  if (move.arrived) return 0;
   return move.kind === "avanzar" ? M + (move.advance ?? 0) : M;
 }
 
