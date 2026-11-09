@@ -10,17 +10,20 @@ export const ENGAGEMENT = 1;    // trabada a 1" o menos de una enemiga
 // blocks: oculta (no se ve a través); cover: da cobertura; solid: no se puede atravesar ni ocupar
 // (#49); noEnd: se puede cruzar pero no acabar encima (una barricada).
 export const TERRAIN_RULES: Record<TerrainKind, { blocks: boolean; cover: boolean; solid: boolean; noEnd: boolean }> = {
-  ruina: { blocks: true, cover: true, solid: false, noEnd: false },        // oculta: no se ve a través salvo estando dentro
-  ruinaGrande: { blocks: true, cover: true, solid: false, noEnd: false },
+  ruina: { blocks: true, cover: true, solid: true, noEnd: true },          // oculta; sólidos solo los muros: se entra por los huecos
+  ruinaGrande: { blocks: true, cover: true, solid: true, noEnd: true },
   cajas: { blocks: true, cover: true, solid: true, noEnd: true },
   bunker: { blocks: true, cover: true, solid: true, noEnd: true },
   crater: { blocks: false, cover: true, solid: false, noEnd: false },      // baja: se ve por encima, pero da cobertura
   barricada: { blocks: false, cover: true, solid: false, noEnd: true },
 };
 
-/** ¿Pisa la peana (x, z, r) escenografía en la que no se puede acabar? */
+/** ¿Pisa la peana (x, z, r) una parte sólida de la escenografía (muro, contenedor, búnker, barricada)? */
 export function onForbiddenTerrain(terrain: TerrainPiece[], x: number, z: number, r: number): TerrainPiece | null {
-  for (const t of terrain) if (TERRAIN_RULES[t.kind].noEnd && insideTerrain(t, x, z, r * 0.85)) return t;
+  for (const t of terrain) {
+    if (!TERRAIN_RULES[t.kind].noEnd || !insideTerrain(t, x, z, r + 0.5)) continue;
+    if (TERRAIN_SOLIDS[t.kind].some((rect) => discHitsRect(t, rect, x, z, r * 0.92))) return t;
+  }
   return null;
 }
 
@@ -31,8 +34,10 @@ export function crossesSolid(terrain: TerrainPiece[], ax: number, az: number, bx
   const nx = -(bz - az) / len, nz = (bx - ax) / len, o = r * 0.6;
   for (const t of terrain) {
     if (!TERRAIN_RULES[t.kind].solid) continue;
-    if (insideTerrain(t, ax, az, r * 0.5)) continue;           // ya estaba metida: que pueda salir
-    for (const k of [-o, 0, o]) if (segmentHitsTerrain(t, ax + nx * k, az + nz * k, bx + nx * k, bz + nz * k)) return t;
+    for (const rect of TERRAIN_SOLIDS[t.kind]) {
+      if (discHitsRect(t, rect, ax, az, r * 0.5)) continue;    // ya estaba metida: que pueda salir
+      for (const k of [-o, 0, o]) if (segmentHitsRect(t, rect, ax + nx * k, az + nz * k, bx + nx * k, bz + nz * k)) return t;
+    }
   }
   return null;
 }
@@ -85,8 +90,63 @@ export function insideTerrain(t: TerrainPiece, x: number, z: number, pad = 0): b
 
 /** ¿Corta el segmento a→b la huella de la pieza? (método de las franjas en coordenadas locales) */
 export function segmentHitsTerrain(t: TerrainPiece, ax: number, az: number, bx: number, bz: number): boolean {
+  const f = TERRAIN[t.kind];
+  return segmentHitsRect(t, { x: 0, z: 0, w: f.w, d: f.d }, ax, az, bx, bz);
+}
+
+// --- Partes sólidas (hitboxes) ----------------------------------------------------
+// Las partes de cada pieza que no se pueden atravesar ni ocupar, medidas sobre su modelo
+// (models/terrain.ts), en coordenadas de la pieza: los muros de las ruinas (se puede entrar
+// por los huecos), los contenedores y las cajas sueltas, el cuerpo del búnker y la barricada.
+// El cráter no tiene: se entra y da cobertura.
+
+export interface LocalRect { x: number; z: number; w: number; d: number }
+
+export const TERRAIN_SOLIDS: Record<TerrainKind, LocalRect[]> = {
+  ruina: [
+    { x: 0, z: -1.8, w: 6.3, d: 0.5 },           // muro largo (con su pilar)
+    { x: -2.8, z: 0, w: 0.5, d: 4.3 },           // muro corto en L
+  ],
+  ruinaGrande: [
+    { x: 0, z: -2.75, w: 8.3, d: 0.55 },
+    { x: -3.75, z: 0, w: 0.55, d: 6.3 },
+    { x: 3.75, z: -1, w: 0.55, d: 4.3 },
+    { x: -1.8, z: 2.75, w: 3.8, d: 0.55 },
+    { x: -3.5, z: 1.2, w: 0.5, d: 0.5 },           // pilares
+    { x: 0.6, z: 0.3, w: 0.5, d: 0.5 },
+  ],
+  cajas: [
+    { x: -0.3, z: 0.6, w: 3.0, d: 1.35 },          // contenedor de abajo
+    { x: 0.1, z: -0.75, w: 3.1, d: 1.45 },         // el otro (algo girado)
+    { x: 1.6, z: 1.0, w: 1.05, d: 1.05 },          // cajas sueltas
+  ],
+  crater: [],
+  bunker: [{ x: 0, z: 0, w: 5.6, d: 3.6 }],        // cuerpo y losa del techo
+  barricada: [{ x: 0, z: 0, w: 4.05, d: 0.55 }],
+};
+
+/** ¿Corta el segmento a→b el rectángulo `r` de la pieza? */
+export function segmentHitsRect(t: TerrainPiece, r: LocalRect, ax: number, az: number, bx: number, bz: number): boolean {
   const [x0, z0] = toLocal(t, ax, az), [x1, z1] = toLocal(t, bx, bz);
-  const f = TERRAIN[t.kind], hw = f.w / 2, hd = f.d / 2;
+  const hw = r.w / 2, hd = r.d / 2;
+  return clipSegment(x0 - r.x, z0 - r.z, x1 - r.x, z1 - r.z, hw, hd);
+}
+
+/** ¿Se solapa la peana (x, z, rad) con el rectángulo `r` de la pieza? */
+export function discHitsRect(t: TerrainPiece, r: LocalRect, x: number, z: number, rad: number): boolean {
+  const [lx, lz] = toLocal(t, x, z);
+  const dx = Math.max(0, Math.abs(lx - r.x) - r.w / 2), dz = Math.max(0, Math.abs(lz - r.z) - r.d / 2);
+  return dx * dx + dz * dz < rad * rad;
+}
+
+/** Rectángulos sólidos de la pieza en coordenadas del mundo (centro, medidas y giro), para dibujarlos. */
+export function worldSolids(t: TerrainPiece): { x: number; z: number; w: number; d: number; rot: number }[] {
+  const c = Math.cos(t.rot), s = Math.sin(t.rot);
+  // giro de Three.js en Y: x = lx·cos + lz·sin, z = −lx·sin + lz·cos
+  return TERRAIN_SOLIDS[t.kind].map((r) => ({ x: t.x + r.x * c + r.z * s, z: t.z - r.x * s + r.z * c, w: r.w, d: r.d, rot: t.rot }));
+}
+
+function clipSegment(x0: number, z0: number, x1: number, z1: number, hw: number, hd: number): boolean {
   let t0 = 0, t1 = 1;
   const dx = x1 - x0, dz = z1 - z0;
   for (const [p, d, lo, hi] of [[x0, dx, -hw, hw], [z0, dz, -hd, hd]] as const) {

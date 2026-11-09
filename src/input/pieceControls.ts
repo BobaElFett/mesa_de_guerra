@@ -38,7 +38,9 @@ export interface RulesGate {
 type Gesture =
   | { kind: "none" }
   | { kind: "piece"; id: string; sx: number; sy: number; dragging: boolean;
-      start: Map<string, { x: number; z: number }>; grab: THREE.Vector2; additive: boolean; single: boolean }
+      start: Map<string, { x: number; z: number }>; grab: THREE.Vector2; additive: boolean; single: boolean;
+      /** Ya estaba elegida justo su unidad entera: un clic sin arrastre deja solo esta miniatura. */
+      narrow: boolean }
   | { kind: "box"; sx: number; sy: number; additive: boolean };
 
 export class PieceControls {
@@ -94,8 +96,10 @@ export class PieceControls {
       return;
     }
     const ids = this.gate()?.selectionFor(id, e.altKey) ?? [id];
+    const narrow = !e.altKey && !e.shiftKey && ids.length > 1 && this.selected.size === ids.length && ids.every((x) => this.selected.has(x));
     if (e.shiftKey) for (const x of ids) this.selected.add(x);
-    else if (!ids.every((x) => this.selected.has(x)) || (e.altKey && this.selected.size !== 1)) {
+    // Si ya estaba elegida, se arrastra lo que haya elegido (la unidad o solo esa miniatura)
+    else if (!this.selected.has(id) || (e.altKey && this.selected.size !== 1)) {
       this.selected.clear();
       for (const x of ids) this.selected.add(x);
     }
@@ -108,7 +112,7 @@ export class PieceControls {
     const me = start.get(id)!;
     this.g = {
       kind: "piece", id, sx: e.clientX, sy: e.clientY, dragging: false, start,
-      grab: new THREE.Vector2(me.x - p.x, me.z - p.z), additive: e.shiftKey, single: e.altKey,
+      grab: new THREE.Vector2(me.x - p.x, me.z - p.z), additive: e.shiftKey, single: e.altKey, narrow,
     };
   }
 
@@ -179,7 +183,8 @@ export class PieceControls {
       // Clic sin arrastre sobre una ya seleccionada (sin Mayús): queda solo esa
       if (!g.additive) {
         this.selected.clear();
-        for (const x of this.gate()?.selectionFor(g.id, g.single) ?? [g.id]) this.selected.add(x);
+        // Segundo clic sobre una miniatura de la unidad ya elegida: solo esa (para moverla suelta)
+        for (const x of g.narrow ? [g.id] : this.gate()?.selectionFor(g.id, g.single) ?? [g.id]) this.selected.add(x);
         this.changed();
       }
       return;

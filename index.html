@@ -206,6 +206,7 @@
   #action-menu span { display: block; font-size: 11.5px; color: var(--dim); font-weight: 400; }
   #action-menu .off { opacity: .55; border: 1px dashed var(--line); border-radius: 4px; }
   #phase-hint .guide { color: #9fe0a6; font-weight: 600; }
+  .sel-hint { font-size: 12px; margin-top: 6px; }
   #ai-status { font-size: 12px; color: var(--gold); margin-left: 6px; white-space: nowrap; }
   #end-backdrop { position: fixed; inset: 0; z-index: 10; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; }
   #end-backdrop[hidden] { display: none; }
@@ -231,7 +232,7 @@
 <div id="help" class="panel">
   <h1 class="title">Mesa de Guerra</h1>
   <button id="help-toggle">Ocultar</button>
-  <div class="sub">Jugabilidad (v0.22)</div>
+  <div class="sub">Jugabilidad (v0.23)</div>
   <button id="tutorial-start" class="primary" style="width:100%;margin:4px 0 6px">Tutorial: aprende a jugar (5 min)</button>
   <h2>Cámara</h2>
   <ul>
@@ -246,7 +247,7 @@
     <li>Arrastra en el tapete: recuadro de selección</li>
     <li>Arrastra una miniatura: mueve la selección (muestra las pulgadas)</li>
     <li><kbd>R</kbd> girar la selección · <kbd>Ctrl</kbd>+<kbd>A</kbd> todo tu bando · <kbd>Supr</kbd> retirar (mesa libre)</li>
-    <li>Modo reglas: clic selecciona la unidad entera; <kbd>Alt</kbd>+clic, una sola miniatura</li>
+    <li>Modo reglas: clic selecciona la unidad entera; <b>otro clic</b> en una de sus miniaturas (o <kbd>Alt</kbd>+clic) deja solo esa, para moverla suelta</li>
     <li><kbd>T</kbd> editar escenografía (añadir, mover, girar, borrar)</li>
     <li><kbd>M</kbd> cinta métrica: arrastra para medir (de peana a peana mide borde a borde)</li>
     <li><kbd>C</kbd> círculos de alcance alrededor de la selección (3"–24")</li>

@@ -30,7 +30,17 @@ function unitCard(s: GameState, selected: Set<string>): string {
     return singleCard(s, f[0]) + singleCard(s, f[1], true);
   }
   if (units.length !== 1) return "";
-  return singleCard(s, units[0]!);
+  return singleCard(s, units[0]!) + selectionHint(s, selected, units[0]!);
+}
+
+/** Cómo elegir y mover miniaturas sueltas (modo reglas). */
+function selectionHint(s: GameState, selected: Set<string>, uid: string): string {
+  if (!s.rulesMode) return "";
+  const all = s.pieces.filter((p) => p.unit === uid);
+  const picked = all.filter((p) => selected.has(p.id)).length;
+  if (all.length < 2) return "";
+  if (picked < all.length) return `<div class="sel-hint">Miniatura suelta: arrástrala sola. <span class="dim">Mayús+clic añade otra; clic en la mesa vacía o Esc, nada.</span></div>`;
+  return `<div class="sel-hint dim">Clic otra vez en una miniatura para moverla sola (o <kbd>Alt</kbd>+clic).</div>`;
 }
 
 function singleCard(s: GameState, uid: string, inFormation = false): string {

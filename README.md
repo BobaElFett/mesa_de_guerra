@@ -9,6 +9,13 @@ Plan completo (visión, facciones, roadmap y backlog): documento *Mesa de Guerra
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor.
 
+## Novedades 0.23 · miniaturas sueltas y hitboxes de la escenografía
+- **Mover miniaturas sueltas en modo reglas:** el primer clic elige la unidad entera; **otro clic en una de sus miniaturas** deja solo esa, y se arrastra sola (con su límite de movimiento, los anillos y el aviso de coherencia). Arrastrar una miniatura ya elegida mueve lo que esté elegido (la unidad o esa sola). Sigue valiendo **Alt+clic**. La ficha de la unidad lo explica.
+- **Hitboxes de la escenografía a la medida de los modelos:** lo que no se pisa ni se cruza son ahora las partes sólidas de verdad, medidas sobre cada modelo: los **muros** de las ruinas (se puede entrar por los lados abiertos y quedarse dentro, a cubierto), cada **contenedor** y las cajas sueltas, el **cuerpo del búnker** y la **barricada** (se cruza, pero no se acaba encima). El cráter no tiene: se entra. Antes contaba el rectángulo entero de la pieza (y las ruinas no frenaban nada).
+- **Se ven:** al arrastrar miniaturas en modo reglas, o con *Escenografía* abierto, las partes sólidas se dibujan en rojo sobre la mesa, también a través de los muros.
+- La visión no cambia: una ruina sigue ocultando lo que hay detrás de su huella, salvo para quien está dentro.
+- Equilibrio con la IA Difícil desplegando los dos bandos, 90 partidas en el mapa de ejemplo: Legión 48, Enjambre 36, 6 empates (antes 43-43).
+
 ## Novedades 0.22 · jugabilidad y facilidad de uso (#46–#53)
 - **Actuar sobre el tablero (#46):** con una unidad tuya elegida, al pasar el ratón por un enemigo aparecen las heridas y bajas esperadas (o la probabilidad de llegar en una carga, con y sin Ímpetu). Con **clic en el enemigo** sale un menú con todo lo que puedes hacer: cada arma, Granadas, cargar o combatir; lo que no se puede, con el motivo. Los enemigos a los que puedes hacer algo llevan un anillo naranja suave.
 - **Qué puedo hacer ahora (#47):** las unidades que aún pueden actuar en la fase llevan un anillo verde que late, y bajo el panel del turno se lee lo que queda («Pueden disparar: …»). **Tab** elige la siguiente y la centra. Al pasar de fase con algo pendiente, avisa; una segunda pulsación pasa igualmente.

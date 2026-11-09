@@ -76,3 +76,21 @@ test("escenografía: no se acaba en un búnker ni se atraviesa", () => {
   assert.match(r.message!, /No se puede atravesar/);
   void s2;
 });
+
+test("hitboxes: en una ruina se entra por los huecos, pero los muros no se pisan ni se cruzan", () => {
+  const ruin = { id: "T1", kind: "ruina" as const, x: 0, z: 0, rot: 0 };
+  const t = [ruin];
+  // Dentro de la ruina, lejos de los muros: vale
+  assert.equal(onForbiddenTerrain(t, 0.5, 0.5, 0.63), null);
+  // Encima del muro largo (z = −1,8): no
+  assert.ok(onForbiddenTerrain(t, 0, -1.8, 0.63));
+  // Entrar por el lado abierto (x = +3, sin muro): vale; cruzar el muro largo desde fuera: no
+  assert.equal(crossesSolid(t, 5, 0.5, 0.5, 0.5, 0.63), null);
+  assert.ok(crossesSolid(t, 0.5, -4, 0.5, 0.5, 0.63));
+  // Girada 90°: el muro largo pasa a estar en x = −1,8
+  const r90 = [{ ...ruin, rot: Math.PI / 2 }];
+  assert.ok(onForbiddenTerrain(r90, -1.8, 0, 0.63) || onForbiddenTerrain(r90, 1.8, 0, 0.63));
+  assert.equal(onForbiddenTerrain(r90, 0.5, 0.5, 0.63), null);
+  // Cráter: se entra y se puede acabar dentro
+  assert.equal(onForbiddenTerrain([{ id: "T2", kind: "crater", x: 0, z: 0, rot: 0 }], 0, 0, 0.63), null);
+});
