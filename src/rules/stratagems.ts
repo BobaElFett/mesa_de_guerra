@@ -118,7 +118,8 @@ function endlessWave(s: GameState, unitId: string) {
   const proto = models[0];
   const cx = models.reduce((a, p) => a + p.x, 0) / models.length, cz = models.reduce((a, p) => a + p.z, 0) / models.length;
   const enemies = enemyModels(s, unitId).map((e) => ({ x: e.x, z: e.z, r: BASE_RADIUS[e.model] + ENGAGEMENT }));
-  let next = s.pieces.reduce((m, p) => Math.max(m, Number(p.id.replace(/\D/g, "")) || 0), 0);
+  // Ids nuevos: por encima de todos, también de los que esperan en reserva (si no, se repetirían)
+  let next = [...s.pieces, ...(s.reserves ?? [])].reduce((m, p) => Math.max(m, Number(p.id.replace(/\D/g, "")) || 0), 0);
   const fresh: Piece[] = [];
   for (let i = 0; i < n; i++) fresh.push({ ...proto, id: `E${++next}`, x: cx, z: cz, damage: 0, leader: false, pose: (i + next) % 3 });
   const placed = resolveOverlaps([...s.pieces, ...fresh], fresh.map((p) => ({ id: p.id, x: p.x, z: p.z })), {
