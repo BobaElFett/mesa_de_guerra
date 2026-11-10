@@ -32,6 +32,11 @@
   #help .sub { font-size: 12px; color: var(--dim); margin: -2px 0 6px; }
   #help h2 { font-size: 11px; margin: 8px 0 2px; text-transform: uppercase; letter-spacing: .08em; color: var(--dim); }
   #help ul { margin: 0; padding-left: 16px; }
+  #help { max-height: calc(100vh / var(--ui, 1) - 24px); overflow-y: auto; }
+  #help details.hsec summary { font-size: 11px; margin: 8px 0 2px; text-transform: uppercase; letter-spacing: .08em; color: var(--dim); cursor: pointer; }
+  #help details.hsec summary:hover { color: var(--gold); }
+  #help-search { width: 100%; box-sizing: border-box; margin: 2px 0 6px; padding: 4px 8px; font-size: 12px; background: #1d1f25; color: inherit; border: 1px solid var(--line); border-radius: 6px; }
+  #help li.hit { background: rgba(226,184,79,.12); border-radius: 4px; }
   #help-toggle { position: absolute; right: 10px; top: 10px; font-size: 11px; padding: 1px 7px; }
   #help.folded > :not(h1):not(#help-toggle) { display: none; }
 
@@ -301,15 +306,17 @@
   <h1 class="title">Mesa de Guerra</h1>
   <button id="help-toggle">Ocultar</button>
   <div class="sub">Personalización (v0.30)</div>
-  <button id="tutorial-start" class="primary" style="width:100%;margin:4px 0 6px">Tutorial: aprende a jugar (5 min)</button>
-  <h2>Cámara</h2>
+  <input id="help-search" type="search" placeholder="Buscar en la ayuda (p. ej. reserva, deshacer)…" autocomplete="off">
+  <div id="help-none" class="dim" hidden>Nada con esas palabras.</div>
+  <button id="tutorial-start" class="primary" style="width:100%;margin:4px 0 6px">Tutorial: dos lecciones guiadas</button>
+  <details class="hsec" open><summary>Cámara</summary>
   <ul>
     <li><kbd>WASD</kbd> o botón central: desplazar</li>
     <li><kbd>Q</kbd> <kbd>E</kbd> o botón derecho: girar</li>
     <li>Rueda: acercar y alejar</li>
     <li><kbd>V</kbd> vista cenital · <kbd>Inicio</kbd> vista inicial</li>
-  </ul>
-  <h2>Mesa</h2>
+  </ul></details>
+  <details class="hsec" open><summary>Mesa</summary>
   <ul>
     <li>Clic: seleccionar · <kbd>Mayús</kbd>+clic: añadir o quitar</li>
     <li>Arrastra en el tapete: recuadro de selección</li>
@@ -322,8 +329,8 @@
     <li><kbd>Ctrl</kbd>+<kbd>Z</kbd> deshacer (contra la IA, tu última jugada y lo que hizo la IA después; <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Z</kbd>, una sola orden) · <kbd>Ctrl</kbd>+<kbd>Y</kbd> rehacer</li>
     <li><kbd>Espacio</kbd> tirar dados · <kbd>+</kbd> <kbd>−</kbd> cuántos · <kbd>B</kbd> ver la bandeja</li>
     <li><kbd>Intro</kbd> pasar turno (en modo reglas: siguiente fase) · <kbd>G</kbd> rejilla</li>
-  </ul>
-  <h2>Partida</h2>
+  </ul></details>
+  <details class="hsec"><summary>Partida</summary>
   <ul>
     <li><b>Ejércitos</b>: listas, misión, rival (IA o dos jugadores) y dificultad</li>
     <li>Objetivos: los controla quien sume más CO a 3"; los PV, arriba a la derecha</li>
@@ -342,7 +349,7 @@
     <li>Con una unidad tuya elegida, <b>clic en un enemigo</b>: disparar, cargar o combatir, con probabilidades</li>
     <li><kbd>Tab</kbd> siguiente unidad que aún puede actuar (anillo verde) · <kbd>L</kbd> registro</li>
     <li><b>En línea</b>: crear sala o unirse (código, copiar y pegar u otra pestaña); chat abajo a la izquierda</li>
-  </ul>
+  </ul></details>
   <h2>Guardado</h2>
   <div class="dim">La mesa se guarda sola en este navegador. <b>Mesas</b> (o <kbd>Ctrl</kbd>+<kbd>S</kbd>) la guarda con nombre, carga otras y exporta o importa archivos.</div>
 </div>

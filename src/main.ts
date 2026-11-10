@@ -357,6 +357,33 @@ document.getElementById("bot-phase")!.addEventListener("click", () => {
 // Línea de visión al apuntar (#60)
 const los = new LosView();
 scene.add(los.group);
+// Ayuda ordenada (#81): secciones plegables y buscador
+{
+  const search = document.getElementById("help-search") as HTMLInputElement;
+  const secs = [...document.querySelectorAll<HTMLDetailsElement>("#help details.hsec")];
+  const wasOpen = secs.map((d) => d.open);
+  const norm = (x: string) => x.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  search.addEventListener("input", () => {
+    const q = norm(search.value.trim());
+    let any = false;
+    secs.forEach((d, i) => {
+      const items = [...d.querySelectorAll("li")];
+      let hits = 0;
+      for (const li of items) {
+        const ok = !q || q.split(/\s+/).every((w) => norm(li.textContent ?? "").includes(w));
+        (li as HTMLElement).hidden = !ok;
+        li.classList.toggle("hit", !!q && ok);
+        if (ok) hits++;
+      }
+      d.hidden = !!q && !hits;
+      d.open = q ? hits > 0 : wasOpen[i];
+      if (hits) any = true;
+    });
+    document.getElementById("help-none")!.hidden = !q || any;
+  });
+  search.addEventListener("keydown", (e) => { if (e.code === "Escape") { search.value = ""; search.dispatchEvent(new Event("input")); search.blur(); } e.stopPropagation(); });
+  for (const [i, d] of secs.entries()) d.addEventListener("toggle", () => { if (!search.value) wasOpen[i] = d.open; });
+}
 // Hoja de atajos (#76): la tecla ? la abre y la cierra
 const keysBox = document.getElementById("keys-backdrop")!;
 const toggleKeys = (on = keysBox.hidden) => { keysBox.hidden = !on; modal.open = on; };
