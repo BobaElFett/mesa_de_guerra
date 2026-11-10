@@ -341,6 +341,7 @@
     <li><kbd>H</kbd> o <b>Sugerir</b>: lo que haría la IA Difícil ahora (en dorado: quién, adónde y contra quién). No hace nada: tú decides</li>
     <li><kbd>?</kbd> todos los atajos de teclado</li>
     <li><b>Psíquicos</b>: en el disparo, clic en un enemigo y elige su poder (2D6 a 7+: D3 heridas mortales)</li>
+    <li><b>Tamaño</b>: Escaramuza (500 puntos) o Batalla (1.000), en la partida rápida, Ejércitos y la campaña</li>
     <li><b>Campaña</b>: tres batallas seguidas contra la IA desde el menú; las unidades que sobreviven y hacen daño pasan a Veteranas (repiten los 1 al herir)</li>
     <li><b>Táctil</b>: dos dedos para acercar, girar y desplazar la vista</li>
     <li><b>Equipo</b>: en Ejércitos, casillas debajo de cada unidad para cambiar armas (con su coste)</li>
@@ -443,9 +444,10 @@
 <div id="armies-backdrop" hidden>
   <div id="armies" class="panel" role="dialog" aria-label="Ejércitos">
     <div class="row"><span class="title" style="font-size:18px">Ejércitos</span>
-      <span class="dim" style="font-size:12px;margin-left:10px">500 puntos por bando · máx. 3 unidades iguales · 1 Andador o Tirano · al menos un personaje</span>
+      <span id="armies-rules" class="dim" style="font-size:12px;margin-left:10px">500 puntos por bando · máx. 3 unidades iguales · 1 Andador o Tirano · al menos un personaje</span>
       <button id="armies-close" style="margin-left:auto">Cerrar</button></div>
     <div class="setup-row" id="armies-setup">
+      <label>Tamaño <select id="size-pick"><option value="500">Escaramuza (500)</option><option value="1000">Batalla (1.000)</option></select></label>
       <label>Misión <select id="mission-pick"></select></label>
       <label>Condiciones <select id="cond-pick"><option value="">Normales</option><option value="noche">Noche (visión 24")</option><option value="tormenta">Tormenta (−1 a impactar a más de 12")</option></select></label>
       <label>Mapa <select id="map-pick"><option value="actual">La mesa actual</option><option value="ejemplo">Mapa de ejemplo</option><option value="aleatorio">Aleatorio (simétrico)</option><option value="urbano">Ruinas urbanas (densa)</option><option value="llanura">Llanura (abierta)</option><option value="bosque">Bosque</option></select></label>
@@ -498,6 +500,7 @@
         <h2>Partida rápida contra la IA</h2>
         <label>Tu ejército <select id="q-side"><option value="legion">Legión Astral</option><option value="swarm">El Enjambre</option><option value="mirar">Ninguno: mirar IA contra IA</option></select></label>
         <label>IA <select id="q-level"><option value="facil">Fácil</option><option value="normal">Normal</option><option value="dificil">Difícil</option></select></label>
+        <label>Tamaño <select id="q-size"><option value="500">Escaramuza (500)</option><option value="1000">Batalla (1.000)</option></select></label>
         <label>Misión <select id="q-mission"></select></label>
         <label>Condiciones <select id="q-cond"><option value="">Normales</option><option value="noche">Noche (visión 24")</option><option value="tormenta">Tormenta (−1 a impactar a más de 12")</option></select></label>
         <label>Mapa <select id="q-map"><option value="aleatorio">Aleatorio (simétrico)</option><option value="ejemplo">Mapa de ejemplo</option><option value="urbano">Ruinas urbanas (densa)</option><option value="llanura">Llanura (abierta)</option><option value="bosque">Bosque</option></select></label>

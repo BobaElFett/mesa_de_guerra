@@ -64,6 +64,7 @@ export class ArmyDialog {
     $<HTMLSelectElement>("ai-level").value = settings.aiLevel;
     $<HTMLSelectElement>("map-pick").value = settings.map;
     $<HTMLSelectElement>("cond-pick").value = settings.conditions;
+    $<HTMLSelectElement>("size-pick").value = String(settings.gameSize);
     const desc = () => { $("mission-desc").textContent = MISSIONS[settings.mission].summary; };
     desc();
     $("armies-setup").addEventListener("change", (e) => {
@@ -73,6 +74,8 @@ export class ArmyDialog {
       settings.aiLevel = $<HTMLSelectElement>("ai-level").value as AiLevel;
       settings.map = $<HTMLSelectElement>("map-pick").value as typeof settings.map;
       settings.conditions = $<HTMLSelectElement>("cond-pick").value as typeof settings.conditions;
+      settings.gameSize = Number($<HTMLSelectElement>("size-pick").value) === 1000 ? 1000 : 500;
+      this.render();
       saveSettings();
       desc();
       this.onSettings();
@@ -119,13 +122,13 @@ export class ArmyDialog {
   private deploy() {
     if (this.online?.role === "guest") {
       const f = this.online.side;
-      if (validateList(this.lists[f], f).length) { this.notify("Corrige tu lista antes de enviarla."); return; }
+      if (validateList(this.lists[f], f, settings.gameSize).length) { this.notify("Corrige tu lista antes de enviarla."); return; }
       this.onSendList(f, clone(this.lists[f]));
       this.notify(`Lista enviada al anfitrión (${listPoints(this.lists[f])} puntos). Él despliega la partida.`);
       this.hide();
       return;
     }
-    const errs = SIDES.flatMap((f) => validateList(this.lists[f], f));
+    const errs = SIDES.flatMap((f) => validateList(this.lists[f], f, settings.gameSize));
     if (errs.length) { this.notify("Corrige las listas antes de desplegar."); return; }
     applyMap(this.bus);
     this.bus.dispatch({ type: "setArmies", legion: clone(this.lists.legion), swarm: clone(this.lists.swarm), mission: settings.mission, ...(settings.conditions ? { conditions: settings.conditions } : {}) });
@@ -161,7 +164,7 @@ export class ArmyDialog {
       writeSaved(saved);
       this.notify(`Lista guardada: «${name}»`);
     } else if (b.dataset.act === "random") {
-      this.lists[f] = randomList(f, Math.floor(Math.random() * 2 ** 31));
+      this.lists[f] = randomList(f, Math.floor(Math.random() * 2 ** 31), settings.gameSize);
       this.render();
     } else if (b.dataset.act === "clear") {
       this.lists[f] = { name: "", units: [] };
@@ -215,11 +218,12 @@ export class ArmyDialog {
   }
 
   private render() {
+    { const k = settings.gameSize / 500; $("armies-rules").textContent = `${settings.gameSize} puntos por bando · máx. ${3 * k} unidades iguales · ${k > 1 ? `${k} Andadores o Tiranos` : "1 Andador o Tirano"} · al menos un personaje`; }
     const saved = readSaved();
     let allOk = true;
     $("armies-cols").innerHTML = SIDES.map((f) => {
       const F = FACTIONS[f], list = this.lists[f];
-      const pts = listPoints(list), errs = validateList(list, f);
+      const pts = listPoints(list), errs = validateList(list, f, settings.gameSize);
       if (errs.length) allOk = false;
       const rows = list.units.map((u, i) => {
         const ds = DATASHEETS[u.datasheet];
@@ -247,7 +251,7 @@ export class ArmyDialog {
         <input data-name="${f}" value="${(list.name ?? "").replace(/"/g, "&quot;")}" placeholder="Nombre de la lista" maxlength="40">
         <table class="army-table"><tr><th>Unidad</th><th>Mini.</th><th>Pts</th><th></th></tr>${rows || `<tr><td colspan="4" class="dim">Sin unidades</td></tr>`}</table>
         <div class="row"><select id="add-${f}">${options}</select><button data-side="${f}" data-act="add">Añadir</button></div>
-        <div class="army-total ${pts > POINTS_LIMIT ? "bad" : ""}"><b>${pts}</b> / ${POINTS_LIMIT} puntos</div>
+        <div class="army-total ${pts > settings.gameSize ? "bad" : ""}"><b>${pts}</b> / ${settings.gameSize} puntos</div>
         ${errs.length ? `<ul class="army-errs">${errs.map((x) => `<li>${x}</li>`).join("")}</ul>` : `<div class="ok">Lista válida</div>`}
         <div class="row army-saved">
           <select id="load-${f}"><option value="">Cargar lista guardada…</option>${loads}</select>
@@ -258,7 +262,7 @@ export class ArmyDialog {
         </div>
       </div>`;
     }).join("");
-    const mineOk = this.online?.role === "guest" ? validateList(this.lists[this.online.side], this.online.side).length === 0 : allOk;
+    const mineOk = this.online?.role === "guest" ? validateList(this.lists[this.online.side], this.online.side, settings.gameSize).length === 0 : allOk;
     $<HTMLButtonElement>("armies-deploy").disabled = !mineOk;
   }
 }

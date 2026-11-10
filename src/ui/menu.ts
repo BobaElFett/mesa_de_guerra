@@ -8,7 +8,7 @@ import { modal } from "./modal";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 
-export interface QuickGame { side: Faction | "mirar"; level: AiLevel; mission: MissionId; map: "aleatorio" | "ejemplo" | "urbano" | "llanura" | "bosque"; lists: "prueba" | "mias" | "azar"; conditions?: "" | "noche" | "tormenta" }
+export interface QuickGame { side: Faction | "mirar"; level: AiLevel; mission: MissionId; map: "aleatorio" | "ejemplo" | "urbano" | "llanura" | "bosque"; lists: "prueba" | "mias" | "azar"; conditions?: "" | "noche" | "tormenta"; size?: 500 | 1000 }
 
 export class StartMenu {
   onContinue: () => void = () => {};
@@ -49,6 +49,7 @@ export class StartMenu {
           map: $<HTMLSelectElement>("q-map").value as QuickGame["map"],
           lists: $<HTMLSelectElement>("q-lists").value as QuickGame["lists"],
           conditions: $<HTMLSelectElement>("q-cond").value as QuickGame["conditions"],
+          size: Number($<HTMLSelectElement>("q-size").value) === 1000 ? 1000 : 500,
         };
         try { localStorage.setItem("mesa-de-guerra.rapida", JSON.stringify(q)); } catch { /* nada */ }
         this.onQuick(q);
@@ -61,7 +62,7 @@ export class StartMenu {
       const q = JSON.parse(localStorage.getItem("mesa-de-guerra.rapida") ?? "null") as QuickGame | null;
       if (q) {
         $<HTMLSelectElement>("q-side").value = q.side; $<HTMLSelectElement>("q-level").value = q.level;
-        $<HTMLSelectElement>("q-mission").value = q.mission; $<HTMLSelectElement>("q-map").value = q.map; $<HTMLSelectElement>("q-lists").value = q.lists; $<HTMLSelectElement>("q-cond").value = q.conditions ?? "";
+        $<HTMLSelectElement>("q-mission").value = q.mission; $<HTMLSelectElement>("q-map").value = q.map; $<HTMLSelectElement>("q-lists").value = q.lists; $<HTMLSelectElement>("q-cond").value = q.conditions ?? ""; $<HTMLSelectElement>("q-size").value = String(q.size ?? 500);
       } else $<HTMLSelectElement>("q-level").value = "normal";
     } catch { /* nada */ }
     desc();

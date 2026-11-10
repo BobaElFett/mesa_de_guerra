@@ -53,7 +53,7 @@ import { runtime } from "./ai/settings";
 import { PLAYERS } from "./core/state";
 import { listPoints } from "./rules/armies";
 import { AiController } from "./ai/controller";
-import { TEST_LEGION, TEST_SWARM } from "./rules/armies";
+import { TEST_LEGION, TEST_SWARM, testLists } from "./rules/armies";
 import { applyMap, ArmyDialog } from "./ui/armyDialog";
 import { DiceTray } from "./view/dice";
 import { TRAY } from "./world/table";
@@ -924,14 +924,16 @@ menu.onQuick = (q) => {
   settings.aiSide = q.side === "legion" ? "swarm" : "legion";
   settings.aiLevel = q.level; settings.mission = q.mission; settings.map = q.map;
   saveSettings();
-  let lists = { legion: TEST_LEGION, swarm: TEST_SWARM };
+  settings.gameSize = q.size ?? 500; saveSettings();
+  const size = settings.gameSize;
+  let lists = testLists(size);
   if (q.lists === "azar") {
     const seed = Math.floor(Math.random() * 2 ** 30);
-    lists = { legion: randomList("legion", seed), swarm: randomList("swarm", seed + 1) };
+    lists = { legion: randomList("legion", seed, size), swarm: randomList("swarm", seed + 1, size) };
   } else if (q.lists === "mias") {
     const mine = armies.current();
-    const bad = (["legion", "swarm"] as const).some((f) => validateList(mine[f], f).length);
-    if (bad) toast("Tus listas de Ejércitos no son válidas: se usan las de prueba.");
+    const bad = (["legion", "swarm"] as const).some((f) => validateList(mine[f], f, size).length);
+    if (bad) toast(`Tus listas de Ejércitos no valen para ${size} puntos: se usan las de prueba.`);
     else lists = { legion: mine.legion, swarm: mine.swarm };
   }
   applyMap(bus);
@@ -947,11 +949,11 @@ menu.onQuick = (q) => {
 };
 // Campaña (#70)
 const campaign = new CampaignDialog();
-campaign.lists = (which) => {
-  if (which === "prueba") return { legion: TEST_LEGION, swarm: TEST_SWARM };
-  if (which === "azar") { const seed = Math.floor(Math.random() * 2 ** 30); return { legion: randomList("legion", seed), swarm: randomList("swarm", seed + 1) }; }
+campaign.lists = (which, size = 500) => {
+  if (which === "prueba") return testLists(size);
+  if (which === "azar") { const seed = Math.floor(Math.random() * 2 ** 30); return { legion: randomList("legion", seed, size), swarm: randomList("swarm", seed + 1, size) }; }
   const l = armies.current();
-  const bad = (["legion", "swarm"] as const).filter((f) => validateList(l[f], f).length);
+  const bad = (["legion", "swarm"] as const).filter((f) => validateList(l[f], f, size).length);
   return bad.length ? "Tus listas de Ejércitos no son válidas: corrígelas o usa las de prueba." : { legion: l.legion, swarm: l.swarm };
 };
 campaign.onPlay = (c, n) => {

@@ -22,7 +22,7 @@ export class CampaignDialog {
   /** Juega la batalla `n` (1-3) de la campaña. */
   onPlay: (c: Campaign, n: number) => void = () => {};
   /** Listas para empezar: las de prueba o las de Ejércitos. */
-  lists: (which: "prueba" | "mias" | "azar") => { legion: ArmyList; swarm: ArmyList } | string = () => "sin listas";
+  lists: (which: "prueba" | "mias" | "azar", size?: 500 | 1000) => { legion: ArmyList; swarm: ArmyList } | string = () => "sin listas";
   private confirmAbandon = false;
   onChange: () => void = () => {};
 
@@ -37,7 +37,8 @@ export class CampaignDialog {
         case "start": {
           const side = $<HTMLSelectElement>("c-side").value as Faction;
           const level = $<HTMLSelectElement>("c-level").value as Campaign["level"];
-          const lists = this.lists($<HTMLSelectElement>("c-lists").value as "prueba" | "mias" | "azar");
+          const size = Number($<HTMLSelectElement>("c-size").value) === 1000 ? 1000 : 500;
+          const lists = this.lists($<HTMLSelectElement>("c-lists").value as "prueba" | "mias" | "azar", size);
           if (typeof lists === "string") { $("c-err").textContent = lists; return; }
           saveCampaign(newCampaign(side, level, lists, Math.floor(Math.random() * 2 ** 30)));
           this.render();
@@ -69,6 +70,7 @@ export class CampaignDialog {
         <div class="c-form">
           <label>Tu ejército <select id="c-side"><option value="legion">Legión Astral</option><option value="swarm">El Enjambre</option></select></label>
           <label>IA <select id="c-level"><option value="facil">Fácil</option><option value="normal" selected>Normal</option><option value="dificil">Difícil</option></select></label>
+          <label>Tamaño <select id="c-size"><option value="500">Escaramuza (500)</option><option value="1000">Batalla (1.000)</option></select></label>
           <label>Listas <select id="c-lists"><option value="prueba">Las de prueba</option><option value="mias">Las mías (Ejércitos)</option><option value="azar">Al azar</option></select></label>
         </div>
         <div id="c-err" class="warn"></div>

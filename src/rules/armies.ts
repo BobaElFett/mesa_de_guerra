@@ -53,8 +53,10 @@ export function validateList(list: ArmyList, faction: Faction, limit = POINTS_LI
     else if (led.has(u.leads)) errs.push(`${DATASHEETS[to.datasheet].name} tiene dos líderes.`);
     led.add(u.leads);
   }
-  for (const [id, n] of counts) if (n > 3) errs.push(`Como mucho 3 ${DATASHEETS[id].name} (hay ${n}).`);
-  if (big > 1) errs.push("Como mucho 1 Andador o Tirano.");
+  // Batallas de 1000 puntos (#88): el doble de todo (6 iguales, 2 Andadores o Tiranos)
+  const k = Math.max(1, Math.round(limit / POINTS_LIMIT));
+  for (const [id, n] of counts) if (n > 3 * k) errs.push(`Como mucho ${3 * k} ${DATASHEETS[id].name} (hay ${n}).`);
+  if (big > k) errs.push(k > 1 ? `Como mucho ${k} Andadores o Tiranos.` : "Como mucho 1 Andador o Tirano.");
   if (!characters) errs.push("Hace falta al menos un personaje (Capitán o Tirano Sináptico).");
   const pts = listPoints(list);
   if (pts > limit) errs.push(`${pts} puntos: pasa de ${limit}.`);
@@ -179,4 +181,18 @@ export function applyOptions(s: GameState, unitId: string, ids: string[] = []) {
       if (p) { used.add(p.id); swap(p, o.replace, o.with); }
     }
   }
+}
+
+/** Tamaños de partida (#88). */
+export const GAME_SIZES = { 500: "Escaramuza (500 puntos)", 1000: "Batalla (1.000 puntos)" } as const;
+export type GameSize = keyof typeof GAME_SIZES;
+
+/** Listas de prueba para cada tamaño (las de 1000, dos veces las de 500). */
+export function testLists(size: number): { legion: ArmyList; swarm: ArmyList } {
+  if (size < 1000) return { legion: TEST_LEGION, swarm: TEST_SWARM };
+  const twice = (l: ArmyList): ArmyList => ({
+    name: `${l.name} (1000)`,
+    units: [...l.units.map((u) => ({ ...u })), ...l.units.map((u) => ({ ...u, ...(u.leads !== undefined ? { leads: u.leads + l.units.length } : {}) }))],
+  });
+  return { legion: twice(TEST_LEGION), swarm: twice(TEST_SWARM) };
 }
