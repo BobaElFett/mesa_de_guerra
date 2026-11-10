@@ -1,7 +1,7 @@
 import { recordDamage } from "./stats";
 import type { PieceMove } from "../core/commands";
 import { BASE_RADIUS, GameState, Piece, PLAYERS } from "../core/state";
-import { DATASHEETS, Datasheet, unitPoints } from "./datasheets";
+import { DATASHEETS, Datasheet, optionPoints, unitPoints } from "./datasheets";
 import { resolveOverlaps } from "../core/placement";
 import { onForbiddenTerrain, disc, gap } from "./geometry";
 import { recordCasualties } from "./missions";
@@ -25,7 +25,7 @@ export function reserveErrors(list: ArmyList): string[] {
   let res = 0, total = 0;
   for (const u of list.units) {
     const ds = DATASHEETS[u.datasheet];
-    const pts = unitPoints(ds, u.models) ?? 0;
+    const pts = (unitPoints(ds, u.models) ?? 0) + optionPoints(ds, u.models, u.options);
     total += pts;
     if (!u.reserve) continue;
     if (!canReserve(ds)) errs.push(`${ds.name} no puede empezar en reserva.`);

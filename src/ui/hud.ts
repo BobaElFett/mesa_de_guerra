@@ -1,6 +1,6 @@
 import { outcome } from "../rules/missions";
 import { arrivalBlocked, reserveUnits, LAST_ARRIVAL_ROUND } from "../rules/reserves";
-import { pieceWeaponIds } from "../rules/datasheets";
+import { pieceWeaponIds, unitCost } from "../rules/datasheets";
 import { hasStrat, STRAT_IDS, StratId, STRATAGEMS, stratBlocked } from "../rules/stratagems";
 import { formation, partnerOf, underCommand } from "../rules/leaders";
 import { CommandBus } from "../core/commands";
@@ -57,7 +57,7 @@ function singleCard(s: GameState, uid: string, inFormation = false): string {
     leaderBadge(s, uid),
   ].join("");
   const F = FACTIONS[unit.faction];
-  const pts = unitPoints(ds, unit.startingModels);
+  const pts = unitCost(unit);
   let html = `<div class="unit-card"><div class="uc-head"><b style="color:${F.color}">${ds.name}</b> <span class="dim">· ${alive}/${unit.startingModels} miniaturas${pts !== null ? ` · ${pts} pts` : ""}</span>`
     + ` <button class="sheet-toggle" data-toggle="sheet" title="Mostrar u ocultar la hoja de datos">${sheetOpen ? "Ocultar hoja" : "Hoja de datos"}</button></div>`
     + (badges ? `<div class="badges">${badges}</div>` : "")

@@ -60,6 +60,8 @@ export interface Unit {
   attachedTo?: string;
   /** Fuera de la mesa, en reserva (#56): sus miniaturas están en `GameState.reserves`. */
   reserve?: boolean;
+  /** Coste total con el equipo opcional (#66); sin él, el de su tamaño inicial. */
+  points?: number;
 }
 
 export type TerrainKind = "ruina" | "ruinaGrande" | "cajas" | "crater" | "bunker" | "barricada";

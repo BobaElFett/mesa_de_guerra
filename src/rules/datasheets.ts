@@ -233,6 +233,11 @@ export function pieceWeaponIds(ds: Datasheet, p: { leader?: boolean; weapons?: s
   return p.weapons ?? (p.leader && ds.leaderWeapons ? ds.leaderWeapons : ds.weapons);
 }
 
+/** Lo que vale una unidad en la mesa: su tamaño inicial más el equipo opcional (#66). */
+export function unitCost(u: { datasheet: string; startingModels: number; points?: number }): number {
+  return u.points ?? unitPoints(DATASHEETS[u.datasheet as DatasheetId], u.startingModels) ?? 0;
+}
+
 /** Coste del equipo opcional elegido para una unidad de `models` miniaturas. */
 export function optionPoints(ds: Datasheet, models: number, ids: string[] = []): number {
   return ids.reduce((n, id) => {

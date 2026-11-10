@@ -60,3 +60,22 @@ test("equipo: se dispara con las armas nuevas y la IA juega con ellas", () => {
   }
   for (const w of ["canonLaser", "lanzamisiles", "garrasVenenosas"]) assert.ok(used.has(w), `usa ${w}: ${[...used].join(",")}`);
 });
+
+test("el equipo cuenta en lo que vale la unidad al destruirla (#66)", async () => {
+  const { unitCost } = await import("../src/rules/datasheets");
+  const { statsOf } = await import("../src/rules/stats");
+  const bus = new CommandBus(5);
+  bus.dispatch({ type: "setArmies", legion: LEG, swarm: SWA, mission: "caza" });
+  const s0 = bus.state;
+  const fp = s0.units.find((u) => u.datasheet === "fuegoPesado")!;
+  assert.equal(unitCost(fp), 130);
+  assert.equal(unitCost(s0.units.find((u) => u.datasheet === "capitan")!), 80);
+  bus.dispatch({ type: "setRulesMode", on: true });
+  const { recordCasualties } = await import("../src/rules/missions");
+  const { cloneState } = await import("../src/core/state");
+  const s = cloneState(bus.state);
+  s.pieces = s.pieces.filter((p) => p.unit !== fp.id);
+  recordCasualties(s, 1, fp.id, 5);
+  assert.equal(s.killPts![1], 130);
+  void statsOf;
+});

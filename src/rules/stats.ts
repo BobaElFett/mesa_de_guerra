@@ -1,3 +1,4 @@
+import { unitCost } from "./datasheets";
 import { GameState } from "../core/state";
 import { DATASHEETS, unitPoints } from "./datasheets";
 
@@ -12,7 +13,7 @@ const blank = (): UnitStats => ({ dmg: 0, kills: 0, pts: 0, taken: 0, lost: 0 })
 export function modelPoints(s: GameState, unitId: string): number {
   const u = s.units.find((x) => x.id === unitId);
   if (!u) return 0;
-  return (unitPoints(DATASHEETS[u.datasheet], u.startingModels) ?? 0) / u.startingModels;
+  return unitCost(u) / u.startingModels;
 }
 
 /** Apunta un ataque de `by` (null: sin atacante, p. ej. reservas perdidas) contra `target`. */

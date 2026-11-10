@@ -1,3 +1,4 @@
+import { unitCost } from "./datasheets";
 import { note } from "./history";
 import { BASE_RADIUS, Faction, GameState, PLAYERS } from "../core/state";
 import { DATASHEETS, unitPoints } from "./datasheets";
@@ -172,7 +173,7 @@ export function recordCasualties(s: GameState, by: 0 | 1, unitId: string, slain:
   }
   const m = s.mission ? MISSIONS[s.mission] : null;
   if (!m?.killVp || !s.rulesMode) return;
-  const pts = ((unitPoints(ds, u.startingModels) ?? 0) / u.startingModels) * slain;
+  const pts = (unitCost(u) / u.startingModels) * slain;
   const bank = [s.killPts?.[0] ?? 0, s.killPts?.[1] ?? 0] as [number, number];
   const before = Math.floor(bank[by] / m.killVp.per);
   bank[by] += pts;
@@ -193,7 +194,7 @@ export function pointsLost(s: GameState, faction: Faction): number {
   let n = 0;
   for (const u of s.units) if (u.faction === faction) {
     const ds = DATASHEETS[u.datasheet];
-    const pts = unitPoints(ds, u.startingModels) ?? 0;
+    const pts = unitCost(u);
     const alive = s.pieces.filter((p) => p.unit === u.id).length + (s.reserves ?? []).filter((p) => p.unit === u.id).length;
     n += pts * (1 - alive / u.startingModels);
   }

@@ -1,3 +1,4 @@
+import { unitCost as costOf } from "../rules/datasheets";
 import { pieceWeaponIds } from "../rules/datasheets";
 import { BASE_RADIUS, GameState, Piece } from "../core/state";
 import { abilityX, DATASHEETS, Dice, hasAbility, unitPoints, Weapon, WEAPONS } from "../rules/datasheets";
@@ -85,7 +86,7 @@ export function expectedAttack(s: GameState, weapon: Weapon, attackers: number, 
 export function unitCost(s: GameState, unitId: string): number {
   const u = s.units.find((x) => x.id === unitId);
   if (!u) return 0;
-  return unitPoints(DATASHEETS[u.datasheet], u.startingModels) ?? 0;
+  return costOf(u);
 }
 
 /** Heridas que le quedan a la unidad. */

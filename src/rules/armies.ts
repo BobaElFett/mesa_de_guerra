@@ -102,6 +102,8 @@ export function deployArmies(s: GameState, legion: ArmyList, swarm: ArmyList, mi
       if (k) x += gapBefore(b);
       if (x + b.width > BOARD.w / 2 - 1) { x = -BOARD.w / 2 + 1; rowOffset += 6; }   // otra franja si no cabe
       const unit: Unit = { id: `U${++unitN}`, datasheet: b.u.datasheet, faction, startingModels: b.u.models };
+      const extra = optionPoints(b.ds, b.u.models, b.u.options);
+      if (extra) unit.points = (unitPoints(b.ds, b.u.models) ?? 0) + extra;
       if (b.attached) unit.attachedTo = unitIdOf.get(b.u.leads!);
       unitIdOf.set(b.i, unit.id);
       if (b.u.reserve && canReserve(b.ds)) reserved.push(unit.id);
