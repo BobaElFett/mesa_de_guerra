@@ -299,6 +299,11 @@
   #record table.rec { width: 100%; font-size: 13px; border-collapse: collapse; }
   #record table.rec td, #record table.rec th { padding: 3px 6px; }
   #record table.rec:not(.last) td:not(:first-child), #record table.rec th { text-align: center; }
+  #record .ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; }
+  #record .ach { border: 1px solid var(--line); border-radius: 6px; padding: 5px 8px; font-size: 12px; opacity: .5; }
+  #record .ach.on { opacity: 1; border-color: var(--gold); }
+  #record .ach b { display: block; color: var(--gold); }
+  #record .ach:not(.on) b { color: var(--dim); }
   #record .win { color: #6dff8a; } #record .loss { color: #ff7a6a; }
   #campaign-backdrop { position: fixed; inset: 0; z-index: 13; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; }
   #campaign-backdrop[hidden] { display: none; }
@@ -338,7 +343,7 @@
 <div id="help" class="panel">
   <h1 class="title">Mesa de Guerra</h1>
   <button id="help-toggle">Ocultar</button>
-  <div class="sub">Batallas grandes (v0.34)</div>
+  <div class="sub">Códice y desafíos (v0.35)</div>
   <input id="help-search" type="search" placeholder="Buscar en la ayuda (p. ej. reserva, deshacer)…" autocomplete="off">
   <div id="help-none" class="dim" hidden>Nada con esas palabras.</div>
   <button id="tutorial-start" class="primary" style="width:100%;margin:4px 0 6px">Tutorial: dos lecciones guiadas</button>

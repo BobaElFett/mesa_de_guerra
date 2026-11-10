@@ -2,6 +2,11 @@
 
 Lo nuevo de cada versión de *Mesa de Guerra*, de la más reciente a la primera.
 
+## 0.35 · fase 16, códice y desafíos (#91–#93)
+- **Códice (#91):** menú > *Códice*, o el botón *Códice* de la ficha. Cada unidad con su miniatura en 3D girando, perfil, armas (también las de equipo), habilidades, equipo opcional y un texto de trasfondo; y una entrada para cada bando.
+- **Desafíos (#92):** cinco escenarios cortos, de 1 a 3 estrellas: *Último bastión* (aguanta tres rondas rodeado), *Decapitación* (mata al Tirano cuanto antes), *La marea* (con el Enjambre, toma la base de la Legión), *Cazabestias* (acaba con el Tirano y un Carnífice) y *El corazón* (conserva el centro). Se guarda la mejor marca; durante el desafío, un cartel recuerda el objetivo.
+- **Logros (#93):** trece logros (ganar en Difícil, con los dos bandos, sin perder unidades, de noche, una campaña, 3 estrellas…), con aviso al conseguirlos y la lista en el Historial.
+
 ## 0.34 · fase 15, batallas grandes (#88–#90)
 - **Tamaño de partida (#88):** *Escaramuza* (500 puntos) o *Batalla* (1.000), en la partida rápida, Ejércitos y la campaña. A 1.000 puntos, el doble de límites (6 unidades iguales, 2 Andadores o Tiranos); listas de prueba y al azar de 1.000. Todo cabe en las zonas de despliegue.
 - **Rendimiento (#89):** medido en una batalla de 1.000 puntos (130 miniaturas): 333 llamadas de dibujo, 115.000 triángulos y el JavaScript ocioso el 95 % del tiempo, también arrastrando. La IA tarda como mucho 0,4 s en una fase. No hizo falta cambiar nada.

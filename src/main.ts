@@ -31,7 +31,10 @@ import { SuggestView } from "./view/suggestView";
 import { LosView } from "./view/losView";
 import { Replay } from "./ui/replay";
 import { CampaignDialog, loadCampaign, saveCampaign } from "./ui/campaign";
-import { recordGame, RecordDialog } from "./ui/record";
+import { loadRecords, recordGame, RecordDialog } from "./ui/record";
+import { unlock } from "./ui/achievements";
+import { unitCost } from "./rules/datasheets";
+import { campaignScore } from "./rules/campaign";
 import { Codex } from "./ui/codex";
 import { ChallengeDialog, loadStars } from "./ui/challenges";
 import { CHALLENGES, setupChallenge } from "./rules/challenges";
@@ -1008,7 +1011,7 @@ challenges.onPlay = (c) => {
 bus.onChange(() => {
   if (!challenges.active || replay.active || challengeEnding) return;
   const r = challenges.active.check(bus.state, challenges.memo);
-  if (r.over) { challengeEnding = true; ai.paused = true; setTimeout(() => { challenges.finish(r); challengeInfo(); challengeEnding = false; }, 1200); }
+  if (r.over) { challengeEnding = true; ai.paused = true; setTimeout(() => { challenges.finish(r); challengeInfo(); challengeEnding = false; checkAchievements(); }, 1200); }
 });
 menu.onRecord = () => records.show();
 let recordedSig = "";
@@ -1018,7 +1021,15 @@ function recordHistory() {
   const sig = `${bus.seed}:${bus.total}:${s.vp?.join("-")}`;
   if (sig === recordedSig) return;
   recordedSig = sig;
-  recordGame(s, settings.aiSide === "legion" ? "swarm" : "legion", settings.aiLevel);
+  const rec = recordGame(s, settings.aiSide === "legion" ? "swarm" : "legion", settings.aiLevel);
+  const pts = s.units.filter((u) => u.faction === rec.side).reduce((n, u) => n + unitCost(u), 0);
+  checkAchievements({ rec, s, points: pts });
+}
+/** Logros (#93): tras una partida, un desafío o una campaña. */
+function checkAchievements(last?: { rec: import("./ui/record").GameRecord; s: import("./core/state").GameState; points: number }) {
+  const c = loadCampaign(), sc = c ? campaignScore(c) : null;
+  const fresh = unlock({ records: loadRecords(), last, stars: loadStars(), campaignWon: !!(c && sc?.over && sc.winner === c.side) });
+  if (fresh.length) setTimeout(() => toast(`★ Logro${fresh.length > 1 ? "s" : ""}: ${fresh.map((a) => a.name).join(", ")}`), 2600);
 }
 function campaignInfo() {
   const c = loadCampaign(), el = document.getElementById("menu-campaign-info")!;
@@ -1032,7 +1043,7 @@ function recordCampaign() {
   const s = bus.state, c = loadCampaign();
   if (!c || !s.campaignBattle || replay.active) return;
   const next = recordBattle(c, s);
-  if (next) { saveCampaign(next); campaignInfo(); }
+  if (next) { saveCampaign(next); campaignInfo(); checkAchievements(); }
 }
 if (settings.showMenu) menu.show();
 

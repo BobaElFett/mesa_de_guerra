@@ -3,6 +3,7 @@ import { MISSIONS } from "../rules/missions";
 import { CONDITIONS } from "../rules/conditions";
 import { outcome } from "../rules/missions";
 import { modal } from "./modal";
+import { achievementsHtml } from "./achievements";
 
 // Historial (#79): cada partida acabada contra la IA, en el navegador (las 200 últimas).
 
@@ -90,8 +91,8 @@ export class RecordDialog {
       + (rs.length ? `<p class="dim">${rs.length} partida${rs.length > 1 ? "s" : ""} contra la IA en este navegador.</p>`
         + `<h3>Por dificultad</h3><table class="rec">${head}${(["facil", "normal", "dificil"] as const).map((l) => row(LEVEL[l], byLevel.get(l))).join("")}${row("<b>Total</b>", all.get("x"))}</table>`
         + `<h3>Por bando</h3><table class="rec">${head}${(["legion", "swarm"] as const).map((f) => row(`<span style="color:${FACTIONS[f].color}">${FACTIONS[f].name}</span>`, bySide.get(f))).join("")}</table>`
-        + `<h3>Últimas partidas</h3><table class="rec last">${last}</table>`
+        + `<h3>Últimas partidas</h3><table class="rec last">${last}</table>` + achievementsHtml()
         + `<div style="text-align:right;margin-top:10px"><button data-r="clear">${this.confirmClear ? "¿Seguro? Pulsa otra vez" : "Borrar historial"}</button></div>`
-      : `<p class="dim">Aún no hay partidas. Cuando acabes una contra la IA, se apunta aquí.</p>`);
+      : `<p class="dim">Aún no hay partidas. Cuando acabes una contra la IA, se apunta aquí.</p>` + achievementsHtml());
   }
 }

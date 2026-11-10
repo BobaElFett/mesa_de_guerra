@@ -5,7 +5,7 @@ la **Legión Astral** (super soldados con servoarmadura) contra **El Enjambre** 
 Se juega como en una mesa de verdad (mover, medir y tirar dados) o con el **modo reglas**, que guía las fases y resuelve las tiradas.
 Three.js + TypeScript, compilado con esbuild a un único `dist/index.html`.
 
-Versión **0.34**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
+Versión **0.35**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
 
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor ni conexión.
@@ -14,8 +14,10 @@ Al abrirlo sale el menú:
 - **Jugar contra la IA:** bando, dificultad (Fácil, Normal, Difícil), misión, condiciones, mapa y listas (de prueba, las tuyas o al azar). También se puede **mirar IA contra IA**.
 - **Campaña:** tres batallas seguidas; las unidades que sobreviven y hacen daño pasan a Veteranas.
 - **Tutorial:** dos lecciones guiadas (lo básico; reservas, consejos y estratagemas).
+- **Desafíos:** cinco escenarios cortos con estrellas.
+- **Códice:** todas las unidades con su miniatura, perfil y trasfondo.
 - **Mesa libre:** sin reglas automáticas, como en Tabletop Simulator.
-- **Ejércitos**, **Historial**, **En línea** (dos ordenadores) y **Ajustes**.
+- **Ejércitos**, **Historial** (con logros), **En línea** (dos ordenadores) y **Ajustes**.
 
 ## Cómo se juega (modo reglas)
 Cada bando tiene un ejército de **500 puntos** (*Escaramuza*) o **1.000** (*Batalla*). La partida dura **5 rondas**; en cada una juegan los dos bandos su turno, con cinco fases:
