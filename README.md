@@ -5,7 +5,7 @@ la **Legión Astral** (super soldados con servoarmadura) contra **El Enjambre** 
 Se juega como en una mesa de verdad (mover, medir y tirar dados) o con el **modo reglas**, que guía las fases y resuelve las tiradas.
 Three.js + TypeScript, compilado con esbuild a un único `dist/index.html`.
 
-Versión **0.33**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
+Versión **0.34**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
 
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor ni conexión.
@@ -18,7 +18,7 @@ Al abrirlo sale el menú:
 - **Ejércitos**, **Historial**, **En línea** (dos ordenadores) y **Ajustes**.
 
 ## Cómo se juega (modo reglas)
-Cada bando tiene un ejército de **500 puntos**. La partida dura **5 rondas**; en cada una juegan los dos bandos su turno, con cinco fases:
+Cada bando tiene un ejército de **500 puntos** (*Escaramuza*) o **1.000** (*Batalla*). La partida dura **5 rondas**; en cada una juegan los dos bandos su turno, con cinco fases:
 
 1. **Mando:** +1 punto de mando (PM) por bando para estratagemas; las unidades por debajo de la mitad chequean moral (2D6 contra su Liderazgo).
 2. **Movimiento:** mover (hasta M), avanzar (+D6, sin disparar ni cargar después) o retirarse del combate. Desde la ronda 2 llegan las **reservas**, a más de 9" del enemigo.
@@ -26,12 +26,12 @@ Cada bando tiene un ejército de **500 puntos**. La partida dura **5 rondas**; e
 4. **Carga:** a 12" o menos, 2D6 para llegar; el cargado puede hacer fuego defensivo (impacta a 6).
 5. **Combate:** quien cargó golpea primero; luego se alternan.
 
-**Misiones:** *Toma y mantén*, *Corazón del frente*, *Caza de presas* (PV por puntos destruidos) y *Reliquia* (se recoge y se lleva). Gana quien tenga más PV tras la ronda 5.
+**Misiones:** *Toma y mantén*, *Corazón del frente*, *Caza de presas* (PV por puntos destruidos), *Reliquia* (se recoge y se lleva) y *Asalto* (asimétrica: uno ataca y otro defiende). Gana quien tenga más PV tras la ronda 5.
 **Mapas:** de ejemplo, aleatorio, *Ruinas urbanas*, *Llanura* y *Bosque* (los bosques se atraviesan, dan cobertura y tapan la visión si se cruzan más de 3"), todos simétricos.
 **Condiciones:** *Noche* (nada dispara a más de 24") y *Tormenta* (−1 a impactar a más de 12").
 
 ## Ejércitos
-Máximo 3 unidades iguales y 1 Andador o Tirano; al menos un personaje. Varias unidades tienen **equipo opcional** (casillas en Ejércitos) y las de Despliegue profundo o Túneles pueden empezar **en reserva** (hasta la mitad de los puntos).
+Máximo 3 unidades iguales y 1 Andador o Tirano (el doble a 1.000 puntos); al menos un personaje. Varias unidades tienen **equipo opcional** (casillas en Ejércitos) y las de Despliegue profundo o Túneles pueden empezar **en reserva** (hasta la mitad de los puntos).
 
 | Legión Astral | M | R | Sv | H | Puntos | Armas | Habilidades |
 |---|---|---|---|---|---|---|---|

@@ -33,12 +33,16 @@ export class MissionPanel {
     const rows = (s.objectives ?? []).map((o) => {
       const st = objectiveStatus(s, o);
       const color = st.holder === null ? "transparent" : C(st.holder);
-      return `<li><span class="dot" style="background:${color}"></span><b>${o.name}</b> <span class="dim">${o.vp} PV</span>`
+      return `<li><span class="dot" style="background:${color}"></span><b>${o.name}</b> <span class="dim">${m.asym ? `${m.asym.attacker} / ${m.asym.defender} PV` : `${o.vp} PV`}</span>`
         + `<span class="oc" title="CO a 3&quot;: Legión · Enjambre"><span style="color:${C(0)}">${st.oc[0]}</span> · <span style="color:${C(1)}">${st.oc[1]}</span></span></li>`;
     }).join("");
     let proj = "";
     if (s.rulesMode && !s.gameOver && s.phase !== "despliegue") {
-      const worth = (pl: 0 | 1) => Math.min(m.capPerTurn, (s.objectives ?? []).filter((o) => objectiveStatus(s, o).holder === pl).reduce((n, o) => n + o.vp, 0));
+      const worth = (pl: 0 | 1) => {
+        const held = (s.objectives ?? []).filter((o) => objectiveStatus(s, o).holder === pl);
+        if (m.asym) { const def = s.defender === pl; return Math.min(def ? m.asym.defenderCap : m.capPerTurn, held.length * (def ? m.asym.defender : m.asym.attacker)); }
+        return Math.min(m.capPerTurn, held.reduce((n, o) => n + o.vp, 0));
+      };
       const when = m.scoreAt === "inicio" ? "al empezar el turno de cada uno" : "al acabar el turno de cada uno";
       proj = s.turn < FIRST_SCORING_ROUND
         ? `<div class="m-proj dim">Se puntúa desde la ronda ${FIRST_SCORING_ROUND}, ${when}.</div>`
@@ -48,6 +52,6 @@ export class MissionPanel {
     el.innerHTML = `<div class="m-head"><span class="m-name">${m.name}</span><span class="dim">ronda ${Math.min(s.turn, MAX_ROUNDS)}/${MAX_ROUNDS}</span>`
       + `<button class="m-fold" data-act="fold">${this.folded ? "Ver" : "Plegar"}</button></div>`
       + `<div class="vp"><span style="color:${C(0)}">Legión <b>${vp[0]}</b></span><span class="dim">PV</span><span style="color:${C(1)}"><b>${vp[1]}</b> Enjambre</span></div>`
-      + `<ul>${rows}</ul>${proj}${s.conditions ? `<div class="m-cond"><b>${CONDITIONS[s.conditions].name}:</b> ${CONDITIONS[s.conditions].text}</div>` : ""}<div class="m-sum">${m.summary}</div>${end}`;
+      + `<ul>${rows}</ul>${proj}${s.defender !== undefined ? `<div class="m-cond"><b>Ataca:</b> <span style="color:${FACTIONS[PLAYERS[1 - s.defender]].color}">${FACTIONS[PLAYERS[1 - s.defender]].name}</span> · <b>Defiende:</b> <span style="color:${FACTIONS[PLAYERS[s.defender]].color}">${FACTIONS[PLAYERS[s.defender]].name}</span></div>` : ""}${s.conditions ? `<div class="m-cond"><b>${CONDITIONS[s.conditions].name}:</b> ${CONDITIONS[s.conditions].text}</div>` : ""}<div class="m-sum">${m.summary}</div>${end}`;
   }
 }

@@ -12,7 +12,7 @@ import { aiPlayPhase } from "../src/ai/tactics";
 import { stateHash } from "../src/net/protocol";
 import { invariants } from "./fullgame.test";
 
-const MISSIONS: MissionId[] = ["tomar", "corazon", "caza", "reliquia"];
+const MISSIONS: MissionId[] = ["tomar", "corazon", "caza", "reliquia", "asalto"];
 const CONDS = [undefined, "noche", "tormenta"] as const;
 const LEVELS = ["facil", "normal", "dificil"] as const;
 

@@ -10,7 +10,7 @@ import { gap } from "./geometry";
 //  - Se puntúa al final del turno de cada jugador desde la ronda 2, según la misión.
 //  - Tras la ronda 5 gana quien tenga más PV.
 
-export type MissionId = "tomar" | "corazon" | "caza" | "reliquia";
+export type MissionId = "tomar" | "corazon" | "caza" | "reliquia" | "asalto";
 
 export const OBJECTIVE_RADIUS = 0.79;   // marcador de 40 mm
 export const OBJECTIVE_RANGE = 3;
@@ -55,6 +55,12 @@ export interface Mission {
   killVp?: { per: number };
   /** Cuándo puntúan los objetivos: al empezar tu turno (tras la moral) o al acabarlo. */
   scoreAt: "inicio" | "final";
+  /**
+   * Misión asimétrica (#90): un bando defiende (lo decide la semilla de la partida). Los
+   * objetivos están escritos para un defensor en la mitad del Enjambre (z < 0) y se reflejan si
+   * defiende la Legión. Cada objetivo da `attacker` PV al atacante y `defender` al defensor.
+   */
+  asym?: { attacker: number; defender: number; defenderCap: number };
 }
 
 export const FIRST_SCORING_ROUND = 2;
@@ -98,6 +104,15 @@ export const MISSIONS: Record<MissionId, Mission> = {
     ],
     capPerTurn: 10, scoreAt: "final",
   },
+  asalto: {
+    id: "asalto", name: "Asalto",
+    summary: "Un bando defiende su posición y el otro ataca (se sortea al empezar). Tres objetivos justo delante de la zona del defensor. Al acabar cada turno (desde la ronda 2), el atacante gana 4 PV por cada objetivo que controle y el defensor, 1 por cada uno que conserve (hasta 3).",
+    objectives: [
+      { x: -14, z: -6, vp: 5, name: "Puesto oeste" }, { x: 0, z: -7, vp: 5, name: "Puesto central" }, { x: 14, z: -6, vp: 5, name: "Puesto este" },
+    ],
+    capPerTurn: 15, scoreAt: "final",
+    asym: { attacker: 4, defender: 1, defenderCap: 3 },
+  },
 };
 
 export const DEFAULT_MISSION: MissionId = "tomar";
@@ -107,6 +122,11 @@ export function setupMission(s: GameState, id: MissionId) {
   const m = MISSIONS[id] ?? MISSIONS[DEFAULT_MISSION];
   s.mission = m.id;
   s.objectives = m.objectives.map((o, i) => ({ id: `O${i + 1}`, ...o, ...(o.relic ? { carrier: null } : {}) }));
+  if (m.asym) {
+    // Quién defiende: lo dice la semilla (así es igual en los dos ordenadores y al repetir)
+    s.defender = ((s.rng >>> 3) & 1) as 0 | 1;
+    if (s.defender === 0) s.objectives = s.objectives.map((o) => ({ ...o, x: -o.x, z: -o.z }));
+  } else delete s.defender;
   s.vp = [0, 0];
   s.vpLog = [];
   s.kills = [];
@@ -155,8 +175,9 @@ export function scoreObjectives(s: GameState, when: "inicio" | "final") {
   const m = MISSIONS[s.mission];
   if (m.scoreAt !== when) return;
   const mine = controlledBy(s, s.active);
-  const raw = mine.reduce((n, o) => n + o.vp, 0);
-  const vp = Math.min(m.capPerTurn, raw);
+  const defending = m.asym && s.defender === s.active;
+  const raw = mine.reduce((n, o) => n + (m.asym ? (defending ? m.asym.defender : m.asym.attacker) : o.vp), 0);
+  const vp = Math.min(defending ? m.asym!.defenderCap : m.capPerTurn, raw);
   if (vp > 0) addVp(s, s.active, vp, `Objetivos: ${mine.map((o) => o.name).join(", ")}${raw > vp ? ` (tope ${m.capPerTurn})` : ""}`);
 }
 

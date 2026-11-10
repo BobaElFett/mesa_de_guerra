@@ -122,6 +122,8 @@ export interface GameState {
   vp?: [number, number];     // puntos de victoria de cada jugador
   vpLog?: VpEntry[];
   kills?: KillEntry[];       // unidades destruidas, en orden
+  /** Misión asimétrica (#90): quién defiende. */
+  defender?: 0 | 1;
   /** Batalla de la campaña que se juega (1-3, #70). */
   campaignBattle?: number;
   /** Condiciones de batalla (#68). */

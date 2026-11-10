@@ -2,6 +2,11 @@
 
 Lo nuevo de cada versión de *Mesa de Guerra*, de la más reciente a la primera.
 
+## 0.34 · fase 15, batallas grandes (#88–#90)
+- **Tamaño de partida (#88):** *Escaramuza* (500 puntos) o *Batalla* (1.000), en la partida rápida, Ejércitos y la campaña. A 1.000 puntos, el doble de límites (6 unidades iguales, 2 Andadores o Tiranos); listas de prueba y al azar de 1.000. Todo cabe en las zonas de despliegue.
+- **Rendimiento (#89):** medido en una batalla de 1.000 puntos (130 miniaturas): 333 llamadas de dibujo, 115.000 triángulos y el JavaScript ocioso el 95 % del tiempo, también arrastrando. La IA tarda como mucho 0,4 s en una fase. No hizo falta cambiar nada.
+- **Misión Asalto (#90):** asimétrica. La semilla de la partida decide quién defiende; tres puestos justo delante de su zona. Al acabar cada turno, el atacante gana 4 PV por puesto que controle y el defensor, 1 por cada uno que conserve (hasta 3). El panel de misión dice quién ataca. IA Difícil contra IA Difícil, 90 partidas: atacante 40, defensor 47, 3 empates (el Enjambre ataca mejor; la Legión defiende mejor).
+
 ## 0.33 · equilibrio de los mapas
 - **La IA rodea la escenografía sólida:** si un muro, contenedor o búnker corta el camino, prueba a pasar por cada esquina en dos tramos, sin salirse del movimiento.
 - **Mapas con cobertura suficiente:** el generador pone un mínimo de escenografía que tapa la visión en cada mitad, y la coloca sobre todo hacia el centro. Con la IA Difícil en los dos bandos, el Enjambre pasa de perder casi siempre a quedar parejo (aleatorio 35-30, Ruinas urbanas 37-31). La Llanura sigue favoreciendo a la Legión (48-20), como corresponde a un mapa abierto. *Ruinas urbanas* ya no lleva contenedores.
