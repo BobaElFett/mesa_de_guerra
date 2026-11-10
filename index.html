@@ -258,6 +258,21 @@
   #keys .keys-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 4px 22px; }
   #keys td { padding: 2px 8px 2px 0; font-size: 13px; vertical-align: top; }
   #keys td:first-child { white-space: nowrap; }
+  #challenge-backdrop { position: fixed; inset: 0; z-index: 14; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; }
+  #challenge-backdrop[hidden] { display: none; }
+  #challenge { position: static; width: min(720px, 94vw); max-height: 88vh; overflow-y: auto; padding: 14px 20px; }
+  #challenge h2 { margin: 0; font-family: "Rajdhani", sans-serif; }
+  #challenge .ch-item { display: flex; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+  #challenge .ch-best { color: var(--gold); letter-spacing: 2px; }
+  #challenge .ch-crit { font-size: 11px; margin-top: 2px; }
+  #challenge .ch-stars { font-size: 40px; color: var(--gold); letter-spacing: 6px; text-align: center; margin: 8px 0; }
+  #challenge .ch-stars.none { color: var(--dim); }
+  #challenge .ch-buttons { display: flex; gap: 8px; justify-content: flex-end; }
+  body.in-challenge #mission { display: none; }
+  #challenge-box { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); z-index: 9; width: min(560px, 60vw); padding: 8px 12px; font-size: 13px; }
+  #challenge-box .row { display: flex; gap: 6px; align-items: center; }
+  #challenge-box .ch-body { margin-top: 4px; }
+  #challenge-box.folded .ch-body { display: none; }
   #codex-backdrop { position: fixed; inset: 0; z-index: 14; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; }
   #codex-backdrop[hidden] { display: none; }
   #codex { position: static; width: min(1000px, 96vw); max-height: 90vh; overflow-y: auto; padding: 14px 20px; }
@@ -360,6 +375,7 @@
     <li><kbd>?</kbd> todos los atajos de teclado</li>
     <li><b>Psíquicos</b>: en el disparo, clic en un enemigo y elige su poder (2D6 a 7+: D3 heridas mortales)</li>
     <li><b>Tamaño</b>: Escaramuza (500 puntos) o Batalla (1.000), en la partida rápida, Ejércitos y la campaña</li>
+    <li><b>Desafíos</b>: cinco escenarios cortos con estrellas, desde el menú</li>
     <li><b>Códice</b>: todas las unidades con su miniatura, perfil y trasfondo (menú, o botón Códice en la ficha)</li>
     <li><b>Campaña</b>: tres batallas seguidas contra la IA desde el menú; las unidades que sobreviven y hacen daño pasan a Veteranas (repiten los 1 al herir)</li>
     <li><b>Táctil</b>: dos dedos para acercar, girar y desplazar la vista</li>
@@ -436,6 +452,8 @@
 </div>
 <div id="mission" class="panel" hidden></div>
 <div id="keys-backdrop" hidden><div id="keys" class="panel" role="dialog" aria-label="Atajos de teclado"><div style="display:flex;align-items:center"><h2>Atajos de teclado</h2><button data-k="close" style="margin-left:auto">Cerrar</button></div><div class="keys-grid"><div><h3>Cámara</h3><table><tr><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></td><td>desplazar (o botón central / dos dedos)</td></tr><tr><td><kbd>Q</kbd> <kbd>E</kbd></td><td>girar (o botón derecho)</td></tr><tr><td>Rueda</td><td>acercar y alejar (o pellizcar)</td></tr><tr><td><kbd>V</kbd></td><td>vista cenital</td></tr><tr><td><kbd>Inicio</kbd></td><td>vista inicial</td></tr></table></div><div><h3>Mesa</h3><table><tr><td>Clic</td><td>elegir (en modo reglas, la unidad entera; otro clic, solo esa miniatura)</td></tr><tr><td><kbd>Mayús</kbd>+clic</td><td>añadir o quitar de la selección</td></tr><tr><td><kbd>Alt</kbd>+clic</td><td>elegir solo esa miniatura</td></tr><tr><td><kbd>Ctrl</kbd>+<kbd>A</kbd></td><td>todo tu bando</td></tr><tr><td><kbd>R</kbd> / <kbd>Mayús</kbd>+<kbd>R</kbd></td><td>girar la selección</td></tr><tr><td><kbd>Supr</kbd></td><td>retirar (mesa libre)</td></tr><tr><td><kbd>Esc</kbd></td><td>cancelar o deseleccionar</td></tr><tr><td><kbd>Tab</kbd></td><td>siguiente unidad que aún puede actuar</td></tr></table></div><div><h3>Herramientas</h3><table><tr><td><kbd>M</kbd></td><td>cinta métrica</td></tr><tr><td><kbd>C</kbd></td><td>círculos de alcance</td></tr><tr><td><kbd>T</kbd></td><td>editar escenografía</td></tr><tr><td><kbd>G</kbd></td><td>rejilla</td></tr><tr><td><kbd>L</kbd></td><td>registro de la batalla</td></tr></table></div><div><h3>Partida</h3><table><tr><td><kbd>Intro</kbd></td><td>siguiente fase / pasar turno</td></tr><tr><td><kbd>H</kbd></td><td>sugerir jugada</td></tr><tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>deshacer (contra la IA, tu última jugada)</td></tr><tr><td><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Z</kbd></td><td>deshacer una sola orden</td></tr><tr><td><kbd>Ctrl</kbd>+<kbd>Y</kbd></td><td>rehacer</td></tr><tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>guardar mesa (en Mesas)</td></tr></table></div><div><h3>Dados</h3><table><tr><td><kbd>Espacio</kbd></td><td>tirar</td></tr><tr><td><kbd>+</kbd> <kbd>−</kbd></td><td>cuántos dados</td></tr><tr><td><kbd>B</kbd></td><td>ver la bandeja</td></tr></table></div></div><div class="dim" style="margin-top:8px">Pulsa <kbd>?</kbd> para abrir o cerrar esta hoja.</div></div></div>
+<div id="challenge-backdrop" hidden><div id="challenge" class="panel" role="dialog" aria-label="Desafíos"></div></div>
+<div id="challenge-box" class="panel" hidden></div>
 <div id="codex-backdrop" hidden><div id="codex" class="panel" role="dialog" aria-label="Códice"></div></div>
 <div id="record-backdrop" hidden><div id="record" class="panel" role="dialog" aria-label="Historial"></div></div>
 <div id="campaign-backdrop" hidden><div id="campaign" class="panel" role="dialog" aria-label="Campaña"></div></div>
@@ -511,6 +529,7 @@
         <button data-m="campaign" class="big">Campaña<span id="menu-campaign-info">tres batallas seguidas contra la IA</span></button>
         <button data-m="tutorial" class="big">Tutorial<span>aprende a jugar en 5 minutos</span></button>
         <button data-m="free" class="big">Mesa libre<span>como en una mesa de verdad, sin reglas automáticas</span></button>
+        <button data-m="challenges" class="big">Desafíos<span id="menu-challenge-info">cinco escenarios con estrellas</span></button>
         <button data-m="codex" class="big">Códice<span>todas las unidades y su historia</span></button>
         <button data-m="record" class="big">Historial<span>tus partidas contra la IA</span></button>
         <button data-m="armies" class="big">Ejércitos<span>prepara tus listas de 500 puntos</span></button>

@@ -33,6 +33,8 @@ import { Replay } from "./ui/replay";
 import { CampaignDialog, loadCampaign, saveCampaign } from "./ui/campaign";
 import { recordGame, RecordDialog } from "./ui/record";
 import { Codex } from "./ui/codex";
+import { ChallengeDialog, loadStars } from "./ui/challenges";
+import { CHALLENGES, setupChallenge } from "./rules/challenges";
 import { CAMPAIGN, recordBattle } from "./rules/campaign";
 import { randomMap } from "./rules/maps";
 import { randomList } from "./rules/randomList";
@@ -84,6 +86,8 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 app.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
+// Desafíos (#92): banderas al principio (refresh las mira antes de crear el diálogo)
+let challengeOn = false, challengeEnding = false;
 // Colores para daltónicos (#74): antes de crear ninguna miniatura ni panel
 // Pinta tu ejército (#77); los colores para daltónicos mandan sobre los esquemas
 const PALETTE_AT_START = `${settings.palette}|${settings.legionScheme}|${settings.swarmScheme}`;
@@ -715,7 +719,7 @@ function refresh(_s?: unknown, cmd?: Command | null) {
   if (arriving && arrivalBlocked(bus.state, arriving)) stopArrival();
   missionPanel.render(bus.state);
   if (bus.state.gameOver && !wasOver) { recordCampaign(); recordHistory(); }
-  if (bus.state.gameOver && !wasOver && bus.state.mission && !replay.active) setTimeout(() => endDialog.show(bus.state), shots.playing ? 2500 : 600);
+  if (bus.state.gameOver && !wasOver && bus.state.mission && !replay.active && !challengeOn && !challengeEnding) setTimeout(() => endDialog.show(bus.state), shots.playing ? 2500 : 600);
   wasOver = bus.state.gameOver;
   if (newAttacks.length) { playAttackFx(newAttacks); shots.playAll(newAttacks, bus.state); }
   soundFor(cmd ?? null);
@@ -979,11 +983,38 @@ const records = new RecordDialog();
 const codex = new Codex();
 menu.onCodex = () => codex.show();
 hud.onCodex = (d) => codex.show(d as never);
+// Desafíos (#92)
+const challenges = new ChallengeDialog();
+menu.onChallenges = () => challenges.show();
+const challengeInfo = () => {
+  const b = loadStars(), n = CHALLENGES.reduce((a, c) => a + (b[c.id] ?? 0), 0);
+  document.getElementById("menu-challenge-info")!.textContent = n ? `${n} de ${CHALLENGES.length * 3} estrellas` : "cinco escenarios con estrellas";
+};
+challengeInfo();
+challenges.onChange = () => { challengeOn = !!challenges.active; document.body.classList.toggle("in-challenge", challengeOn); challengeInfo(); };
+challenges.onPlay = (c) => {
+  runtime.spectate = false;
+  settings.aiSide = c.side === "legion" ? "swarm" : "legion";
+  settings.aiLevel = "normal";
+  saveSettings();
+  stopArrival();
+  setupChallenge(bus, c);
+  ai.paused = false;
+  controls.selected.clear(); controls.onSelectionChange();
+  cam.reset();
+  if (c.side === "swarm") cam.sideOf(1);
+  refresh();
+};
+bus.onChange(() => {
+  if (!challenges.active || replay.active || challengeEnding) return;
+  const r = challenges.active.check(bus.state, challenges.memo);
+  if (r.over) { challengeEnding = true; ai.paused = true; setTimeout(() => { challenges.finish(r); challengeInfo(); challengeEnding = false; }, 1200); }
+});
 menu.onRecord = () => records.show();
 let recordedSig = "";
 function recordHistory() {
   const s = bus.state;
-  if (!settings.aiSide || runtime.online || runtime.spectate || replay.active || !s.mission) return;
+  if (!settings.aiSide || runtime.online || runtime.spectate || replay.active || !s.mission || challengeOn || challengeEnding) return;
   const sig = `${bus.seed}:${bus.total}:${s.vp?.join("-")}`;
   if (sig === recordedSig) return;
   recordedSig = sig;
