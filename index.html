@@ -305,7 +305,7 @@
 <div id="help" class="panel">
   <h1 class="title">Mesa de Guerra</h1>
   <button id="help-toggle">Ocultar</button>
-  <div class="sub">Revisión (v0.31)</div>
+  <div class="sub">Campo de batalla (v0.32)</div>
   <input id="help-search" type="search" placeholder="Buscar en la ayuda (p. ej. reserva, deshacer)…" autocomplete="off">
   <div id="help-none" class="dim" hidden>Nada con esas palabras.</div>
   <button id="tutorial-start" class="primary" style="width:100%;margin:4px 0 6px">Tutorial: dos lecciones guiadas</button>
@@ -448,7 +448,7 @@
     <div class="setup-row" id="armies-setup">
       <label>Misión <select id="mission-pick"></select></label>
       <label>Condiciones <select id="cond-pick"><option value="">Normales</option><option value="noche">Noche (visión 24")</option><option value="tormenta">Tormenta (−1 a impactar a más de 12")</option></select></label>
-      <label>Mapa <select id="map-pick"><option value="actual">La mesa actual</option><option value="ejemplo">Mapa de ejemplo</option><option value="aleatorio">Aleatorio (simétrico)</option></select></label>
+      <label>Mapa <select id="map-pick"><option value="actual">La mesa actual</option><option value="ejemplo">Mapa de ejemplo</option><option value="aleatorio">Aleatorio (simétrico)</option><option value="urbano">Ruinas urbanas (densa)</option><option value="llanura">Llanura (abierta)</option><option value="bosque">Bosque</option></select></label>
       <label>Rival <select id="ai-side"><option value="">Dos jugadores (sin IA)</option><option value="swarm">IA lleva el Enjambre</option><option value="legion">IA lleva la Legión</option></select></label>
       <label>Dificultad <select id="ai-level"><option value="facil">Fácil</option><option value="normal" selected>Normal</option><option value="dificil">Difícil</option></select></label>
       <div class="m-desc" id="mission-desc"></div>
@@ -500,7 +500,7 @@
         <label>IA <select id="q-level"><option value="facil">Fácil</option><option value="normal">Normal</option><option value="dificil">Difícil</option></select></label>
         <label>Misión <select id="q-mission"></select></label>
         <label>Condiciones <select id="q-cond"><option value="">Normales</option><option value="noche">Noche (visión 24")</option><option value="tormenta">Tormenta (−1 a impactar a más de 12")</option></select></label>
-        <label>Mapa <select id="q-map"><option value="aleatorio">Aleatorio (simétrico)</option><option value="ejemplo">Mapa de ejemplo</option></select></label>
+        <label>Mapa <select id="q-map"><option value="aleatorio">Aleatorio (simétrico)</option><option value="ejemplo">Mapa de ejemplo</option><option value="urbano">Ruinas urbanas (densa)</option><option value="llanura">Llanura (abierta)</option><option value="bosque">Bosque</option></select></label>
         <label>Listas <select id="q-lists"><option value="prueba">Las de prueba (unos 470 puntos)</option><option value="mias">Las mías (Ejércitos)</option><option value="azar">Al azar (500 puntos)</option></select></label>
         <div id="q-desc" class="dim"></div>
         <button data-m="quick" class="primary big">Jugar</button>
@@ -515,6 +515,7 @@
     <h3>Sonido</h3>
     <label><input type="checkbox" id="set-sound"> Sonido</label>
     <label>Volumen <input type="range" id="set-volume" min="0" max="1" step="0.05"></label>
+    <label>Ambiente <select id="set-ambient"><option value="0">Apagado</option><option value="0.2">Bajo</option><option value="0.35">Medio</option><option value="0.6">Alto</option></select></label>
     <h3>Mesa</h3>
     <label>Legión <select id="set-legion"><option value="azul">Azul y oro</option><option value="carmesi">Rojo y negro</option><option value="verde">Verde y hueso</option><option value="gris">Gris y blanco</option></select></label>
     <label>Enjambre <select id="set-swarm"><option value="morado">Morado</option><option value="carmesi">Rojo carmesí</option><option value="pantano">Verde pantano</option><option value="ocre">Ocre</option></select></label>

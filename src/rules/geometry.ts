@@ -16,7 +16,11 @@ export const TERRAIN_RULES: Record<TerrainKind, { blocks: boolean; cover: boolea
   bunker: { blocks: true, cover: true, solid: true, noEnd: true },
   crater: { blocks: false, cover: true, solid: false, noEnd: false },      // baja: se ve por encima, pero da cobertura
   barricada: { blocks: false, cover: true, solid: false, noEnd: true },
+  // Bosque (#84): se atraviesa y se puede acabar dentro; da cobertura dentro o detrás, y tapa la
+  // visión si la línea cruza más de FOREST_DEPTH" de bosque (y ninguna de las dos está dentro)
+  bosque: { blocks: true, cover: true, solid: false, noEnd: false },
 };
+export const FOREST_DEPTH = 3;
 
 /** ¿Pisa la peana (x, z, r) una parte sólida de la escenografía (muro, contenedor, búnker, barricada)? */
 export function onForbiddenTerrain(terrain: TerrainPiece[], x: number, z: number, r: number): TerrainPiece | null {
@@ -121,6 +125,7 @@ export const TERRAIN_SOLIDS: Record<TerrainKind, LocalRect[]> = {
     { x: 1.6, z: 1.0, w: 1.05, d: 1.05 },          // cajas sueltas
   ],
   crater: [],
+  bosque: [],
   bunker: [{ x: 0, z: 0, w: 5.6, d: 3.6 }],        // cuerpo y losa del techo
   barricada: [{ x: 0, z: 0, w: 4.05, d: 0.55 }],
 };
@@ -177,7 +182,22 @@ function sightLines(a: Disc, b: Disc): [number, number, number, number][] {
 function blocksLine(t: TerrainPiece, a: Disc, b: Disc, l: [number, number, number, number]): boolean {
   if (!TERRAIN_RULES[t.kind].blocks) return false;
   if (insideTerrain(t, a.x, a.z) || insideTerrain(t, b.x, b.z)) return false;
+  if (t.kind === "bosque") return lengthInside(t, ...l) > FOREST_DEPTH;
   return segmentHitsTerrain(t, ...l);
+}
+
+/** Cuánto del segmento a→b queda dentro de la huella de la pieza (recorte de Liang-Barsky). */
+export function lengthInside(t: TerrainPiece, ax: number, az: number, bx: number, bz: number): number {
+  const [x0, z0] = toLocal(t, ax, az), [x1, z1] = toLocal(t, bx, bz), f = TERRAIN[t.kind];
+  const dx = x1 - x0, dz = z1 - z0;
+  let lo = 0, hi = 1;
+  for (const [p, q] of [[-dx, x0 + f.w / 2], [dx, f.w / 2 - x0], [-dz, z0 + f.d / 2], [dz, f.d / 2 - z0]]) {
+    if (Math.abs(p) < 1e-12) { if (q < 0) return 0; continue; }
+    const r = q / p;
+    if (p < 0) lo = Math.max(lo, r); else hi = Math.min(hi, r);
+    if (lo > hi) return 0;
+  }
+  return (hi - lo) * Math.hypot(dx, dz);
 }
 
 export type Sight = "visible" | "cobertura" | "oculta";

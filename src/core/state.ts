@@ -68,7 +68,7 @@ export interface Unit {
   entry?: number;
 }
 
-export type TerrainKind = "ruina" | "ruinaGrande" | "cajas" | "crater" | "bunker" | "barricada";
+export type TerrainKind = "ruina" | "ruinaGrande" | "cajas" | "crater" | "bunker" | "barricada" | "bosque";
 
 /** Huella de cada pieza de escenografía (ancho en x × fondo en z, en pulgadas, sin girar). */
 export const TERRAIN: Record<TerrainKind, { name: string; w: number; d: number }> = {
@@ -78,6 +78,7 @@ export const TERRAIN: Record<TerrainKind, { name: string; w: number; d: number }
   crater: { name: "Cráter", w: 5, d: 5 },
   bunker: { name: "Búnker", w: 6, d: 4 },
   barricada: { name: "Barricada", w: 4, d: 1 },
+  bosque: { name: "Bosque", w: 7, d: 5 },
 };
 
 export interface TerrainPiece {

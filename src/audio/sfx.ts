@@ -29,6 +29,7 @@ class Audio {
     this.on = v;
     try { localStorage.setItem(KEY, v ? "1" : "0"); } catch { /* nada */ }
     if (this.master) this.master.gain.value = v ? this.volume : 0;
+    if (this.amb && this.ctx) this.amb.gain.gain.setTargetAtTime(v ? this.ambLevel * 0.25 : 0, this.ctx.currentTime, 0.3);
   }
 
   private ensure(): AudioContext | null {
@@ -72,6 +73,70 @@ class Audio {
     o.connect(g).connect(this.master!);
     o.start(at);
     o.stop(at + dur + 0.05);
+  }
+
+  // --- Ambiente (#86): viento continuo y, de vez en cuando, una batalla lejana -------------
+  private amb: { gain: GainNode; timer: ReturnType<typeof setTimeout> | null } | null = null;
+  private ambLevel = 0.35;
+  /** Volumen del ambiente (0 lo apaga). Se puede llamar antes de que suene nada. */
+  setAmbient(level: number) {
+    this.ambLevel = Math.max(0, Math.min(1, level));
+    if (this.amb) this.amb.gain.gain.setTargetAtTime(this.on ? this.ambLevel * 0.25 : 0, this.ctx!.currentTime, 0.4);
+    if (this.ambLevel > 0) this.startAmbient(); else this.stopAmbient();
+  }
+  /** Arranca el ambiente (hace falta un gesto del usuario antes: lo llama main al primer clic). */
+  startAmbient() {
+    if (this.amb || this.ambLevel <= 0) return;
+    const c = this.ensure();
+    if (!c || !this.master || !this.noise) return;
+    const gain = c.createGain();
+    gain.gain.value = 0;
+    gain.connect(this.master);
+    // Viento: ruido en bucle, paso bajo que respira con un LFO lento
+    const src = c.createBufferSource();
+    src.buffer = this.noise; src.loop = true;
+    const lp = c.createBiquadFilter();
+    lp.type = "lowpass"; lp.frequency.value = 380; lp.Q.value = 0.7;
+    const lfo = c.createOscillator(), lfoGain = c.createGain();
+    lfo.frequency.value = 0.07; lfoGain.gain.value = 180;
+    lfo.connect(lfoGain).connect(lp.frequency);
+    const wind = c.createGain();
+    wind.gain.value = 0.5;
+    src.connect(lp).connect(wind).connect(gain);
+    src.start(); lfo.start();
+    gain.gain.setTargetAtTime(this.on ? this.ambLevel * 0.25 : 0, c.currentTime, 1.5);
+    this.amb = { gain, timer: null };
+    const distant = () => {
+      if (!this.amb) return;
+      if (this.on && this.ambLevel > 0) {
+        const at = c.currentTime + 0.05, k = 0.15 + Math.random() * 0.25;
+        // Explosión lejana: golpe grave y apagado; a veces, una ráfaga de disparos
+        const g = c.createGain(); g.gain.value = this.ambLevel * k; g.connect(this.master!);
+        const o = c.createOscillator(); o.type = "sine";
+        o.frequency.setValueAtTime(60 + Math.random() * 30, at); o.frequency.exponentialRampToValueAtTime(25, at + 1.4);
+        const og = c.createGain(); og.gain.setValueAtTime(0.0001, at); og.gain.exponentialRampToValueAtTime(0.8, at + 0.05); og.gain.exponentialRampToValueAtTime(0.0001, at + 1.6);
+        o.connect(og).connect(g); o.start(at); o.stop(at + 1.7);
+        if (Math.random() < 0.5) for (let i = 0; i < 4 + Math.floor(Math.random() * 6); i++) {
+          const s2 = c.createBufferSource(), f = c.createBiquadFilter(), sg = c.createGain(), t2 = at + 0.6 + i * (0.09 + Math.random() * 0.05);
+          s2.buffer = this.noise; f.type = "bandpass"; f.frequency.value = 700; f.Q.value = 1.2;
+          sg.gain.setValueAtTime(0.0001, t2); sg.gain.exponentialRampToValueAtTime(0.25, t2 + 0.005); sg.gain.exponentialRampToValueAtTime(0.0001, t2 + 0.08);
+          s2.connect(f).connect(sg).connect(g); s2.start(t2, Math.random() * 0.5, 0.1);
+        }
+      }
+      this.amb.timer = setTimeout(distant, 5000 + Math.random() * 9000);
+    };
+    this.amb.timer = setTimeout(distant, 3000);
+    this.ambNodes = [src, lfo];
+  }
+  private ambNodes: AudioScheduledSourceNode[] = [];
+  stopAmbient() {
+    if (!this.amb) return;
+    if (this.amb.timer) clearTimeout(this.amb.timer);
+    const g = this.amb.gain, c = this.ctx!;
+    g.gain.setTargetAtTime(0, c.currentTime, 0.3);
+    const nodes = this.ambNodes;
+    setTimeout(() => { for (const n of nodes) { try { n.stop(); } catch { /* ya parado */ } } g.disconnect(); }, 1500);
+    this.amb = null; this.ambNodes = [];
   }
 
   /** Reproduce un sonido (`n` repeticiones escalonadas para ráfagas). */

@@ -384,6 +384,8 @@ scene.add(los.group);
   search.addEventListener("keydown", (e) => { if (e.code === "Escape") { search.value = ""; search.dispatchEvent(new Event("input")); search.blur(); } e.stopPropagation(); });
   for (const [i, d] of secs.entries()) d.addEventListener("toggle", () => { if (!search.value) wasOpen[i] = d.open; });
 }
+// Ambiente sonoro (#86): arranca con el primer gesto (el navegador no deja sonar antes)
+window.addEventListener("pointerdown", () => sfx.setAmbient(settings.ambient), { once: true });
 // Hoja de atajos (#76): la tecla ? la abre y la cierra
 const keysBox = document.getElementById("keys-backdrop")!;
 const toggleKeys = (on = keysBox.hidden) => { keysBox.hidden = !on; modal.open = on; };
@@ -904,6 +906,7 @@ const settingsDlg = new SettingsDialog();
 sfx.setVolume(settings.volume);
 settingsDlg.sound = { get: () => sfx.on, set: (v) => { if (v !== sfx.on) { sfx.setOn(v); paintSound(); } }, volume: (v) => sfx.setVolume(v) };
 settingsDlg.onChange = () => {
+  sfx.setAmbient(settings.ambient);
   if (`${settings.palette}|${settings.legionScheme}|${settings.swarmScheme}` !== PALETTE_AT_START) { toast("Cambiando los colores…"); setTimeout(() => location.reload(), 300); } speedSel.value = settings.diceSpeed; applySpeed(); applyGraphics(); guideKey = ""; refresh(); };
 menu.continueInfo = () => {
   const s = bus.state;

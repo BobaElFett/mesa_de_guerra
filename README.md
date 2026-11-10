@@ -5,7 +5,7 @@ la **Legión Astral** (super soldados con servoarmadura) contra **El Enjambre** 
 Se juega como en una mesa de verdad (mover, medir y tirar dados) o con el **modo reglas**, que guía las fases y resuelve las tiradas.
 Three.js + TypeScript, compilado con esbuild a un único `dist/index.html`.
 
-Versión **0.31**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
+Versión **0.32**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
 
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor ni conexión.
@@ -27,6 +27,7 @@ Cada bando tiene un ejército de **500 puntos**. La partida dura **5 rondas**; e
 5. **Combate:** quien cargó golpea primero; luego se alternan.
 
 **Misiones:** *Toma y mantén*, *Corazón del frente*, *Caza de presas* (PV por puntos destruidos) y *Reliquia* (se recoge y se lleva). Gana quien tenga más PV tras la ronda 5.
+**Mapas:** de ejemplo, aleatorio, *Ruinas urbanas*, *Llanura* y *Bosque* (los bosques se atraviesan, dan cobertura y tapan la visión si se cruzan más de 3"), todos simétricos.
 **Condiciones:** *Noche* (nada dispara a más de 24") y *Tormenta* (−1 a impactar a más de 12").
 
 ## Ejércitos
@@ -57,7 +58,7 @@ Máximo 3 unidades iguales y 1 Andador o Tirano; al menos un personaje. Varias u
 - **Ctrl+Z** contra la IA: deshace tu última jugada y lo que hizo la IA después.
 - **Registro** (**L**), **repetición** al acabar, **estadísticas** por unidad y **unidad de la partida**.
 - **?**: todos los atajos de teclado. La ayuda de la izquierda tiene buscador.
-- **Ajustes:** sonido, velocidad de los ataques, gráficos (*Rápidos* para equipos modestos), tamaño de la interfaz, colores de cada bando y colores para daltónicos.
+- **Ajustes:** sonido y ambiente, velocidad de los ataques, gráficos (*Rápidos* para equipos modestos), tamaño de la interfaz, colores de cada bando y colores para daltónicos.
 - Pantalla táctil: un dedo como el ratón, dos dedos para acercar, girar y desplazar.
 
 ## Desarrollar (requiere Node.js 20+)

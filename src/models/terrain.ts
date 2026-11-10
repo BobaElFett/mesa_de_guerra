@@ -137,7 +137,32 @@ function barricada(): Part[] {
   return p;
 }
 
-const BUILDERS: Record<TerrainKind, () => Part[]> = { ruina, ruinaGrande, cajas, crater, bunker, barricada };
+/** Bosque (#84): suelo de hojarasca y una docena de árboles low poly (copas en capas). */
+function bosque(): Part[] {
+  const p: Part[] = [];
+  const r = rnd(11);
+  p.push(place(new THREE.CylinderGeometry(1, 1, 0.05, 14).scale(3.5, 1, 2.5), "#3d4a2a", 0, 0.025, 0));
+  for (let i = 0; i < 18; i++) p.push(box(0.3 + r() * 0.4, 0.06, 0.3 + r() * 0.4, i % 2 ? "#4f5a30" : "#5c4a2c", (r() - 0.5) * 6.2, 0.04, (r() - 0.5) * 4.2, 0, r() * 3, 0));
+  const spots: [number, number][] = [];
+  for (let tries = 0; spots.length < 11 && tries < 200; tries++) {
+    const x = (r() - 0.5) * 6, z = (r() - 0.5) * 4;
+    if ((x / 3.2) ** 2 + (z / 2.2) ** 2 > 1) continue;
+    if (spots.some(([a, b]) => Math.hypot(a - x, b - z) < 1.2)) continue;
+    spots.push([x, z]);
+  }
+  for (const [x, z] of spots) {
+    const h = 2.4 + r() * 1.6, s = 0.8 + r() * 0.4;
+    const green = ["#2f5a2c", "#3a6b33", "#2a4d29"][Math.floor(r() * 3)];
+    p.push(place(new THREE.CylinderGeometry(0.1, 0.14, h * 0.45, 6), "#5a4029", x, h * 0.225, z));
+    for (let k = 0; k < 3; k++) {
+      const cr = (0.9 - k * 0.22) * s, ch = 0.9 * s;
+      p.push(place(new THREE.ConeGeometry(cr, ch, 7), k === 1 ? green : "#336130", x, h * 0.4 + k * ch * 0.55 + ch / 2, z, 0, r() * 3, 0));
+    }
+  }
+  return p;
+}
+
+const BUILDERS: Record<TerrainKind, () => Part[]> = { ruina, ruinaGrande, cajas, crater, bunker, barricada, bosque };
 
 export function makeTerrain(kind: TerrainKind): THREE.Group {
   return build(BUILDERS[kind]());
