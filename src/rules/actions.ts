@@ -1,3 +1,4 @@
+import { isPsyker, powerOf, PSYCHIC_RANGE, psychicBlocked, psychicTargets } from "./psychic";
 import { arrivalBlocked, LAST_ARRIVAL_ROUND, reserveUnits } from "./reserves";
 import type { Command } from "../core/commands";
 import { Faction, GameState, PLAYERS } from "../core/state";
@@ -72,6 +73,19 @@ export function actionsAgainst(s: GameState, actor: string[], target: string): B
       out.push({
         label: `Granadas · 1 PM${actor.length > 1 ? ` (${name(s, u)})` : ""}`, cmd: why ? null : { type: "stratagem", id: "granadas", unit: u, target },
         detail: why ?? `6D6 a 4+: ~${fmt(e.damage)} heridas mortales · sin salvación`, blocked: why ?? undefined, value: why ? 0 : attackValue(s, target, e) * 0.8,
+      });
+    }
+    // Poder psíquico (#78): gratis, una vez por turno
+    for (const u of actor) {
+      if (!isPsyker(s, u)) continue;
+      const power = powerOf(s, u);
+      const why = psychicBlocked(s, u) ?? (psychicTargets(s, u).includes(target) ? null : `Fuera de ${PSYCHIC_RANGE}" o sin visión.`);
+      const e = expectedAttack(s, power, 1, target, { mortal: true });
+      const p = 21 / 36;     // 2D6 ≥ 7
+      out.push({
+        label: `${power.name} (poder)${actor.length > 1 ? ` · ${name(s, u)}` : ""}`, cmd: why ? null : { type: "psychic", unit: u, target },
+        detail: why ?? `2D6 ≥ 7 (${pct(p)}): D3 heridas mortales (~${fmt(e.damage * p)}) · doble 1 o doble 6: 1 herida al psíquico`,
+        blocked: why ?? undefined, value: why ? 0 : attackValue(s, target, { damage: e.damage * p }),
       });
     }
   } else if (s.phase === "carga") {

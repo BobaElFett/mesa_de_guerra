@@ -13,14 +13,14 @@ export const BOARD = { w: 60, d: 44 } as const;   // tapete de 60" × 44"
 export const DEPLOY_DEPTH = 10;                   // zona de despliegue desde cada borde largo
 
 export type Faction = "legion" | "swarm";
-export type ModelKind = "legionario" | "garra" | "capitan" | "pesado" | "andador" | "tirano" | "nodo" | "escupidor" | "exterminador" | "acechador" | "moto" | "carnifice";
+export type ModelKind = "legionario" | "garra" | "capitan" | "pesado" | "andador" | "tirano" | "nodo" | "escupidor" | "exterminador" | "acechador" | "moto" | "carnifice" | "psiquico" | "mente";
 
 /** Radio de la peana en pulgadas: 32 mm para la Legión, 25 mm para las Garras. */
 export const BASE_RADIUS: Record<ModelKind, number> = {
   legionario: 0.63, pesado: 0.63, capitan: 0.79, andador: 1.6,     // 32 mm, 32 mm, 40 mm, 90 mm
   garra: 0.49, escupidor: 0.49, nodo: 0.79, tirano: 1.18,          // 25 mm, 25 mm, 40 mm, 60 mm
   exterminador: 0.79, acechador: 0.79,                             // 40 mm (#57)
-  moto: 1.0, carnifice: 1.6,                                       // peana de moto y 105 mm (#62)
+  moto: 1.0, carnifice: 1.6, psiquico: 0.63, mente: 0.79,                                       // peana de moto y 105 mm (#62)
 };
 
 export const FACTIONS: Record<Faction, { name: string; of: string; color: string }> = {

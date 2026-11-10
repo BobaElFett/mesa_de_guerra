@@ -1,3 +1,4 @@
+import { psychicBlocked, psychicTargets } from "../rules/psychic";
 import { arriveStep } from "./arrival";
 import { formation, formationModels, partnerOf } from "../rules/leaders";
 import { CommandBus, PieceMove } from "../core/commands";
@@ -68,6 +69,10 @@ function movePhase(bus: CommandBus) {
 }
 
 function shootPhase(bus: CommandBus) {
+  // Poder psíquico (#78) contra el primer enemigo a tiro
+  for (const u of ownUnits(bus.state)) {
+    if (!psychicBlocked(bus.state, u.id)) bus.dispatch({ type: "psychic", unit: u.id, target: psychicTargets(bus.state, u.id)[0] });
+  }
   for (const u of ownUnits(bus.state)) {
     for (;;) {
       const o = shootingOptions(bus.state, u.id);

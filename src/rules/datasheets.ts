@@ -37,7 +37,7 @@ export interface Profile {
   OC: number;   // control de objetivo
 }
 
-export type UnitAbility = "alMando" | "sargento" | "blindado" | "sinaptico" | "rapidez" | "despliegueProfundo" | "tuneles" | "turbo" | "aterrador";
+export type UnitAbility = "alMando" | "sargento" | "blindado" | "sinaptico" | "rapidez" | "despliegueProfundo" | "tuneles" | "turbo" | "aterrador" | "psiquico";
 
 /**
  * Equipo opcional (#63): cambia un arma por otra en el líder, en una miniatura normal o en todas.
@@ -81,7 +81,7 @@ export interface Datasheet {
 export type DatasheetId =
   | "capitan" | "asalto" | "fuegoPesado" | "andador" | "exterminadores"
   | "tirano" | "garras" | "escupidores" | "nodo" | "acechadores"
-  | "motoristas" | "carnifice";
+  | "motoristas" | "carnifice" | "psiquico" | "mente";
 
 const w = (id: string, name: string, range: number | "CC", attacks: Dice, skill: number | null,
   strength: number, ap: number, damage: Dice, abilities: WeaponAbility[] = []): Weapon =>
@@ -119,6 +119,10 @@ export const WEAPONS: Record<string, Weapon> = Object.fromEntries([
   // Unidades nuevas (#62)
   w("bolterGemelo", "Bólter gemelo", 18, 3, 3, 4, -1, 1),
   w("guadanas", "Guadañas monstruosas", "CC", 5, 3, 9, -2, 3),
+  // Poderes psíquicos (#78): se resuelven como heridas mortales (D3, sin tirada para impactar)
+  w("rayoMental", "Rayo mental", 18, "D3", null, 1, 0, 1),
+  w("gritoPsiquico", "Grito psíquico", 18, "D3", null, 1, 0, 1),
+  w("bastonPsi", "Báculo psíquico", "CC", 3, 3, 6, -1, "D3"),
   w("pinchos", "Lanzapinchos", 24, "D6", 4, 6, -1, 1, [{ kind: "explosiva" }]),
 ].map((x) => [x.id, x]));
 
@@ -169,6 +173,18 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
     profile: { M: 8, T: 5, Sv: 4, W: 3, Ld: 8, OC: 1 },
     sizes: [{ models: 3, points: 75 }, { models: 6, points: 150 }], weapons: ["cuchillasDobles"],
     abilities: ["tuneles", "rapidez"], model: "acechador",
+  },
+  psiquico: {
+    id: "psiquico", name: "Psíquico de la Legión", faction: "legion",
+    profile: { M: 6, T: 4, Sv: 3, Inv: 5, W: 4, Ld: 6, OC: 1 },
+    sizes: [{ models: 1, points: 75 }], weapons: ["pistolaBolter", "bastonPsi"],
+    abilities: ["psiquico"], model: "psiquico", character: true, leads: ["asalto", "exterminadores"],
+  },
+  mente: {
+    id: "mente", name: "Mente del Enjambre", faction: "swarm",
+    profile: { M: 6, T: 5, Sv: 4, Inv: 5, W: 5, Ld: 7, OC: 1 },
+    sizes: [{ models: 1, points: 80 }], weapons: ["garrasAfiladas"],
+    abilities: ["psiquico", "sinaptico"], model: "mente", character: true,
   },
   motoristas: {
     id: "motoristas", name: "Motoristas de Asalto", faction: "legion",
@@ -276,6 +292,7 @@ export const UNIT_ABILITY_TEXT: Record<UnitAbility, { name: string; text: string
   sinaptico: { name: "Sináptico", text: "Las unidades del Enjambre a 12\" superan solas los chequeos de moral." },
   rapidez: { name: "Rapidez", text: "Puede declarar una carga después de avanzar." },
   despliegueProfundo: { name: "Despliegue profundo", text: "Puede empezar en reserva y teletransportarse en la fase de movimiento (desde la ronda 2) a cualquier punto a más de 9\" de los enemigos. Si al acabar la ronda 3 no ha llegado, se pierde." },
+  psiquico: { name: "Psíquico", text: "Una vez por turno, en su disparo, usa su poder contra un enemigo visible a 18\": 2D6; con 7 o más, D3 heridas mortales. Con doble 1 o doble 6 sufre 1 herida mortal (peligros de la disformidad)." },
   turbo: { name: "Turbo", text: "Al avanzar suma 6\" sin tirar el dado." },
   aterrador: { name: "Aterrador", text: "Las unidades enemigas a 6\" o menos restan 1 a su Liderazgo en los chequeos de moral." },
   tuneles: { name: "Túneles", text: "Puede empezar en reserva y salir de un túnel en la fase de movimiento (desde la ronda 2) a más de 9\" de los enemigos. Si al acabar la ronda 3 no ha llegado, se pierde." },

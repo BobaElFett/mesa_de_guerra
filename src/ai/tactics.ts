@@ -12,6 +12,7 @@ import { formation, formationModels, partnerOf, underCommand } from "../rules/le
 import { OBJECTIVE_RADIUS, OBJECTIVE_RANGE, objectiveStatus } from "../rules/missions";
 import { canCarry, PICK_RANGE, RELIC_R } from "../rules/relic";
 import { grenadeTargets, hasStrat, stratBlocked } from "../rules/stratagems";
+import { isPsyker, powerOf, psychicBlocked, psychicTargets } from "../rules/psychic";
 import { crossesSolid, disc, gap, sight } from "../rules/geometry";
 import {
   attackValue, centroid, expectedAttack, groupGap, meleeExpected, p2D6, pointsPerWound, unitCost,
@@ -430,6 +431,22 @@ function bestShots(s: GameState, f: Faction, W?: Weights): ShotPick[] {
 function shootStep(bus: CommandBus, W: Weights): boolean {
   const s = bus.state;
   const f = mine(s);
+  // Poderes psíquicos (#78): siempre que haya a quién (el riesgo de peligros es 1 entre 18)
+  for (const u of s.units.filter((x) => x.faction === f && alive(s, x.id) && isPsyker(s, x.id))) {
+    if (psychicBlocked(s, u.id)) continue;
+    const power = powerOf(s, u.id);
+    let best: { t: string; v: number } | null = null;
+    for (const t of psychicTargets(s, u.id)) {
+      const v = attackValue(s, t, expectedAttack(s, power, 1, t, { mortal: true }));
+      if (!best || v > best.v) best = { t, v };
+    }
+    if (best) {
+      bus.dispatch({ type: "psychic", unit: u.id, target: best.t });
+      lastActor = u.id;
+      lastAction = `${nameOf(s, u.id)} usa ${power.name} contra ${nameOf(s, best.t)}`;
+      return true;
+    }
+  }
   // Granadas (#52) con la unidad que más daño haga, si compensa
   if (W.strats && s.cp[s.active] > W.cpReserve && !(s.turnLog.strats ?? []).some((x) => x.id === "granadas")) {
     let best: { u: string; t: string; v: number } | null = null;

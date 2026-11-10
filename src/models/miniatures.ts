@@ -467,6 +467,29 @@ function carnifice(pose: number): Part[] {
   return p;
 }
 
+// --- Psíquicos (#78) -------------------------------------------------------
+/** Psíquico de la Legión: armadura de capitán, capucha y báculo con cristal encendido. */
+function psiquico(pose: number): Part[] {
+  const p = legionario(pose, false, "capitan");
+  const A = LEG;
+  p.push(box(0.3, 0.12, 0.32, A.dark, 0, y(1.24), -0.02));                       // capucha
+  p.push(box(0.3, 0.26, 0.08, A.dark, 0, y(1.1), -0.16));
+  p.push(segment([0.34, y(0.12), 0.12], [0.34, y(1.55), 0.12], 0.05, 0.05, "#c9b27a"));   // báculo
+  p.push(place(new THREE.OctahedronGeometry(0.11), "#7fd8ff", 0.34, y(1.66), 0.12, 0, 0, 0, true));
+  for (const a of [0, 2.1, 4.2]) p.push(place(new THREE.TetrahedronGeometry(0.04), "#7fd8ff", 0.34 + Math.cos(a) * 0.16, y(1.62), 0.12 + Math.sin(a) * 0.16, a, a, 0, true));
+  return p;
+}
+
+/** Mente del Enjambre: cuerpo pequeño bajo un cerebro enorme que brilla. */
+function mente(pose: number): Part[] {
+  const p = garra(pose, true, { scythes: false });
+  const C = SW;
+  p.push(place(new THREE.IcosahedronGeometry(0.36, 0), C.shell, 0, y(1.12), -0.02));
+  p.push(place(new THREE.IcosahedronGeometry(0.26, 0), C.glow, 0, y(1.2), 0.08, 0.3, 0.4, 0, true));
+  for (const s of [-1, 1]) p.push(spike([s * 0.18, y(1.3), -0.1], [s * 0.34, y(1.55), -0.22], 0.04, C.bone));
+  return p;
+}
+
 // --- Fábrica con caché ----------------------------------------------------------
 
 const cache = new Map<string, THREE.Group>();
@@ -478,8 +501,8 @@ export function makeMiniature(kind: ModelKind, pose = 0, leader = false): THREE.
   if (!proto) {
     proto = new THREE.Group();
     const r = BASE_RADIUS[kind];
-    const legion = ["legionario", "capitan", "pesado", "andador", "exterminador", "moto"].includes(kind);
-    const rim = leader || kind === "capitan" || kind === "tirano" ? (legion ? LEG.trim : SW.glow) : legion ? LEG.rim : SW.rim;
+    const legion = ["legionario", "capitan", "pesado", "andador", "exterminador", "moto", "psiquico"].includes(kind);
+    const rim = leader || kind === "capitan" || kind === "tirano" || kind === "psiquico" || kind === "mente" ? (legion ? LEG.trim : SW.glow) : legion ? LEG.rim : SW.rim;
     const [parts, scale] = bodyOf(kind, pose, leader);
     // El cuerpo escalado se hornea en la geometría: peana y cuerpo en una sola malla (#58)
     if (scale !== 1) {
@@ -506,6 +529,8 @@ function bodyOf(kind: ModelKind, pose: number, leader: boolean): [Part[], number
     case "exterminador": return [legionario(pose, false, "exterminador"), 1.22];
     case "acechador": return [garra(pose, true, { monster: true }), 1.55];
     case "moto": return [moto(pose), 1];
+    case "psiquico": return [psiquico(pose), 1.12];
+    case "mente": return [mente(pose), 1.5];
     case "carnifice": return [carnifice(pose), 2.9];
   }
 }

@@ -31,6 +31,8 @@ export interface TurnLog {
   fought?: string[];
   /** Estratagemas usadas este turno. */
   strats?: { id: string; unit: string }[];
+  /** Psíquicos que ya han usado su poder (#78), con la tirada. */
+  psychic?: { unit: string; roll: [number, number]; target: string }[];
 }
 
 export const emptyTurnLog = (): TurnLog => ({ moves: {}, origins: {} });

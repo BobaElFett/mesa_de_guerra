@@ -830,7 +830,7 @@ function playAttackFx(entries: AttackLogEntry[]) {
     const aUnit = bus.state.units.find((u) => u.id === e.attacker);
     const fac = aUnit?.faction ?? "legion";
     const melee = e.kind === "combate";
-    const kind = WEAPONS[e.weapon]?.id === "granadas" ? "pesado" : fac === "swarm" ? "acido" : /plasma/i.test(e.weapon) ? "plasma" : /canon|cañon|pesad/i.test(e.weapon) ? "pesado" : "bala";
+    const kind = WEAPONS[e.weapon]?.id === "granadas" ? "pesado" : fac === "swarm" ? "acido" : /plasma|rayo|grito/i.test(e.weapon) ? "plasma" : /canon|cañon|pesad/i.test(e.weapon) ? "pesado" : "bala";
     const n = Math.min(12, e.result.attacks);
     for (let i = 0; i < n; i++) {
       const a = shooters[i % Math.max(1, shooters.length)];

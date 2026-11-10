@@ -110,7 +110,7 @@ export const sfx = new Audio();
 export function weaponSound(weaponId: string, melee: boolean, faction: "legion" | "swarm"): Sfx {
   if (melee) return faction === "swarm" ? "garra" : "golpe";
   if (weaponId === "granadas") return "granada";
-  if (/plasma/i.test(weaponId)) return "plasma";
+  if (/plasma|rayoMental|gritoPsiquico/i.test(weaponId)) return "plasma";
   if (/pesad|canon|cañon|Pesado/i.test(weaponId)) return "pesado";
   if (faction === "swarm") return "acido";
   return "rifle";

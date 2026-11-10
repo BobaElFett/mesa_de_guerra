@@ -1,6 +1,7 @@
 import { outcome } from "../rules/missions";
 import { arrivalBlocked, reserveUnits, LAST_ARRIVAL_ROUND } from "../rules/reserves";
 import { pieceWeaponIds, unitCost } from "../rules/datasheets";
+import { isPsyker, powerOf, psychicBlocked } from "../rules/psychic";
 import { hasStrat, STRAT_IDS, StratId, STRATAGEMS, stratBlocked } from "../rules/stratagems";
 import { formation, partnerOf, underCommand } from "../rules/leaders";
 import { CommandBus } from "../core/commands";
@@ -195,6 +196,10 @@ function phaseActions(s: GameState, uid: string, inFormation = false): string {
     }
     const first = pendingChargers(s);
     if (first.length && !first.includes(uid)) html += `<div class="dim">Pendientes de combatir primero: ${first.map((u) => DATASHEETS[s.units.find((x) => x.id === u)!.datasheet].name).join(", ")}.</div>`;
+  }
+  if (s.phase === "disparo" && isPsyker(s, uid) && unit.faction === PLAYERS[s.active] && !s.gameOver) {
+    const why = psychicBlocked(s, uid);
+    html += `<div class="strats"><span class="badge${why ? "" : " lead"}" title="${UNIT_ABILITY_TEXT.psiquico.text}">${powerOf(s, uid).name}: ${why ?? "haz clic en el enemigo"}</span></div>`;
   }
   html += stratButtons(s, uid);
   return html;
