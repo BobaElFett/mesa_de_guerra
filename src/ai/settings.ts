@@ -17,11 +17,14 @@ export interface GameSettings {
   uiScale: number;
   /** Colores de bando (#74): normales o para daltónicos (azul y naranja). */
   palette: "normal" | "daltonico";
+  /** Esquemas de color de cada bando (#77). */
+  legionScheme: "azul" | "carmesi" | "verde" | "gris";
+  swarmScheme: "morado" | "carmesi" | "pantano" | "ocre";
 }
 
 const KEY = "mesa-de-guerra.ajustes";
 const DEFAULTS: GameSettings = { aiSide: "swarm", aiLevel: "normal", mission: "tomar", map: "actual", diceSpeed: "normal",
-  volume: 0.55, followAi: true, guideRings: true, confirmAdvance: true, hoverTips: true, showMenu: true, graphics: "alta", conditions: "", uiScale: 1, palette: "normal" };
+  volume: 0.55, followAi: true, guideRings: true, confirmAdvance: true, hoverTips: true, showMenu: true, graphics: "alta", conditions: "", uiScale: 1, palette: "normal", legionScheme: "azul", swarmScheme: "morado" };
 
 export const AI_LEVEL_NAME: Record<AiLevel, string> = { facil: "Fácil", normal: "Normal", dificil: "Difícil" };
 

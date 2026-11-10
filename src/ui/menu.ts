@@ -106,6 +106,8 @@ export class SettingsDialog {
     $<HTMLSelectElement>("set-graphics").value = settings.graphics;
     $<HTMLSelectElement>("set-ui").value = String(settings.uiScale);
     $<HTMLSelectElement>("set-palette").value = settings.palette;
+    $<HTMLSelectElement>("set-legion").value = settings.legionScheme;
+    $<HTMLSelectElement>("set-swarm").value = settings.swarmScheme;
     $<HTMLInputElement>("set-follow").checked = settings.followAi;
     $<HTMLInputElement>("set-confirm").checked = settings.confirmAdvance;
     $<HTMLInputElement>("set-rings").checked = settings.guideRings;
@@ -129,6 +131,8 @@ export class SettingsDialog {
     settings.graphics = $<HTMLSelectElement>("set-graphics").value as typeof settings.graphics;
     settings.uiScale = Number($<HTMLSelectElement>("set-ui").value) || 1;
     settings.palette = $<HTMLSelectElement>("set-palette").value as typeof settings.palette;
+    settings.legionScheme = $<HTMLSelectElement>("set-legion").value as typeof settings.legionScheme;
+    settings.swarmScheme = $<HTMLSelectElement>("set-swarm").value as typeof settings.swarmScheme;
     settings.followAi = $<HTMLInputElement>("set-follow").checked;
     settings.confirmAdvance = $<HTMLInputElement>("set-confirm").checked;
     settings.guideRings = $<HTMLInputElement>("set-rings").checked;

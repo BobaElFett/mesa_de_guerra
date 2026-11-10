@@ -24,6 +24,28 @@ const SW = {
 export function useColorblindPalette() {
   Object.assign(SW, { shell: "#9a4f16", shellD: "#733a10", glow: "#ffb347", rim: "#f08a24" });
 }
+/** Pinta tu ejército (#77): esquemas de color por bando. `rim` es también el color del bando en la interfaz. */
+export const LEGION_SCHEMES = {
+  azul: { name: "Azul y oro", armor: "#2f56a8", armorD: "#26468a", trim: "#d6a83c", rim: "#3d6fd8" },
+  carmesi: { name: "Rojo y negro", armor: "#9a2626", armorD: "#781d1d", trim: "#2a2b30", rim: "#d8483a" },
+  verde: { name: "Verde y hueso", armor: "#2f6b3a", armorD: "#24552e", trim: "#e3d8b8", rim: "#4aa860" },
+  gris: { name: "Gris y blanco", armor: "#868d97", armorD: "#6a7079", trim: "#eef0f2", rim: "#aab4c2" },
+} as const;
+export const SWARM_SCHEMES = {
+  morado: { name: "Morado", shell: "#5d2a73", shellD: "#45205a", glow: "#d56bff", rim: "#a24fc4" },
+  carmesi: { name: "Rojo carmesí", shell: "#7a1f2b", shellD: "#5c1620", glow: "#ff6a6a", rim: "#c8394a" },
+  pantano: { name: "Verde pantano", shell: "#3e5a2a", shellD: "#2e4520", glow: "#b6ff6a", rim: "#7fae3a" },
+  ocre: { name: "Ocre", shell: "#8a6a2a", shellD: "#6c521f", glow: "#ffd36b", rim: "#c89a3a" },
+} as const;
+export type LegionScheme = keyof typeof LEGION_SCHEMES;
+export type SwarmScheme = keyof typeof SWARM_SCHEMES;
+/** Aplica los esquemas (antes de crear ninguna miniatura). Devuelve el color de cada bando. */
+export function useSchemes(l: LegionScheme, s: SwarmScheme): { legion: string; swarm: string } {
+  const L = LEGION_SCHEMES[l] ?? LEGION_SCHEMES.azul, S = SWARM_SCHEMES[s] ?? SWARM_SCHEMES.morado;
+  Object.assign(LEG, { armor: L.armor, armorD: L.armorD, trim: L.trim, rim: L.rim });
+  Object.assign(SW, { shell: S.shell, shellD: S.shellD, glow: S.glow, rim: S.rim });
+  return { legion: L.rim, swarm: S.rim };
+}
 const BASE_TOP = "#5a5648", BASE_SIDE = "#2b2d31", PEBBLE = "#6f6a5a";
 const Y0 = 0.12;   // altura de la cara superior de la peana
 
