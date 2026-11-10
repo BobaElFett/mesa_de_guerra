@@ -1,5 +1,6 @@
 import { outcome } from "../rules/missions";
 import { arrivalBlocked, reserveUnits, LAST_ARRIVAL_ROUND } from "../rules/reserves";
+import { pieceWeaponIds } from "../rules/datasheets";
 import { hasStrat, STRAT_IDS, StratId, STRATAGEMS, stratBlocked } from "../rules/stratagems";
 import { formation, partnerOf, underCommand } from "../rules/leaders";
 import { CommandBus } from "../core/commands";
@@ -77,12 +78,20 @@ function sheetDetails(s: GameState, uid: string): string {
   const unit = s.units.find((u) => u.id === uid)!;
   const ds = DATASHEETS[unit.datasheet];
   const models = s.pieces.filter((p) => p.unit === uid);
-  const ids = [...new Set([...ds.weapons, ...(ds.leaderWeapons ?? [])])];
   const leaderName = unit.faction === "legion" ? "sargento" : "alfa";
+  // Las armas que llevan de verdad (con equipo opcional, #63): cuántas miniaturas llevan cada una
+  const carriers = new Map<string, { n: number; leader: boolean }>();
+  for (const p of models.length ? models : [{ leader: false }]) for (const id of pieceWeaponIds(ds, p)) {
+    const e = carriers.get(id) ?? { n: 0, leader: false };
+    e.n++; if ((p as { leader?: boolean }).leader) e.leader = true;
+    carriers.set(id, e);
+  }
+  const ids = models.length ? [...carriers.keys()] : [...new Set([...ds.weapons, ...(ds.leaderWeapons ?? [])])];
   let html = `<table class="wtable"><tr><th>Arma</th><th>Alc.</th><th>A</th><th>HP</th><th>F</th><th>FP</th><th>D</th></tr>`;
   for (const id of ids) {
     const w = WEAPONS[id];
-    const who = ds.leaderWeapons?.includes(id) ? ` <span class="dim">(${leaderName})</span>` : "";
+    const c = carriers.get(id);
+    const who = c && models.length > 1 && c.n < models.length ? ` <span class="dim">(${c.n === 1 && c.leader ? leaderName : `×${c.n}`})</span>` : "";
     const ab = weaponLine(w).match(/\((.*)\)$/)?.[1];
     html += `<tr><td>${w.name}${who}${ab ? `<div class="dim">${ab}</div>` : ""}</td><td>${w.range === "CC" ? "CC" : `${w.range}"`}</td><td>${w.attacks}</td><td>${w.skill ? `${w.skill}+` : "—"}</td><td>${w.strength}</td><td>${w.ap === 0 ? "0" : `−${-w.ap}`}</td><td>${w.damage}</td></tr>`;
   }
@@ -172,7 +181,7 @@ function phaseActions(s: GameState, uid: string, inFormation = false): string {
   if (s.phase === "combate" && !s.gameOver) {
     const o = fightOptions(s, uid);
     const ds2 = DATASHEETS[unit.datasheet];
-    const melee = [...new Set([...ds2.weapons, ...(ds2.leaderWeapons ?? [])])].map((id) => WEAPONS[id]).filter((w) => w.range === "CC");
+    const melee = [...new Set(s.pieces.filter((p) => p.unit === uid).flatMap((p) => pieceWeaponIds(ds2, p)))].map((id) => WEAPONS[id]).filter((w) => w.range === "CC");
     html += `<div class="weapon">${melee.map((w) => `<b>${w.name}</b> <span class="dim">${weaponLine(w)}</span>`).join("<br>")}</div>`;
     if (o.fought) html += `<div class="dim">Ya ha combatido.</div>`;
     else if (o.blocked && !o.targets.length) html += `<div class="dim">${o.blocked}</div>`;

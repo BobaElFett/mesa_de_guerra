@@ -9,6 +9,15 @@ Plan completo (visión, facciones, roadmap y backlog): documento *Mesa de Guerra
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor.
 
+## Novedades 0.26 · fase 8, variedad (#63–#65)
+- **Equipo opcional (#63):** casillas en Ejércitos, con su coste.
+  - Escuadra de Asalto: el sargento puede llevar espada de energía (+10) o pistola de plasma (+5); un legionario, lanzallamas (+5) y otro, lanzamisiles (+10).
+  - Fuego Pesado: todos con lanzamisiles (0) o cañón láser (+10; 48", F12, FP−3, D6 de daño).
+  - Escupidores: ácido corrosivo (0; 12", 2 ataques, FP−1). Garras Menores: púas venenosas (Letal, +1 pt por miniatura).
+  - La ficha de la unidad enseña las armas que llevan de verdad y cuántas miniaturas llevan cada una. Con la IA Difícil en los dos bandos, el equipo no desequilibra.
+- **Misión Reliquia (#64):** una reliquia en el centro (si cae en el búnker, se aparta por la línea central). La recoge la unidad que acabe a 1" sin enemigos tan cerca (las bestias y vehículos grandes no pueden), va con ella y cae donde estaba si la destruyen. Al acabar tu turno, desde la ronda 2: 6 PV si la llevas y 2 por cada flanco. La IA va a por ella y persigue al portador. En la mesa, cristal dorado; al llevarla, flota sobre el portador con el color de su bando.
+- **Estadísticas de la batalla (#65):** el resumen final trae una tabla por bando (heridas causadas, miniaturas eliminadas, puntos destruidos y estado de cada unidad) y la **unidad de la partida**, la que más puntos ha destruido.
+
 ## Novedades 0.25 · fase 7, profundidad y ayudas (#59–#62)
 - **Sugerir jugada (#59):** botón **Sugerir** en el panel de turno, o tecla **H**: enseña lo que haría la IA Difícil ahora (en dorado: la unidad, adónde movería, a quién dispararía o cargaría) y lo explica en una frase. No hace nada: la mesa y los dados no cambian.
 - **Línea de visión (#60):** en el disparo, con tu unidad elegida y el ratón sobre un enemigo, cada miniatura traza su línea a la miniatura enemiga que mejor ve: **verde** la ve, **naranja** con cobertura, **roja** no ve a ninguna, **gris discontinua** la ve pero no llega.

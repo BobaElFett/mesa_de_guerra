@@ -4,7 +4,7 @@ import { resolveOverlaps } from "../core/placement";
 import { zoneBand } from "./deployment";
 import { DEFAULT_MISSION, MissionId, setupMission } from "./missions";
 import { BASE_RADIUS, BOARD, DEPLOY_DEPTH, Faction, GameState, Piece, Unit } from "../core/state";
-import { DATASHEETS, DatasheetId, unitPoints } from "./datasheets";
+import { DATASHEETS, DatasheetId, optionErrors, optionPoints, pieceWeaponIds, unitPoints } from "./datasheets";
 
 // Listas de ejército y despliegue en las zonas de cada bando.
 
@@ -15,13 +15,15 @@ export interface ArmyEntry {
   leads?: number;
   /** Empieza en reserva (#56): solo unidades con Despliegue profundo o Túneles. */
   reserve?: boolean;
+  /** Equipo opcional elegido (#63): ids de `Datasheet.options`. */
+  options?: string[];
 }
 export interface ArmyList { name?: string; units: ArmyEntry[] }
 
 export const POINTS_LIMIT = 500;
 
 export function listPoints(list: ArmyList): number {
-  return list.units.reduce((n, u) => n + (unitPoints(DATASHEETS[u.datasheet], u.models) ?? 0), 0);
+  return list.units.reduce((n, u) => n + (unitPoints(DATASHEETS[u.datasheet], u.models) ?? 0) + optionPoints(DATASHEETS[u.datasheet], u.models, u.options), 0);
 }
 
 /** Errores de una lista según el reglamento (vacío si es válida). */
@@ -34,6 +36,7 @@ export function validateList(list: ArmyList, faction: Faction, limit = POINTS_LI
     if (!ds) { errs.push(`Hoja desconocida: ${u.datasheet}`); continue; }
     if (ds.faction !== faction) errs.push(`${ds.name} no es de este bando.`);
     if (unitPoints(ds, u.models) === null) errs.push(`${ds.name}: ${u.models} miniaturas no es un tamaño válido.`);
+    errs.push(...optionErrors(ds, u.options));
     counts.set(u.datasheet, (counts.get(u.datasheet) ?? 0) + 1);
     if (ds.big) big++;
     if (ds.character) characters++;
@@ -117,6 +120,7 @@ export function deployArmies(s: GameState, legion: ArmyList, swarm: ArmyList, mi
         p.z = Math.max(-BOARD.d / 2 + b.r, Math.min(BOARD.d / 2 - b.r, p.z));
         s.pieces.push(p);
       }
+      applyOptions(s, unit.id, b.u.options);
       x += b.width;
     });
   }
@@ -144,3 +148,29 @@ export const TEST_LEGION: ArmyList = { name: "Prueba Legión", units: [
 export const TEST_SWARM: ArmyList = { name: "Prueba Enjambre", units: [
   { datasheet: "tirano", models: 1 }, { datasheet: "nodo", models: 3 }, { datasheet: "garras", models: 20 }, { datasheet: "escupidores", models: 10 }, { datasheet: "garras", models: 10 },
 ] };
+
+/**
+ * Equipo opcional (#63): da a cada miniatura afectada su propia lista de armas. «uno» elige una
+ * miniatura normal distinta por cada opción; «todos», todas las que lleven el arma cambiada.
+ */
+export function applyOptions(s: GameState, unitId: string, ids: string[] = []) {
+  const u = s.units.find((x) => x.id === unitId);
+  if (!u || !ids.length) return;
+  const ds = DATASHEETS[u.datasheet];
+  const ps = s.pieces.filter((p) => p.unit === unitId);
+  const used = new Set<string>();
+  const swap = (p: Piece, from: string, to: string) => {
+    const cur = pieceWeaponIds(ds, p);
+    if (cur.includes(from)) p.weapons = cur.map((w) => (w === from ? to : w));
+  };
+  for (const id of ids) {
+    const o = ds.options?.find((x) => x.id === id);
+    if (!o) continue;
+    if (o.who === "lider") { for (const p of ps.filter((q) => q.leader)) swap(p, o.replace, o.with); }
+    else if (o.who === "todos") { for (const p of ps) swap(p, o.replace, o.with); }
+    else {
+      const p = [...ps].reverse().find((q) => !q.leader && !used.has(q.id) && pieceWeaponIds(ds, q).includes(o.replace));
+      if (p) { used.add(p.id); swap(p, o.replace, o.with); }
+    }
+  }
+}

@@ -1,3 +1,4 @@
+import { pieceWeaponIds } from "../rules/datasheets";
 import { arriveStep } from "./arrival";
 import { overwatchBlocked, overwatchWeapons } from "../rules/reactions";
 import { CommandBus, PieceMove } from "../core/commands";
@@ -94,7 +95,7 @@ function rangedWeapons(s: GameState, unitId: string) {
     const u = s.units.find((x) => x.id === id)!;
     const ds = DATASHEETS[u.datasheet];
     for (const p of s.pieces.filter((q) => q.unit === id)) {
-      const ids = p.leader && ds.leaderWeapons ? ds.leaderWeapons : ds.weapons;
+      const ids = pieceWeaponIds(ds, p);
       for (const wid of ids) {
         const w = WEAPONS[wid];
         if (w.range === "CC") continue;

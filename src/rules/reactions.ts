@@ -1,3 +1,4 @@
+import { pieceWeaponIds } from "./datasheets";
 import { note, unitName } from "./history";
 import { GameState, PLAYERS } from "../core/state";
 import { DATASHEETS, WEAPONS } from "./datasheets";
@@ -22,7 +23,7 @@ export function overwatchWeapons(s: GameState, targetId: string, chargerId: stri
   const chargers = unitModels(s, chargerId);
   const byW = new Map<string, string[]>();
   for (const p of unitModels(s, targetId)) {
-    const ids = p.leader && ds.leaderWeapons ? ds.leaderWeapons : ds.weapons;
+    const ids = pieceWeaponIds(ds, p);
     for (const wid of ids) {
       const w = WEAPONS[wid];
       if (w.range === "CC") continue;

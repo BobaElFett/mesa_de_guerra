@@ -43,6 +43,8 @@ export interface Piece {
   unit?: string;
   /** Heridas perdidas; la miniatura cae cuando llegan a su H. */
   damage?: number;
+  /** Armas propias (equipo opcional, #63); si no, las de su hoja de datos. */
+  weapons?: string[];
 }
 
 /** Una unidad del reglamento: varias miniaturas con la misma hoja de datos. */

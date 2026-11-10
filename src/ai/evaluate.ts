@@ -1,3 +1,4 @@
+import { pieceWeaponIds } from "../rules/datasheets";
 import { BASE_RADIUS, GameState, Piece } from "../core/state";
 import { abilityX, DATASHEETS, Dice, hasAbility, unitPoints, Weapon, WEAPONS } from "../rules/datasheets";
 import { saveTarget, woundTarget } from "../rules/attack";
@@ -134,7 +135,7 @@ export function meleeExpected(s: GameState, unitId: string, targetId: string, fr
   const models = s.pieces.filter((p) => p.unit === unitId);
   const byWeapon = new Map<string, number>();
   for (const p of models) {
-    const ids = p.leader && ds.leaderWeapons ? ds.leaderWeapons : ds.weapons;
+    const ids = pieceWeaponIds(ds, p);
     const w = ids.map((id) => WEAPONS[id]).find((x) => x.range === "CC");
     if (w) byWeapon.set(w.id, (byWeapon.get(w.id) ?? 0) + 1);
   }

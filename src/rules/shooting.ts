@@ -1,3 +1,4 @@
+import { pieceWeaponIds } from "./datasheets";
 import { recordDamage } from "./stats";
 import { note } from "./history";
 import { hasStrat } from "./stratagems";
@@ -58,7 +59,7 @@ export interface AttackLogEntry {
 }
 
 const rangedWeaponsOf = (p: Piece, ds: (typeof DATASHEETS)[keyof typeof DATASHEETS]): Weapon[] =>
-  (p.leader && ds.leaderWeapons ? ds.leaderWeapons : ds.weapons).map((id) => WEAPONS[id]).filter((w) => w.range !== "CC");
+  pieceWeaponIds(ds, p).map((id) => WEAPONS[id]).filter((w) => w.range !== "CC");
 
 function enemyUnitsOf(s: GameState, unitId: string) {
   const u = s.units.find((x) => x.id === unitId)!;

@@ -4,7 +4,7 @@ import { MISSIONS, MissionId } from "../rules/missions";
 import { AiLevel, saveSettings, settings } from "../ai/settings";
 import { CommandBus } from "../core/commands";
 import { Faction, FACTIONS } from "../core/state";
-import { DATASHEETS, DatasheetId, unitPoints } from "../rules/datasheets";
+import { DATASHEETS, DatasheetId, optionPoints, unitPoints } from "../rules/datasheets";
 import { ArmyList, listPoints, validateList, POINTS_LIMIT, TEST_LEGION, TEST_SWARM } from "../rules/armies";
 import { modal } from "./modal";
 
@@ -170,6 +170,21 @@ export class ArmyDialog {
 
   private change(e: Event) {
     const t = e.target as HTMLSelectElement;
+    if (t.dataset.option !== undefined) {
+      const [f, i, id] = t.dataset.option.split("|");
+      const u = this.lists[f as Faction].units[Number(i)];
+      const ds = DATASHEETS[u.datasheet];
+      const o = ds.options?.find((x) => x.id === id);
+      let ids = (u.options ?? []).filter((x) => x !== id);
+      if ((t as unknown as HTMLInputElement).checked && o) {
+        // Las que cambian la misma arma de las mismas miniaturas se excluyen: se quita la otra
+        ids = ids.filter((x) => { const q = ds.options?.find((y) => y.id === x); return !(q && o.who !== "uno" && q.who === o.who && q.replace === o.replace); });
+        ids.push(id);
+      }
+      if (ids.length) u.options = ids; else delete u.options;
+      this.render();
+      return;
+    }
     if (t.dataset.reserve !== undefined) {
       const [f, i] = t.dataset.reserve.split("|");
       const u = this.lists[f as Faction].units[Number(i)];
@@ -208,9 +223,9 @@ export class ArmyDialog {
         const leads = ds.leads ? `<div class="lead-pick">Lidera a <select data-leads="${f}|${i}"><option value="">— nadie —</option>`
           + squads.map(({ x, j }) => `<option value="${j}"${u.leads === j ? " selected" : ""}>${j + 1}. ${DATASHEETS[x.datasheet].name} (${x.models})</option>`).join("")
           + `</select></div>` : "";
-        return `<tr><td><span class="dim">${i + 1}.</span> ${ds.name}${ds.character ? ' <span class="dim">(personaje)</span>' : ""}${leads}${(canReserve(ds) ? `<label class="reserve-pick" title="Empieza fuera de la mesa y llega desde la ronda 2 a más de 9&quot; de los enemigos. Si al acabar la ronda 3 no ha llegado, se pierde."><input type="checkbox" data-reserve="${f}|${i}"${u.reserve ? " checked" : ""}> En reserva (llega desde la ronda 2)</label>` : "")}</td>`
+        return `<tr><td><span class="dim">${i + 1}.</span> ${ds.name}${ds.character ? ' <span class="dim">(personaje)</span>' : ""}${leads}${(canReserve(ds) ? `<label class="reserve-pick" title="Empieza fuera de la mesa y llega desde la ronda 2 a más de 9&quot; de los enemigos. Si al acabar la ronda 3 no ha llegado, se pierde."><input type="checkbox" data-reserve="${f}|${i}"${u.reserve ? " checked" : ""}> En reserva (llega desde la ronda 2)</label>` : "")}${(ds.options ?? []).map((o) => `<label class="reserve-pick"><input type="checkbox" data-option="${f}|${i}|${o.id}"${u.options?.includes(o.id) ? " checked" : ""}> ${o.name}${o.points ? ` <span class="dim">+${o.perModel ? o.points * u.models : o.points}</span>` : ""}</label>`).join("")}</td>`
           + `<td>${ds.sizes.length > 1 ? `<select data-size="${f}|${i}">${sizes}</select>` : u.models}</td>`
-          + `<td class="pts">${unitPoints(ds, u.models) ?? "—"}</td>`
+          + `<td class="pts">${unitPoints(ds, u.models) === null ? "—" : unitPoints(ds, u.models)! + optionPoints(ds, u.models, u.options)}</td>`
           + `<td><button data-side="${f}" data-act="remove" data-i="${i}" title="Quitar">×</button></td></tr>`;
       }).join("");
       const options = Object.values(DATASHEETS).filter((d) => d.faction === f)

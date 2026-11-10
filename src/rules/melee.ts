@@ -1,3 +1,4 @@
+import { pieceWeaponIds } from "./datasheets";
 import { note, unitName } from "./history";
 import { onForbiddenTerrain } from "./geometry";
 import { hasStrat } from "./stratagems";
@@ -175,7 +176,7 @@ export function applyFight(s: GameState, unitId: string, targetId: string): Atta
   // Agrupa por arma CC (el líder puede llevar otra)
   const groups = new Map<string, Piece[]>();
   for (const p of fighters) {
-    const ids = p.leader && ds.leaderWeapons ? ds.leaderWeapons : ds.weapons;
+    const ids = pieceWeaponIds(ds, p);
     const w = ids.map((id) => WEAPONS[id]).find((x) => x.range === "CC");
     if (!w) continue;
     if (!groups.has(w.id)) groups.set(w.id, []);

@@ -39,6 +39,22 @@ export interface Profile {
 
 export type UnitAbility = "alMando" | "sargento" | "blindado" | "sinaptico" | "rapidez" | "despliegueProfundo" | "tuneles" | "turbo" | "aterrador";
 
+/**
+ * Equipo opcional (#63): cambia un arma por otra en el líder, en una miniatura normal o en todas.
+ * Dos opciones de líder o de todas que cambian la misma arma se excluyen; las de «uno» se suman
+ * (cada una, una miniatura distinta).
+ */
+export interface WargearOption {
+  id: string;
+  name: string;
+  who: "lider" | "uno" | "todos";
+  replace: string;
+  with: string;
+  /** Coste: por la unidad o, con `perModel`, por cada miniatura. */
+  points: number;
+  perModel?: boolean;
+}
+
 export interface Datasheet {
   id: DatasheetId;
   name: string;
@@ -56,6 +72,8 @@ export interface Datasheet {
   character?: boolean;
   /** Escuadras que este personaje puede liderar. */
   leads?: DatasheetId[];
+  /** Equipo opcional (#63). */
+  options?: WargearOption[];
   /** Vehículo o monstruo: como mucho 1 por ejército. */
   big?: boolean;
 }
@@ -84,6 +102,12 @@ export const WEAPONS: Record<string, Weapon> = Object.fromEntries([
   w("garrasMonstruosas", "Garras monstruosas", "CC", 6, 2, 9, -2, 3),
   w("escupeBilis", "Escupe-bilis", 12, "D6", null, 5, -1, 1, [{ kind: "torrente" }]),
   w("garras", "Garras", "CC", 2, 4, 3, -1, 1),
+  // Equipo opcional (#63)
+  w("lanzallamas", "Lanzallamas", 12, "D6", null, 4, 0, 1, [{ kind: "torrente" }]),
+  w("lanzamisiles", "Lanzamisiles", 48, "D6", 3, 4, -1, 1, [{ kind: "pesada" }, { kind: "explosiva" }]),
+  w("canonLaser", "Cañón láser", 48, 1, 3, 12, -3, "D6", [{ kind: "pesada" }]),
+  w("acidoCorrosivo", "Ácido corrosivo", 12, 2, 4, 5, -1, 1, [{ kind: "asalto" }]),
+  w("garrasVenenosas", "Púas venenosas", "CC", 2, 4, 3, -1, 1, [{ kind: "letal" }]),
   w("escupidor", "Escupidor", 18, 1, 4, 5, 0, 1, [{ kind: "asalto" }]),
   w("mordiscos", "Mordiscos", "CC", 1, 4, 3, 0, 1),
   w("canonBio", "Cañón bio", 24, 3, 4, 5, -1, 1),
@@ -111,12 +135,22 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
     sizes: [{ models: 5, points: 90 }, { models: 10, points: 170 }],
     weapons: ["rifleBolter", "cuchillo"], leaderWeapons: ["pistolaBolter", "espadaSierra"],
     abilities: ["sargento"], model: "legionario",
+    options: [
+      { id: "sgtEspada", name: "Sargento: espada de energía (en vez de espada sierra)", who: "lider", replace: "espadaSierra", with: "espadaEnergia", points: 10 },
+      { id: "sgtPlasma", name: "Sargento: pistola de plasma (en vez de pistola bólter)", who: "lider", replace: "pistolaBolter", with: "pistolaPlasma", points: 5 },
+      { id: "llamas", name: "Un legionario: lanzallamas (en vez de rifle)", who: "uno", replace: "rifleBolter", with: "lanzallamas", points: 5 },
+      { id: "misiles", name: "Un legionario: lanzamisiles (en vez de rifle)", who: "uno", replace: "rifleBolter", with: "lanzamisiles", points: 10 },
+    ],
   },
   fuegoPesado: {
     id: "fuegoPesado", name: "Escuadra de Fuego Pesado", faction: "legion",
     profile: { M: 5, T: 4, Sv: 3, W: 2, Ld: 6, OC: 1 },
     sizes: [{ models: 5, points: 120 }], weapons: ["canonPesado", "cuchillo"],
     abilities: [], model: "pesado",
+    options: [
+      { id: "misiles", name: "Todos: lanzamisiles (en vez de cañón pesado)", who: "todos", replace: "canonPesado", with: "lanzamisiles", points: 0 },
+      { id: "laser", name: "Todos: cañón láser (en vez de cañón pesado)", who: "todos", replace: "canonPesado", with: "canonLaser", points: 10 },
+    ],
   },
   andador: {
     id: "andador", name: "Andador de Combate", faction: "legion", big: true,
@@ -159,12 +193,18 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
     profile: { M: 8, T: 4, Sv: 5, W: 1, Ld: 8, OC: 1 },
     sizes: [{ models: 10, points: 55 }, { models: 20, points: 110 }], weapons: ["garras"],
     abilities: ["rapidez"], model: "garra",
+    options: [
+      { id: "veneno", name: "Todas: púas venenosas (Letal, +1 pt por miniatura)", who: "todos", replace: "garras", with: "garrasVenenosas", points: 1, perModel: true },
+    ],
   },
   escupidores: {
     id: "escupidores", name: "Escupidores", faction: "swarm",
     profile: { M: 6, T: 3, Sv: 4, W: 1, Ld: 8, OC: 1 },
     sizes: [{ models: 10, points: 60 }, { models: 20, points: 120 }], weapons: ["escupidor", "mordiscos"],
     abilities: [], model: "escupidor",
+    options: [
+      { id: "acido", name: "Todos: ácido corrosivo (12\", 2 ataques, FP−1, en vez de escupidor)", who: "todos", replace: "escupidor", with: "acidoCorrosivo", points: 0 },
+    ],
   },
   nodo: {
     id: "nodo", name: "Guerreros Nodo", faction: "swarm",
@@ -186,6 +226,33 @@ export function abilityX(w: Weapon, kind: "rafaga" | "sostenida"): number {
 /** Coste de una unidad con `models` miniaturas, o null si ese tamaño no existe. */
 export function unitPoints(ds: Datasheet, models: number): number | null {
   return ds.sizes.find((s) => s.models === models)?.points ?? null;
+}
+
+/** Armas (ids) de una miniatura: las suyas propias si lleva equipo opcional, o las de su perfil. */
+export function pieceWeaponIds(ds: Datasheet, p: { leader?: boolean; weapons?: string[] }): string[] {
+  return p.weapons ?? (p.leader && ds.leaderWeapons ? ds.leaderWeapons : ds.weapons);
+}
+
+/** Coste del equipo opcional elegido para una unidad de `models` miniaturas. */
+export function optionPoints(ds: Datasheet, models: number, ids: string[] = []): number {
+  return ids.reduce((n, id) => {
+    const o = ds.options?.find((x) => x.id === id);
+    return n + (o ? (o.perModel ? o.points * models : o.points) : 0);
+  }, 0);
+}
+
+/** Errores en el equipo elegido: opciones que no existen o que se excluyen. */
+export function optionErrors(ds: Datasheet, ids: string[] = []): string[] {
+  const out: string[] = [];
+  const chosen = ids.map((id) => ds.options?.find((x) => x.id === id));
+  if (chosen.some((o) => !o)) out.push(`${ds.name}: equipo desconocido`);
+  const seen = new Set<string>();
+  for (const o of chosen) if (o && o.who !== "uno") {     // «uno» se lleva cada vez una miniatura distinta
+    const k = `${o.who}|${o.replace}`;
+    if (seen.has(k)) out.push(`${ds.name}: dos opciones cambian la misma arma`);
+    seen.add(k);
+  }
+  return out;
 }
 
 /** Armas de una miniatura según sea líder o no. */
