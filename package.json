@@ -1,6 +1,6 @@
 {
   "name": "mesa-de-guerra",
-  "version": "0.30.0",
+  "version": "0.31.0",
   "description": "Mesa de juego virtual low poly para un wargame de miniaturas sci-fi, en el navegador",
   "scripts": {
     "build": "node build.mjs",
