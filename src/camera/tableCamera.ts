@@ -38,6 +38,9 @@ export class TableCamera {
   }
 
   /** Acerca la cámara a un punto (p. ej. la bandeja de dados). */
+  /** Distancia actual de la cámara al punto que mira. */
+  get zoom() { return this.distance; }
+
   focus(x: number, z: number, distance: number) {
     this.target.set(x, 0, z);
     this.targetDistance = THREE.MathUtils.clamp(distance, this.minDistance, this.maxDistance);

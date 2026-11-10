@@ -7,7 +7,8 @@ import { makeTerrain } from "../models/terrain";
 // hacia las del estado, así que al deshacer se ve cada cosa volver a su sitio.
 
 type Item = { kind: "mini"; piece: Piece } | { kind: "terrain"; terrain: TerrainPiece };
-interface Entry { group: THREE.Group; item: Item; dying?: number; look: string }
+interface Anim { kind: "lunge" | "recoil"; t: number; dx: number; dz: number }
+interface Entry { group: THREE.Group; item: Item; dying?: number; look: string; base: THREE.Vector3; step: number; anims: Anim[] }
 
 /** Posición y giro de cualquier cosa de la mesa. */
 export interface Placed { id: string; x: number; z: number; rot: number }
@@ -50,7 +51,7 @@ export class PiecesView {
         g.position.set(p.x, 0, p.z);
         g.rotation.y = p.rot;
         this.group.add(g);
-        e = { group: g, item, look };
+        e = { group: g, item, look, base: g.position.clone(), step: 0, anims: [] };
         this.entries.set(id, e);
       }
       e.item = item;
@@ -92,13 +93,54 @@ export class PiecesView {
         if (e.dying >= 1) { this.group.remove(e.group); this.entries.delete(id); }
         continue;
       }
-      if (this.dragging.has(id)) continue;
-      const g = e.group, p = placedOf(e.item);
-      g.position.x += (p.x - g.position.x) * k;
-      g.position.z += (p.z - g.position.z) * k;
-      g.position.y += (0 - g.position.y) * k;
+      const g = e.group;
+      if (this.dragging.has(id)) { e.base.copy(g.position); e.anims.length = 0; continue; }
+      const p = placedOf(e.item), b = e.base;
+      const dx = p.x - b.x, dz = p.z - b.z;
+      b.x += dx * k; b.z += dz * k; b.y += (0 - b.y) * k;
       g.rotation.y += shortAngle(g.rotation.y, p.rot) * k;
+      let ox = 0, oy = 0, oz = 0, tilt = 0;
+      // Al andar: pasitos (sube y baja) y un leve balanceo
+      if (this.animate && e.item.kind === "mini") {
+        const moved = Math.hypot(dx, dz) * k;
+        const walking = Math.hypot(dx, dz) > 0.08;
+        if (walking) e.step += moved * 2.4 + dt * 6;
+        const amp = walking ? Math.min(1, Math.hypot(dx, dz) / 0.6) : 0;
+        oy += Math.abs(Math.sin(e.step)) * 0.18 * amp;
+        tilt = Math.sin(e.step) * 0.08 * amp;
+        if (!walking) e.step = 0;
+        for (const a of e.anims) {
+          a.t += dt;
+          if (a.t < 0) continue;
+          const dur = a.kind === "lunge" ? 0.32 : 0.26;
+          const u = Math.min(1, a.t / dur);
+          // Embiste: sale rápido y vuelve; retroceso: golpe seco hacia atrás
+          const f = a.kind === "lunge" ? Math.sin(u * Math.PI) * 0.55 : Math.sin(u * Math.PI) * (1 - u) * 0.7;
+          ox += a.dx * f; oz += a.dz * f;
+          if (a.kind === "recoil") tilt += Math.sin(u * Math.PI) * 0.12;
+        }
+        e.anims = e.anims.filter((a) => a.t < 0.4);
+      }
+      g.position.set(b.x + ox, b.y + oy, b.z + oz);
+      g.rotation.z = tilt;
     }
+  }
+
+  /** Animaciones de miniaturas; se pueden apagar. */
+  animate = true;
+
+  /** La miniatura da un embiste hacia un punto (combate). */
+  lunge(id: string, to: { x: number; z: number }, delay = 0) { this.push(id, "lunge", to, delay, 1); }
+
+  /** La miniatura retrocede, alejándose de un punto (recibe un impacto). */
+  recoil(id: string, from: { x: number; z: number }, delay = 0) { this.push(id, "recoil", from, delay, -1); }
+
+  private push(id: string, kind: Anim["kind"], at: { x: number; z: number }, delay: number, sign: number) {
+    const e = this.entries.get(id);
+    if (!e || !this.animate || e.item.kind !== "mini" || e.dying !== undefined) return;
+    const dx = at.x - e.base.x, dz = at.z - e.base.z, d = Math.hypot(dx, dz) || 1;
+    if (e.anims.length >= 3) return;
+    e.anims.push({ kind, t: -delay, dx: (dx / d) * sign, dz: (dz / d) * sign });
   }
 
   /** Grupos que se pueden coger con el ratón. `minisOnly` para la cinta métrica. */

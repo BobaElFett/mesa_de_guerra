@@ -343,7 +343,7 @@
 <div id="help" class="panel">
   <h1 class="title">Mesa de Guerra</h1>
   <button id="help-toggle">Ocultar</button>
-  <div class="sub">Códice y desafíos (v0.35)</div>
+  <div class="sub">Vida en la mesa (v0.36)</div>
   <input id="help-search" type="search" placeholder="Buscar en la ayuda (p. ej. reserva, deshacer)…" autocomplete="off">
   <div id="help-none" class="dim" hidden>Nada con esas palabras.</div>
   <button id="tutorial-start" class="primary" style="width:100%;margin:4px 0 6px">Tutorial: dos lecciones guiadas</button>
@@ -373,6 +373,7 @@
     <li><b>Ejércitos</b>: listas, misión, rival (IA o dos jugadores) y dificultad</li>
     <li>Objetivos: los controla quien sume más CO a 3"; los PV, arriba a la derecha</li>
     <li>Estratagemas (1 PM): botones en la ficha de la unidad, en tu turno</li>
+    <li><b>Iconos sobre las unidades</b> (lo hecho este turno): flecha ha movido, doble flecha ha avanzado, flecha atrás se ha retirado, flecha abajo acaba de llegar, diana ha disparado, espadas ha cargado o combatido, estrella de 4 puntas poder psíquico, estrella dorada estratagema, <span style="color:#e0675a">!</span> desmoralizada. Se apagan en Ajustes</li>
     <li><b>Línea de visión</b>: en el disparo, con tu unidad elegida y el ratón sobre un enemigo, cada miniatura traza su línea: <span style="color:#6dff8a">verde</span> lo ve, <span style="color:#ffb34a">naranja</span> con cobertura, <span style="color:#ff4a3a">roja</span> no ve, gris discontinua fuera de alcance</li>
     <li><b>Repetición</b>: al acabar, <i>Ver repetición</i> vuelve a jugar la batalla desde el despliegue (pausa con <kbd>Espacio</kbd>, a 4× sin animaciones, <kbd>Esc</kbd> sale)</li>
     <li><b>Mirar IA contra IA</b>: en la partida rápida, «Tu ejército: Ninguno». <i>Pausar IA</i> para y <i>Dejar de mirar</i> te da la mesa</li>
@@ -570,6 +571,7 @@
     <label>Colores de bando <select id="set-palette"><option value="normal">Azul y morado</option><option value="daltonico">Azul y naranja (daltonismo; manda sobre los esquemas)</option></select></label>
     <label>Tamaño de la interfaz <select id="set-ui"><option value="0.85">Pequeño (85 %)</option><option value="1">Normal</option><option value="1.15">Grande (115 %)</option><option value="1.3">Muy grande (130 %, para pantallas grandes)</option></select></label>
     <label>Gráficos <select id="set-graphics"><option value="alta">Calidad alta</option><option value="rapida">Rápidos (sin sombras, para equipos modestos)</option></select></label>
+    <label><input type="checkbox" id="set-anim"> Animar las miniaturas (andar, embestir, retroceder)</label>
     <label><input type="checkbox" id="set-grid"> Rejilla de pulgadas en el tapete (<kbd>G</kbd>)</label>
     <h3>Partida</h3>
     <label>Velocidad de los ataques <select id="set-speed"><option value="normal">Normal</option><option value="rapido">Rápida</option><option value="instante">Al instante</option></select></label>
@@ -577,6 +579,7 @@
     <label><input type="checkbox" id="set-confirm"> Avisar al pasar de fase si queda algo por hacer</label>
     <h3>Ayudas en la mesa</h3>
     <label><input type="checkbox" id="set-rings"> Anillos de las unidades que aún pueden actuar y de los objetivos posibles</label>
+    <label><input type="checkbox" id="set-icons"> Iconos sobre las unidades (ha movido, disparado, cargado, desmoralizada…)</label>
     <label><input type="checkbox" id="set-tips"> Probabilidades al pasar el ratón por un enemigo</label>
     <label><input type="checkbox" id="set-menu"> Pantalla de inicio al abrir el juego</label>
   </div>

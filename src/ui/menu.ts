@@ -121,6 +121,8 @@ export class SettingsDialog {
     $<HTMLInputElement>("set-rings").checked = settings.guideRings;
     $<HTMLInputElement>("set-tips").checked = settings.hoverTips;
     $<HTMLInputElement>("set-menu").checked = settings.showMenu;
+    $<HTMLInputElement>("set-anim").checked = settings.animations;
+    $<HTMLInputElement>("set-icons").checked = settings.statusIcons;
     $("settings-backdrop").hidden = false;
     modal.open = true;
   }
@@ -147,6 +149,8 @@ export class SettingsDialog {
     settings.guideRings = $<HTMLInputElement>("set-rings").checked;
     settings.hoverTips = $<HTMLInputElement>("set-tips").checked;
     settings.showMenu = $<HTMLInputElement>("set-menu").checked;
+    settings.animations = $<HTMLInputElement>("set-anim").checked;
+    settings.statusIcons = $<HTMLInputElement>("set-icons").checked;
     saveSettings();
     this.onChange();
   }

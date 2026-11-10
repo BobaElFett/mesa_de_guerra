@@ -1,9 +1,13 @@
+import { StatusIcons } from "./view/statusIcons";
+import { createRoom } from "./app/room";
+import { setupHelpSearch, setupKeysSheet } from "./ui/helpPanel";
+import { playAttackFx } from "./app/battleFx";
 import { formation, formationModels } from "./rules/leaders";
 import * as THREE from "three";
 import { CommandBus } from "./core/commands";
 import { freshSeed } from "./core/rng";
 import { readTable, writeTable } from "./core/save";
-import { BOARD, BASE_RADIUS } from "./core/state";
+import { BASE_RADIUS } from "./core/state";
 import { TableCamera } from "./camera/tableCamera";
 import { Table } from "./world/table";
 import { PiecesView } from "./view/piecesView";
@@ -47,10 +51,8 @@ import { Tutorial } from "./ui/tutorial";
 import { SettingsDialog, StartMenu } from "./ui/menu";
 import { validateList } from "./rules/armies";
 import { BattleLog } from "./ui/battleLog";
-import { sfx, weaponSound } from "./audio/sfx";
+import { sfx } from "./audio/sfx";
 import { saveSettings } from "./ai/settings";
-import { WEAPONS } from "./rules/datasheets";
-import type { AttackLogEntry } from "./rules/shooting";
 import { overwatchWeapons } from "./rules/reactions";
 import { expectedAttack } from "./ai/evaluate";
 import { actionsAgainst, pendingText, pendingUnits, selectedFormation, validTargets } from "./rules/actions";
@@ -106,54 +108,7 @@ const BG = new THREE.Color("#17191e");
 scene.background = BG;
 scene.fog = new THREE.Fog(BG, 140, 420);
 
-// --- Luz de sala: un foco cálido encima de la mesa y luz ambiente fría -----
-const hemi = new THREE.HemisphereLight("#cfd8e6", "#3a2e26", 0.9);
-const key = new THREE.DirectionalLight("#fff0d8", 2.6);
-key.position.set(-26, 70, 34);
-key.castShadow = true;
-key.shadow.mapSize.set(4096, 4096);
-const sc = key.shadow.camera;
-sc.left = -BOARD.w / 2 - 8; sc.right = BOARD.w / 2 + 22;
-sc.bottom = -BOARD.d / 2 - 8; sc.top = BOARD.d / 2 + 8;
-sc.near = 10; sc.far = 200;
-key.shadow.bias = -0.0012;
-key.shadow.normalBias = 0.06;
-const rim = new THREE.DirectionalLight("#9fb4ff", 0.5);
-rim.position.set(40, 30, -50);
-scene.add(hemi, key, key.target, rim);
-
-// Condiciones de batalla (#68): la sala se oscurece de noche; con tormenta, gris y relámpagos
-let atmo: string | undefined = "?";
-let flashIn = 6, flash = 0;
-const BASE_LIGHT = { hemi: hemi.intensity, key: key.intensity, rim: rim.intensity, keyColor: key.color.clone(), bg: (BG as THREE.Color).clone() };
-function applyAtmosphere(c: string | undefined) {
-  if (c === atmo) return;
-  atmo = c;
-  const night = c === "noche", storm = c === "tormenta";
-  hemi.intensity = BASE_LIGHT.hemi * (night ? 0.3 : storm ? 0.65 : 1);
-  key.intensity = BASE_LIGHT.key * (night ? 0.35 : storm ? 0.6 : 1);
-  rim.intensity = BASE_LIGHT.rim * (night ? 1.6 : 1);
-  key.color.copy(BASE_LIGHT.keyColor);
-  if (night) key.color.set("#9fb2ff");
-  if (storm) key.color.set("#d8dde6");
-  const bg = BASE_LIGHT.bg.clone();
-  if (night) bg.multiplyScalar(0.45);
-  if (storm) bg.lerp(new THREE.Color("#4a5058"), 0.5);
-  scene.background = bg;
-  (scene.fog as THREE.Fog).color.copy(bg);
-  (scene.fog as THREE.Fog).near = night ? 60 : storm ? 80 : 140;
-  (scene.fog as THREE.Fog).far = night ? 220 : storm ? 260 : 420;
-}
-function stormTick(dt: number) {
-  if (atmo !== "tormenta") return;
-  if (flash > 0) {
-    flash -= dt;
-    key.intensity = BASE_LIGHT.key * (flash > 0 ? 0.6 + 2.2 * Math.max(0, flash / 0.18) : 0.6);
-    return;
-  }
-  flashIn -= dt;
-  if (flashIn <= 0) { flash = 0.18; flashIn = 7 + Math.random() * 10; sfx.play("trueno", 1, 0.4 + Math.random() * 0.8); }
-}
+const { key, applyAtmosphere, stormTick } = createRoom(scene, BG);
 
 /** Firma de todo lo que proyecta sombra: si cambia, hay que repintar el mapa de sombras. */
 let shadowSig = NaN;
@@ -193,6 +148,8 @@ const objectives = new ObjectivesView();
 scene.add(objectives.group);
 const effects = new Effects();
 scene.add(effects.group);
+const statusIcons = new StatusIcons();
+scene.add(statusIcons.group);
 const solids = new SolidsView();
 scene.add(solids.group);
 const battleLog = new BattleLog();
@@ -365,44 +322,10 @@ document.getElementById("bot-phase")!.addEventListener("click", () => {
 // Línea de visión al apuntar (#60)
 const los = new LosView();
 scene.add(los.group);
-// Ayuda ordenada (#81): secciones plegables y buscador
-{
-  const search = document.getElementById("help-search") as HTMLInputElement;
-  const secs = [...document.querySelectorAll<HTMLDetailsElement>("#help details.hsec")];
-  const wasOpen = secs.map((d) => d.open);
-  const norm = (x: string) => x.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-  search.addEventListener("input", () => {
-    const q = norm(search.value.trim());
-    let any = false;
-    secs.forEach((d, i) => {
-      const items = [...d.querySelectorAll("li")];
-      let hits = 0;
-      for (const li of items) {
-        const ok = !q || q.split(/\s+/).every((w) => norm(li.textContent ?? "").includes(w));
-        (li as HTMLElement).hidden = !ok;
-        li.classList.toggle("hit", !!q && ok);
-        if (ok) hits++;
-      }
-      d.hidden = !!q && !hits;
-      d.open = q ? hits > 0 : wasOpen[i];
-      if (hits) any = true;
-    });
-    document.getElementById("help-none")!.hidden = !q || any;
-  });
-  search.addEventListener("keydown", (e) => { if (e.code === "Escape") { search.value = ""; search.dispatchEvent(new Event("input")); search.blur(); } e.stopPropagation(); });
-  for (const [i, d] of secs.entries()) d.addEventListener("toggle", () => { if (!search.value) wasOpen[i] = d.open; });
-}
+setupHelpSearch();
 // Ambiente sonoro (#86): arranca con el primer gesto (el navegador no deja sonar antes)
 window.addEventListener("pointerdown", () => sfx.setAmbient(settings.ambient), { once: true });
-// Hoja de atajos (#76): la tecla ? la abre y la cierra
-const keysBox = document.getElementById("keys-backdrop")!;
-const toggleKeys = (on = keysBox.hidden) => { keysBox.hidden = !on; modal.open = on; };
-keysBox.addEventListener("click", (e) => { if (e.target === keysBox || (e.target as HTMLElement).closest("button[data-k=close]")) toggleKeys(false); });
-window.addEventListener("keydown", (e) => {
-  if ((e.target as HTMLElement)?.tagName === "INPUT" || (e.target as HTMLElement)?.tagName === "TEXTAREA") return;
-  if (e.key === "?") { e.preventDefault(); toggleKeys(); }
-  else if (e.code === "Escape" && !keysBox.hidden) toggleKeys(false);
-});
+setupKeysSheet();
 // Deshacer mi jugada (#75): contra la IA, un Ctrl+Z vuelve a antes de tu última acción
 // (con todo lo que hizo la IA después). Ctrl+Alt+Z deshace una sola orden.
 function undoMine() {
@@ -716,6 +639,7 @@ function refresh(_s?: unknown, cmd?: Command | null) {
   }
   renderTray();
   pieces.sync(bus.state);
+  statusIcons.sync(bus.state);
   objectives.sync(bus.state);
   solids.sync(bus.state.terrain);
   applyAtmosphere(bus.state.rulesMode ? bus.state.conditions : undefined);
@@ -724,7 +648,7 @@ function refresh(_s?: unknown, cmd?: Command | null) {
   if (bus.state.gameOver && !wasOver) { recordCampaign(); recordHistory(); }
   if (bus.state.gameOver && !wasOver && bus.state.mission && !replay.active && !challengeOn && !challengeEnding) setTimeout(() => endDialog.show(bus.state), shots.playing ? 2500 : 600);
   wasOver = bus.state.gameOver;
-  if (newAttacks.length) { playAttackFx(newAttacks); shots.playAll(newAttacks, bus.state); }
+  if (newAttacks.length) { playAttackFx(newAttacks, { bus, pieces, effects }); shots.playAll(newAttacks, bus.state); }
   soundFor(cmd ?? null);
   battleLog.render(bus.state);
   // Chequeos de moral nuevos (al empezar una fase de mando)
@@ -807,7 +731,10 @@ const clock = new THREE.Clock();
 renderer.setAnimationLoop(() => {
   const dt = Math.min(clock.getDelta(), 0.1);
   cam.update(dt);
+  pieces.animate = settings.animations;
   pieces.update(dt);
+  statusIcons.enabled = settings.statusIcons && !replay.active;
+  statusIcons.update(pieces, THREE.MathUtils.clamp(cam.zoom / 45, 0.7, 2.2));
   objectives.update(dt);
   effects.update(dt);
   solids.group.visible = (bus.state.rulesMode && pieces.dragging.size > 0) || !terrainPanel.hidden;
@@ -862,38 +789,6 @@ speedSel.value = settings.diceSpeed;
 applySpeed();
 speedSel.addEventListener("change", () => { settings.diceSpeed = speedSel.value as typeof settings.diceSpeed; saveSettings(); applySpeed(); });
 shots.onStep = (n) => sfx.play("dados", 1 + Math.min(2, Math.floor(n / 10)));
-
-/** Trazadoras y sonidos de los ataques recién resueltos. */
-function playAttackFx(entries: AttackLogEntry[]) {
-  let t = 0;
-  for (const e of entries) {
-    const shooters = bus.state.pieces.filter((p) => p.unit === e.attacker);
-    const targets = [...bus.state.pieces.filter((p) => p.unit === e.target).map((p) => p.id), ...e.result.slain];
-    const posOf = (id: string) => { const g = pieces.groupOf(id); return g ? new THREE.Vector3(g.position.x, 0.9, g.position.z) : null; };
-    const aUnit = bus.state.units.find((u) => u.id === e.attacker);
-    const fac = aUnit?.faction ?? "legion";
-    const melee = e.kind === "combate";
-    const kind = WEAPONS[e.weapon]?.id === "granadas" ? "pesado" : fac === "swarm" ? "acido" : /plasma|rayo|grito/i.test(e.weapon) ? "plasma" : /canon|cañon|pesad/i.test(e.weapon) ? "pesado" : "bala";
-    const n = Math.min(12, e.result.attacks);
-    for (let i = 0; i < n; i++) {
-      const a = shooters[i % Math.max(1, shooters.length)];
-      const tid = i < e.result.slain.length ? e.result.slain[i] : targets[i % Math.max(1, targets.length)];
-      const pa = a ? posOf(a.id) : null, pb = tid ? posOf(tid) : null;
-      if (!pb) continue;
-      pb.x += (Math.random() - 0.5) * 0.5; pb.z += (Math.random() - 0.5) * 0.5;
-      const delay = t + i * (melee ? 0.08 : 0.06);
-      if (melee || !pa) effects.sparks(pb, delay, fac === "swarm" ? "#c9a3ff" : "#ffd27a");
-      else {
-        const arrive = effects.shot(pa, pb, kind, delay);
-        const hit = i < e.result.hits;
-        if (hit) effects.impact(pb, arrive, i < e.result.slain.length, kind === "acido" ? "#c8ff9a" : "#fff3c4");
-      }
-    }
-    sfx.play(weaponSound(e.weapon, melee, fac), Math.max(1, Math.min(8, Math.ceil(e.result.attacks / 2))), t);
-    if (e.result.slain.length) sfx.play("baja", Math.min(3, e.result.slain.length), t + 0.5);
-    t += 0.35;
-  }
-}
 
 /** Sonidos de las órdenes que no son ataques. */
 function soundFor(cmd: Command | null) {

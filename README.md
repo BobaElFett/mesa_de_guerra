@@ -5,7 +5,7 @@ la **Legión Astral** (super soldados con servoarmadura) contra **El Enjambre** 
 Se juega como en una mesa de verdad (mover, medir y tirar dados) o con el **modo reglas**, que guía las fases y resuelve las tiradas.
 Three.js + TypeScript, compilado con esbuild a un único `dist/index.html`.
 
-Versión **0.35**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
+Versión **0.36**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
 
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor ni conexión.
@@ -60,7 +60,8 @@ Máximo 3 unidades iguales y 1 Andador o Tirano (el doble a 1.000 puntos); al me
 - **Ctrl+Z** contra la IA: deshace tu última jugada y lo que hizo la IA después.
 - **Registro** (**L**), **repetición** al acabar, **estadísticas** por unidad y **unidad de la partida**.
 - **?**: todos los atajos de teclado. La ayuda de la izquierda tiene buscador.
-- **Ajustes:** sonido y ambiente, velocidad de los ataques, gráficos (*Rápidos* para equipos modestos), tamaño de la interfaz, colores de cada bando y colores para daltónicos.
+- **Iconos sobre las unidades:** lo que ha hecho cada una este turno (mover, avanzar, disparar, cargar, combatir, poder, estratagema) y si está desmoralizada.
+- **Ajustes:** sonido y ambiente, velocidad de los ataques, gráficos (*Rápidos* para equipos modestos), tamaño de la interfaz, colores de cada bando y colores para daltónicos; animaciones e iconos de las unidades, que se pueden apagar.
 - Pantalla táctil: un dedo como el ratón, dos dedos para acercar, girar y desplazar.
 
 ## Desarrollar (requiere Node.js 20+)

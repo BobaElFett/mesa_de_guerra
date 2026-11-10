@@ -2,6 +2,11 @@
 
 Lo nuevo de cada versión de *Mesa de Guerra*, de la más reciente a la primera.
 
+## 0.36 · fase 17, vida en la mesa (#94–#96)
+- **Animaciones (#94):** las miniaturas dan pasitos y se balancean al moverse (también al deshacer y en la repetición). En combate, cada atacante embiste hacia su objetivo; quien recibe un impacto, de un disparo o cuerpo a cuerpo, retrocede con una sacudida en el momento en que le llega. Se apagan en Ajustes > *Animar las miniaturas*.
+- **Iconos sobre las unidades (#95):** encima de cada unidad, lo que ha hecho este turno: ha movido, avanzado o se ha retirado, acaba de llegar de la reserva, ha disparado, cargado o combatido, ha usado su poder psíquico o tiene una estratagema. También si está desmoralizada. Crecen al alejar la cámara y no salen en la repetición. Leyenda en la ayuda (busca «iconos»); se apagan en Ajustes.
+- **Orden interno (#96):** la sala (luces, noche y tormenta), los efectos de los ataques y el panel de ayuda salen del archivo principal a sus propios módulos, sin cambiar nada de lo que se ve.
+
 ## 0.35 · fase 16, códice y desafíos (#91–#93)
 - **Códice (#91):** menú > *Códice*, o el botón *Códice* de la ficha. Cada unidad con su miniatura en 3D girando, perfil, armas (también las de equipo), habilidades, equipo opcional y un texto de trasfondo; y una entrada para cada bando.
 - **Desafíos (#92):** cinco escenarios cortos, de 1 a 3 estrellas: *Último bastión* (aguanta tres rondas rodeado), *Decapitación* (mata al Tirano cuanto antes), *La marea* (con el Enjambre, toma la base de la Legión), *Cazabestias* (acaba con el Tirano y un Carnífice) y *El corazón* (conserva el centro). Se guarda la mejor marca; durante el desafío, un cartel recuerda el objetivo.
