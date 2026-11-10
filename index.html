@@ -296,6 +296,7 @@
     <li>Estratagemas (1 PM): botones en la ficha de la unidad, en tu turno</li>
     <li><b>Línea de visión</b>: en el disparo, con tu unidad elegida y el ratón sobre un enemigo, cada miniatura traza su línea: <span style="color:#6dff8a">verde</span> lo ve, <span style="color:#ffb34a">naranja</span> con cobertura, <span style="color:#ff4a3a">roja</span> no ve, gris discontinua fuera de alcance</li>
     <li><b>Repetición</b>: al acabar, <i>Ver repetición</i> vuelve a jugar la batalla desde el despliegue (pausa con <kbd>Espacio</kbd>, a 4× sin animaciones, <kbd>Esc</kbd> sale)</li>
+    <li><b>Mirar IA contra IA</b>: en la partida rápida, «Tu ejército: Ninguno». <i>Pausar IA</i> para y <i>Dejar de mirar</i> te da la mesa</li>
     <li><kbd>H</kbd> o <b>Sugerir</b>: lo que haría la IA Difícil ahora (en dorado: quién, adónde y contra quién). No hace nada: tú decides</li>
     <li><b>Equipo</b>: en Ejércitos, casillas debajo de cada unidad para cambiar armas (con su coste)</li>
     <li><b>Reservas</b>: Exterminadores y Acechadores pueden empezar fuera (casilla en Ejércitos). Desde la ronda 2, <b>Llegar</b> en el panel de turno y clic en la mesa, a más de 9" de los enemigos; si al acabar la ronda 3 no han llegado, se pierden</li>
@@ -313,6 +314,7 @@
     <span id="table-title" class="dim"></span>
     <span id="turn-text"></span>
     <button id="end-turn" class="primary" title="Intro">Pasar turno</button>
+    <button id="stop-watch" hidden title="Deja de mirar y juega tú con un bando">Dejar de mirar</button>
     <button id="suggest" title="Qué haría la IA Difícil ahora (H)" hidden>Sugerir</button>
     <button id="bot-phase" title="La IA juega esta fase por el bando activo" hidden>IA</button>
     <span id="ai-status" hidden></span>
@@ -443,7 +445,7 @@
       </div>
       <div class="menu-col quick">
         <h2>Partida rápida contra la IA</h2>
-        <label>Tu ejército <select id="q-side"><option value="legion">Legión Astral</option><option value="swarm">El Enjambre</option></select></label>
+        <label>Tu ejército <select id="q-side"><option value="legion">Legión Astral</option><option value="swarm">El Enjambre</option><option value="mirar">Ninguno: mirar IA contra IA</option></select></label>
         <label>IA <select id="q-level"><option value="facil">Fácil</option><option value="normal">Normal</option><option value="dificil">Difícil</option></select></label>
         <label>Misión <select id="q-mission"></select></label>
         <label>Mapa <select id="q-map"><option value="aleatorio">Aleatorio (simétrico)</option><option value="ejemplo">Mapa de ejemplo</option></select></label>

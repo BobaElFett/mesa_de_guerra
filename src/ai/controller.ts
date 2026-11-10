@@ -22,7 +22,11 @@ export class AiController {
 
   constructor(private bus: CommandBus, private busy: () => boolean) {}
 
-  get side(): Faction | null { return runtime.online ? null : settings.aiSide; }
+  get side(): Faction | null {
+    if (runtime.online) return null;
+    // Modo espectador (#67): la IA lleva siempre al bando activo
+    return runtime.spectate ? PLAYERS[this.bus.state.active] : settings.aiSide;
+  }
 
   /** ¿Le toca jugar a la IA ahora (y por tanto el jugador no debería tocar)? */
   isAiTurn(s: GameState = this.bus.state): boolean {
@@ -32,12 +36,23 @@ export class AiController {
   /** En combate: ¿le toca golpear a la IA según la alternancia? */
   private aiFightTurn(s: GameState): boolean {
     const ai = this.side!, human: Faction = ai === "legion" ? "swarm" : "legion";
+    if (runtime.spectate) return canFight(s, "legion") || canFight(s, "swarm");
     if (!canFight(s, ai)) return false;
     const pending = pendingChargers(s);
     if (pending.length) return pending.some((u) => s.units.find((x) => x.id === u)?.faction === ai);
     const fought = s.turnLog.fought ?? [];
     const last = fought.length ? s.units.find((u) => u.id === fought[fought.length - 1])?.faction : undefined;
     return last !== ai || !canFight(s, human);
+  }
+
+  /** Espectador: quién golpea ahora (cargas pendientes primero; luego se alternan). */
+  private fighter(s: GameState): Faction {
+    const pending = pendingChargers(s);
+    if (pending.length) return s.units.find((x) => x.id === pending[0])!.faction;
+    const fought = s.turnLog.fought ?? [];
+    const last = fought.length ? s.units.find((u) => u.id === fought[fought.length - 1])?.faction : undefined;
+    const next: Faction = last === "legion" ? "swarm" : last === "swarm" ? "legion" : PLAYERS[s.active];
+    return canFight(s, next) ? next : next === "legion" ? "swarm" : "legion";
   }
 
   /** Antes de que el jugador pase de fase: que la IA acabe sus combates pendientes. */
@@ -57,8 +72,11 @@ export class AiController {
     if (side && s.rulesMode && s.phase === "despliegue" && !s.gameOver) {
       if (!this.deployed && !this.paused) {
         this.deployed = true;
-        const mv = aiDeploy(s, side);
-        if (mv.length) { this.bus.dispatch({ type: "moveMany", moves: mv }); this.onAction("ha colocado su ejército"); }
+        for (const f of runtime.spectate ? (["legion", "swarm"] as Faction[]) : [side]) {
+          const mv = aiDeploy(this.bus.state, f);
+          if (mv.length) { this.bus.dispatch({ type: "moveMany", moves: mv }); this.onAction("ha colocado su ejército"); }
+        }
+        if (runtime.spectate) { this.bus.dispatch({ type: "nextPhase" }); this.wait = STEP_MS; }
       }
       this.onStatus(null);
       return;
@@ -74,7 +92,7 @@ export class AiController {
     // Carga en espera de fuego defensivo: decide la IA si defiende ella; si no, espera al jugador
     const pc = s.pendingCharge;
     if (pc) {
-      if (PLAYERS[pc.defender] === side) {
+      if (runtime.spectate || PLAYERS[pc.defender] === side) {
         const fire = aiWantsOverwatch(s, settings.aiLevel);
         this.bus.dispatch({ type: "reactCharge", fire });
         if (fire) this.onAction("Fuego defensivo contra la carga");
@@ -86,7 +104,7 @@ export class AiController {
     if (s.phase === "combate") {
       if (this.aiFightTurn(s)) {
         this.onStatus(`${name} combate…`);
-        if (fightStep(this.bus, side, settings.aiLevel)) { { this.onAction(aiLastAction()); const u = aiLastActor(); if (u) this.onFocus(u); } this.wait = STEP_MS; }
+        if (fightStep(this.bus, runtime.spectate ? this.fighter(s) : side, settings.aiLevel)) { { this.onAction(aiLastAction()); const u = aiLastActor(); if (u) this.onFocus(u); } this.wait = STEP_MS; }
         return;
       }
       if (!aiTurn) { this.onStatus(null); return; }

@@ -28,7 +28,8 @@ export const settings: GameSettings = (() => {
 })();
 
 /** Estado de la sesión (no se guarda): la IA en pausa deja jugar su bando a mano. */
-export const runtime: { aiPaused: boolean; online: boolean; localSide: Faction | null } = { aiPaused: false, online: false, localSide: null };
+/** spectate (#67): la IA juega los dos bandos y el jugador solo mira. */
+export const runtime: { aiPaused: boolean; online: boolean; localSide: Faction | null; spectate: boolean } = { aiPaused: false, online: false, localSide: null, spectate: false };
 
 export function saveSettings() {
   try { localStorage.setItem(KEY, JSON.stringify(settings)); } catch { /* nada */ }

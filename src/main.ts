@@ -145,7 +145,7 @@ const picker = new Picker(renderer.domElement, cam.camera, pieces);
 const tape = new TapeMeasure(renderer.domElement, picker, pieces);
 scene.add(tape.group);
 const controls = new PieceControls(renderer.domElement, picker, pieces, bus);
-controls.blocked = () => tape.active || replay.active;
+controls.blocked = () => tape.active || replay.active || (runtime.spectate && bus.state.rulesMode && !bus.state.gameOver);
 const ranges = new RangeRings();
 scene.add(ranges.group);
 
@@ -323,6 +323,11 @@ function showSuggestion() {
   }
 }
 document.getElementById("suggest")!.addEventListener("click", showSuggestion);
+// Modo espectador (#67): dejar de mirar devuelve la mesa; la IA sigue con su bando, en pausa
+document.getElementById("stop-watch")!.addEventListener("click", () => {
+  runtime.spectate = false; ai.paused = true; refresh();
+  toast(`Ya no miras: juegas con ${FACTIONS[settings.aiSide === "legion" ? "swarm" : "legion"].name}. La IA está en pausa (Reanudar IA).`);
+});
 // Acciones sobre el tablero (#46) y guía de la fase (#47)
 /** ¿Puede este jugador mandar sobre ese bando? (no sobre el de la IA ni, en línea, el del rival) */
 function controllable(f: "legion" | "swarm"): boolean {
@@ -505,7 +510,7 @@ hud.beforeAdvance = () => {
 };
 // Ejércitos: listas de 500 puntos y despliegue
 const armies = new ArmyDialog(bus, toast);
-armies.onDeployed = () => { cam.reset(); controls.selected.clear(); controls.onSelectionChange(); ai.paused = false; };
+armies.onDeployed = () => { runtime.spectate = false; cam.reset(); controls.selected.clear(); controls.onSelectionChange(); ai.paused = false; };
 armies.onSettings = () => refresh();
 
 /** Pastilla del panel del turno con el estado de la sala, y aviso de turno en el chat. */
@@ -627,7 +632,8 @@ function refresh(_s?: unknown, cmd?: Command | null) {
   if (suggestAt >= 0 && bus.length !== suggestAt) { suggestView.clear(); suggestAt = -1; }
   $btn("suggest").hidden = !bus.state.rulesMode || bus.state.gameOver || (ai.isAiTurn() && !ai.paused) || runtime.online;
   const aiBtn = $btn("bot-phase");
-  aiBtn.textContent = settings.aiSide ? (ai.paused ? "Reanudar IA" : "Pausar IA") : "IA";
+  aiBtn.textContent = settings.aiSide || runtime.spectate ? (ai.paused ? "Reanudar IA" : "Pausar IA") : "IA";
+  $btn("stop-watch").hidden = !runtime.spectate;
   aiBtn.title = settings.aiSide ? `La IA (${AI_LEVEL_NAME[settings.aiLevel]}) lleva ${FACTIONS[settings.aiSide].of.replace(/^de /, "").replace(/^del /, "el ")}` : "La IA juega esta fase por el bando activo";
   if (ai.isAiTurn() && !ai.paused) $btn("end-turn").disabled = true;
   if (runtime.online) aiBtn.hidden = true;
@@ -797,12 +803,13 @@ menu.continueInfo = () => {
   if (s.rulesMode && s.units.length) return s.gameOver ? "partida terminada" : `ronda ${s.turn} · ${s.mission ? MISSIONS[s.mission].name : "sin misión"}`;
   return `${s.pieces.length} miniaturas en la mesa`;
 };
-menu.onTutorial = () => tutorial.start();
+menu.onTutorial = () => { runtime.spectate = false; tutorial.start(); };
 menu.onArmies = () => armies.show();
 menu.onOnline = () => net.show();
 menu.onSettings = () => settingsDlg.show();
-menu.onFree = () => { if (bus.state.rulesMode) bus.dispatch({ type: "setRulesMode", on: false }); toast("Mesa libre: mueve lo que quieras, tira dados y mide. «Modo reglas» activa el reglamento."); };
+menu.onFree = () => { runtime.spectate = false; if (bus.state.rulesMode) bus.dispatch({ type: "setRulesMode", on: false }); toast("Mesa libre: mueve lo que quieras, tira dados y mide. «Modo reglas» activa el reglamento."); };
 menu.onQuick = (q) => {
+  runtime.spectate = q.side === "mirar";
   settings.aiSide = q.side === "legion" ? "swarm" : "legion";
   settings.aiLevel = q.level; settings.mission = q.mission; settings.map = q.map;
   saveSettings();
@@ -820,6 +827,7 @@ menu.onQuick = (q) => {
   controls.selected.clear(); controls.onSelectionChange();
   cam.reset();
   if (q.side === "swarm") cam.sideOf(1);
+  if (runtime.spectate) { settings.followAi = true; toast(`${MISSIONS[q.mission].name}: IA ${AI_LEVEL_NAME[q.level]} contra IA ${AI_LEVEL_NAME[q.level]}. Pausa con el botón de la IA; «Dejar de mirar» te devuelve la mesa.`); return; }
   toast(`${MISSIONS[q.mission].name} contra la IA (${AI_LEVEL_NAME[q.level]}). Coloca tu ejército y pulsa Empezar partida.`);
 };
 if (settings.showMenu) menu.show();
