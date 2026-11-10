@@ -143,7 +143,9 @@ function shadowSignature(): number {
   return h ^ (n << 20);
 }
 /** Gráficos (#58): calidad alta o rápidos (sin sombras y a resolución 1×). */
+function applyUiScale() { document.documentElement.style.setProperty("--ui", String(settings.uiScale ?? 1)); }
 function applyGraphics() {
+  applyUiScale();
   const fast = settings.graphics === "rapida";
   renderer.setPixelRatio(fast ? 1 : Math.min(window.devicePixelRatio, 2));
   if (key.castShadow === fast) {

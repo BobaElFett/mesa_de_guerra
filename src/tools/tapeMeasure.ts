@@ -7,6 +7,9 @@ import { Picker } from "../input/picker";
 import { sight, Sight } from "../rules/geometry";
 import { TerrainPiece } from "../core/state";
 
+/** Tamaño de la interfaz (#69): las posiciones en píxeles de pantalla, en las del panel ampliado. */
+const uiZ = () => Number(getComputedStyle(document.documentElement).getPropertyValue("--ui")) || 1;
+
 // Cinta métrica (tecla M): con la herramienta activa, clic y arrastre mide en pulgadas.
 // Si un extremo cae en una miniatura, se mide desde el borde de su peana y la cinta la sigue
 // aunque la miniatura se mueva. La medida se queda en la mesa hasta Esc o hasta medir otra vez.
@@ -140,8 +143,8 @@ export class TapeMeasure {
     const vis = this.sightNow();
     if (vis) extra += `<span class="sight ${vis}"> · ${SIGHT_TEXT[vis]}</span>`;
     this.label.innerHTML = `${inchesText(m.inches)}${extra}`;
-    this.label.style.left = `${s.x}px`;
-    this.label.style.top = `${s.y}px`;
+    this.label.style.left = `${s.x / uiZ()}px`;
+    this.label.style.top = `${s.y / uiZ()}px`;
     this.label.hidden = false;
   }
 

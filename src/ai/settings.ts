@@ -13,11 +13,13 @@ export interface GameSettings {
   graphics: "alta" | "rapida";
   /** Condiciones de batalla de la próxima partida (#68). */
   conditions: "" | "noche" | "tormenta";
+  /** Tamaño de la interfaz (#69): 0,85 a 1,3. */
+  uiScale: number;
 }
 
 const KEY = "mesa-de-guerra.ajustes";
 const DEFAULTS: GameSettings = { aiSide: "swarm", aiLevel: "normal", mission: "tomar", map: "actual", diceSpeed: "normal",
-  volume: 0.55, followAi: true, guideRings: true, confirmAdvance: true, hoverTips: true, showMenu: true, graphics: "alta", conditions: "" };
+  volume: 0.55, followAi: true, guideRings: true, confirmAdvance: true, hoverTips: true, showMenu: true, graphics: "alta", conditions: "", uiScale: 1 };
 
 export const AI_LEVEL_NAME: Record<AiLevel, string> = { facil: "Fácil", normal: "Normal", dificil: "Difícil" };
 

@@ -102,6 +102,7 @@ export class SettingsDialog {
     $<HTMLInputElement>("set-volume").value = String(settings.volume);
     $<HTMLSelectElement>("set-speed").value = settings.diceSpeed;
     $<HTMLSelectElement>("set-graphics").value = settings.graphics;
+    $<HTMLSelectElement>("set-ui").value = String(settings.uiScale);
     $<HTMLInputElement>("set-follow").checked = settings.followAi;
     $<HTMLInputElement>("set-confirm").checked = settings.confirmAdvance;
     $<HTMLInputElement>("set-rings").checked = settings.guideRings;
@@ -123,6 +124,7 @@ export class SettingsDialog {
     this.sound.volume(settings.volume);
     settings.diceSpeed = $<HTMLSelectElement>("set-speed").value as typeof settings.diceSpeed;
     settings.graphics = $<HTMLSelectElement>("set-graphics").value as typeof settings.graphics;
+    settings.uiScale = Number($<HTMLSelectElement>("set-ui").value) || 1;
     settings.followAi = $<HTMLInputElement>("set-follow").checked;
     settings.confirmAdvance = $<HTMLInputElement>("set-confirm").checked;
     settings.guideRings = $<HTMLInputElement>("set-rings").checked;

@@ -13,6 +13,9 @@ import { chargeOptions, fightOptions, pendingChargers } from "../rules/melee";
 import { belowHalf, inSynapse } from "../rules/morale";
 import { Weapon, WEAPONS, Profile, UNIT_ABILITY_TEXT, unitPoints } from "../rules/datasheets";
 
+/** Tamaño de la interfaz (#69): las posiciones en píxeles de pantalla, en las del panel ampliado. */
+const uiZ = () => Number(getComputedStyle(document.documentElement).getPropertyValue("--ui")) || 1;
+
 // Interfaz: turno, deshacer/rehacer, dados y medida al arrastrar.
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
@@ -407,8 +410,8 @@ export class Hud {
     if (text === null) { el.hidden = true; return; }
     el.hidden = false;
     el.innerHTML = text;
-    el.style.left = `${x + 16}px`;
-    el.style.top = `${y - 10}px`;
+    el.style.left = `${(x + 16) / uiZ()}px`;
+    el.style.top = `${(y - 10) / uiZ()}px`;
   }
 }
 

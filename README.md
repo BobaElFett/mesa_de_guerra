@@ -9,6 +9,15 @@ Plan completo (visión, facciones, roadmap y backlog): documento *Mesa de Guerra
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor.
 
+## Novedades 0.27 · fase 9, pulido (#66–#69)
+- **El equipo cuenta en las bajas (#66):** los puntos destruidos (estadísticas, *Caza de presas*) y la regla de la mitad en reserva incluyen el coste del equipo opcional.
+- **Modo espectador (#67):** en la partida rápida, *Tu ejército: Ninguno*. La IA despliega y juega los dos bandos (combates alternos y fuego defensivo incluidos) y la cámara sigue la acción. *Pausar IA* la detiene; *Dejar de mirar* te devuelve la mesa con la IA llevando su bando, en pausa.
+- **Condiciones de batalla (#68):** en la partida rápida o en Ejércitos.
+  - **Noche:** ningún arma dispara a más de 24". La sala se oscurece y se vuelve azulada.
+  - **Tormenta:** −1 a impactar al disparar a más de 12" (no en el fuego defensivo). Sala gris, relámpagos y truenos.
+  - La IA cuenta con ellas. Con la IA Difícil en los dos bandos, la Noche favorece algo al Enjambre en el mapa de ejemplo (24-33) y queda pareja en mapas aleatorios (22-22); con 18" el Enjambre ganaba 50 de 60, por eso son 24".
+- **Tamaño de la interfaz (#69):** en Ajustes, del 85 % al 130 % (la mesa en 3D no cambia). El panel de turno ya no se mete debajo de los dados: sus botones bajan a otra línea.
+
 ## Novedades 0.26 · fase 8, variedad (#63–#65)
 - **Equipo opcional (#63):** casillas en Ejércitos, con su coste.
   - Escuadra de Asalto: el sargento puede llevar espada de energía (+10) o pistola de plasma (+5); un legionario, lanzallamas (+5) y otro, lanzamisiles (+10).
