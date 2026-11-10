@@ -3,7 +3,7 @@ import { pieceWeaponIds } from "../rules/datasheets";
 import { arriveStep } from "./arrival";
 import { overwatchBlocked, overwatchWeapons } from "../rules/reactions";
 import { CommandBus, PieceMove } from "../core/commands";
-import { BASE_RADIUS, Faction, GameState, Piece, PLAYERS } from "../core/state";
+import { BASE_RADIUS, Faction, GameState, Piece, PLAYERS, TERRAIN, TerrainPiece } from "../core/state";
 import { DATASHEETS, hasAbility, WEAPONS } from "../rules/datasheets";
 import { allowance, checkMove, isEngaged, movedSoFar } from "../rules/movement";
 import { shootingOptions } from "../rules/shooting";
@@ -13,7 +13,7 @@ import { OBJECTIVE_RADIUS, OBJECTIVE_RANGE, objectiveStatus } from "../rules/mis
 import { canCarry, PICK_RANGE, RELIC_R } from "../rules/relic";
 import { grenadeTargets, hasStrat, stratBlocked } from "../rules/stratagems";
 import { isPsyker, powerOf, psychicBlocked, psychicTargets } from "../rules/psychic";
-import { crossesSolid, disc, gap, sight } from "../rules/geometry";
+import { crossesSolid, disc, gap, onForbiddenTerrain, sight } from "../rules/geometry";
 import {
   attackValue, centroid, expectedAttack, groupGap, meleeExpected, p2D6, pointsPerWound, unitCost,
 } from "./evaluate";
@@ -89,7 +89,56 @@ const translated = (models: Piece[], dx: number, dz: number) => models.map((p) =
 
 // --- Movimiento ------------------------------------------------------------------
 
-interface Plan { dx: number; dz: number; kind: "normal" | "avanzar" | "retirarse"; score: number; why: string }
+interface Plan { dx: number; dz: number; kind: "normal" | "avanzar" | "retirarse"; score: number; why: string;
+  /** Rodeo en dos tramos (#87): primero hasta aquí (desplazamiento), luego al destino. */
+  via?: { dx: number; dz: number } }
+
+/**
+ * Rodear escenografía sólida (#87): si el camino recto choca con una pieza, prueba a pasar por
+ * cada esquina de su huella (separada lo que mide la formación) y seguir desde ahí hacia el
+ * destino, sin pasar del movimiento (en línea recta desde donde empezó, como el reglamento).
+ */
+function detours(s: GameState, models: Piece[], c: { x: number; z: number }, tx: number, tz: number, lim: number, want: number, kind: Plan["kind"]): Plan[] {
+  const out: Plan[] = [];
+  const blockers = new Set<TerrainPiece>();
+  for (const p of models) {
+    const hit = crossesSolid(s.terrain, p.x, p.z, p.x + (tx - c.x), p.z + (tz - c.z), BASE_RADIUS[p.model]);
+    if (hit) blockers.add(hit);
+  }
+  if (!blockers.size) return out;
+  const spread = Math.max(0.6, ...models.map((p) => Math.hypot(p.x - c.x, p.z - c.z) + BASE_RADIUS[p.model]));
+  for (const t of blockers) {
+    const f = TERRAIN[t.kind], m = spread + 0.6, cs = Math.cos(t.rot), sn = Math.sin(t.rot);
+    for (const [lx, lz] of [[-1, -1], [1, -1], [1, 1], [-1, 1]]) {
+      const ax = lx * (f.w / 2 + m), az = lz * (f.d / 2 + m);
+      // de local a mundo (giro de Three.js en Y)
+      const wx = t.x + ax * cs + az * sn, wz = t.z - ax * sn + az * cs;
+      let vx = wx - c.x, vz = wz - c.z;
+      const vl = Math.hypot(vx, vz);
+      if (vl < 0.3) continue;
+      if (vl >= lim) { vx *= lim / vl; vz *= lim / vl; out.push({ dx: vx, dz: vz, kind, score: 0, why: "" }); continue; }
+      // Segundo tramo hacia el destino: lo más largo que quepa en el movimiento (|v + u·k| ≤ lim)
+      const ux0 = tx - wx, uz0 = tz - wz, ul = Math.hypot(ux0, uz0);
+      if (ul < 0.3) { out.push({ dx: vx, dz: vz, kind, score: 0, why: "" }); continue; }
+      const ux = ux0 / ul, uz = uz0 / ul;
+      const b = vx * ux + vz * uz, cc = vx * vx + vz * vz - lim * lim;
+      const k = Math.max(0, Math.min(ul, want, -b + Math.sqrt(Math.max(0, b * b - cc))));
+      out.push({ dx: vx + ux * k, dz: vz + uz * k, kind, score: 0, why: "", via: { dx: vx, dz: vz } });
+    }
+  }
+  return out;
+}
+
+/** ¿Pueden todas las miniaturas hacer este movimiento (o sus dos tramos) sin atravesar nada sólido? */
+function pathClear(s: GameState, models: Piece[], cnd: Plan): boolean {
+  return models.every((p) => {
+    const r = BASE_RADIUS[p.model];
+    if (!cnd.via) return !crossesSolid(s.terrain, p.x, p.z, p.x + cnd.dx, p.z + cnd.dz, r);
+    const mx = p.x + cnd.via.dx, mz = p.z + cnd.via.dz;
+    return !crossesSolid(s.terrain, p.x, p.z, mx, mz, r) && !crossesSolid(s.terrain, mx, mz, p.x + cnd.dx, p.z + cnd.dz, r)
+      && !onForbiddenTerrain(s.terrain, mx, mz, r + 0.05);
+  });
+}
 
 function rangedWeapons(s: GameState, unitId: string) {
   const out: { w: (typeof WEAPONS)[string]; n: number }[] = [];
@@ -342,12 +391,13 @@ function planMove(s: GameState, unitId: string, W: Weights, claimed: Map<string,
         if (d < 0.3) continue;
         const ux = vx / len, uz = vz / len;
         cands.push({ dx: ux * d, dz: uz * d, kind, score: 0, why: "" });
-        // Si el camino recto choca con contenedores o el búnker, prueba a rodear (#49)
+        // Si el camino recto choca con escenografía sólida, prueba a rodear (#49, #87)
         if (models.some((p) => crossesSolid(s.terrain, p.x, p.z, p.x + ux * d, p.z + uz * d, BASE_RADIUS[p.model]))) {
           for (const ang of [0.6, -0.6, 1.1, -1.1]) {
             const c = Math.cos(ang), sn = Math.sin(ang);
             cands.push({ dx: (ux * c - uz * sn) * d, dz: (ux * sn + uz * c) * d, kind, score: 0, why: "" });
           }
+          if (frac === 1) cands.push(...detours(s, models, c, t.x, t.z, lim, want, kind));
         }
       }
     }
@@ -364,8 +414,8 @@ function planMove(s: GameState, unitId: string, W: Weights, claimed: Map<string,
   for (const cnd of cands) {
     // Que la formación no se salga de la mesa
     if (models.some((p) => Math.abs(p.x + cnd.dx) > 29.5 || Math.abs(p.z + cnd.dz) > 21.5)) continue;
-    // Ni atravesar contenedores ni búnker (#49)
-    if (models.some((p) => crossesSolid(s.terrain, p.x, p.z, p.x + cnd.dx, p.z + cnd.dz, BASE_RADIUS[p.model]))) continue;
+    // Ni atravesar contenedores, muros ni búnker (#49), tampoco en los rodeos (#87)
+    if (!pathClear(s, models, cnd)) continue;
     const r = scorePosition(s, unitId, cnd.dx, cnd.dz, cnd.kind, W, claimed, assigned);
     let sc = r.score * jitter(s, W, `${unitId}|${cnd.dx.toFixed(1)}|${cnd.dz.toFixed(1)}|${cnd.kind}`);
     if (cnd.dx === 0 && cnd.dz === 0) sc += 0.5;                  // a igualdad, no moverse
@@ -398,6 +448,17 @@ function moveStep(bus: CommandBus, W: Weights): boolean {
   const len = Math.hypot(plan.dx, plan.dz);
   const k = Math.min(1, (max - 0.05) / len);
   const moves: PieceMove[] = formationModels(s2, u.id).map((p) => ({ id: p.id, x: p.x + plan.dx * k, z: p.z + plan.dz * k }));
+  if (plan.via) {
+    // Rodeo (#87): primero a la esquina y, desde ahí, al destino
+    const legA = formationModels(s2, u.id).map((p) => ({ id: p.id, x: p.x + plan.via!.dx, z: p.z + plan.via!.dz }));
+    const ra = checkMove(s2, u.id, legA, move);
+    if (ra.moves.length) bus.dispatch({ type: "moveMany", moves: ra.moves });
+    const s3 = bus.state;
+    const legB = formationModels(s3, u.id).map((p) => ({ id: p.id, x: p.x + (plan.dx - plan.via!.dx), z: p.z + (plan.dz - plan.via!.dz) }));
+    const rb = checkMove(s3, u.id, legB, s3.turnLog.moves[u.id]);
+    if (rb.moves.length) bus.dispatch({ type: "moveMany", moves: rb.moves });
+    return true;
+  }
   const r = checkMove(s2, u.id, moves, move);
   if (r.moves.length) bus.dispatch({ type: "moveMany", moves: r.moves });
   return true;

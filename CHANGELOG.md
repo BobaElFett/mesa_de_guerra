@@ -2,9 +2,13 @@
 
 Lo nuevo de cada versión de *Mesa de Guerra*, de la más reciente a la primera.
 
+## 0.33 · equilibrio de los mapas
+- **La IA rodea la escenografía sólida:** si un muro, contenedor o búnker corta el camino, prueba a pasar por cada esquina en dos tramos, sin salirse del movimiento.
+- **Mapas con cobertura suficiente:** el generador pone un mínimo de escenografía que tapa la visión en cada mitad, y la coloca sobre todo hacia el centro. Con la IA Difícil en los dos bandos, el Enjambre pasa de perder casi siempre a quedar parejo (aleatorio 35-30, Ruinas urbanas 37-31). La Llanura sigue favoreciendo a la Legión (48-20), como corresponde a un mapa abierto. *Ruinas urbanas* ya no lleva contenedores.
+
 ## 0.32 · fase 14, campo de batalla (#84–#86)
 - **Bosques (#84):** escenografía nueva (7" × 5") que se atraviesa y donde se puede acabar. Quien está dentro o detrás tiene cobertura; si la línea de visión cruza más de 3" de bosque (y ninguna de las dos miniaturas está dentro), no se ve. Modelo con una docena de árboles low poly.
-- **Tipos de mapa (#85):** además de *Aleatorio*, *Ruinas urbanas* (densa, con búnker en el centro), *Llanura* (abierta) y *Bosque*. Todos simétricos respecto al centro. Con la IA Difícil en los dos bandos: Bosque queda parejo (22-23), y en Llanura y Ruinas urbanas gana más la Legión (unos 34-12): en la llanura por el disparo, y en las ruinas porque a la IA del Enjambre le cuesta rodear los muros.
+- **Tipos de mapa (#85):** además de *Aleatorio*, *Ruinas urbanas* (densa, con búnker en el centro), *Llanura* (abierta) y *Bosque*. Todos simétricos respecto al centro. Con la IA Difícil en los dos bandos: Bosque queda parejo (22-23), y en Llanura y Ruinas urbanas gana más la Legión (unos 34-12). En la 0.33 se corrige (había poca escenografía que tapara la visión).
 - **Ambiente sonoro (#86):** viento y, de vez en cuando, explosiones y ráfagas lejanas. Ajustes > *Ambiente* (apagado, bajo, medio, alto). Empieza con el primer clic.
 
 ## 0.31 · fase 13, revisión y orden (#80–#83)

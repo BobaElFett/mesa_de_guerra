@@ -16,11 +16,14 @@ export const MAP_NAME: Record<MapId, string> = {
 
 /** Tipos de mapa (#85): qué piezas, cuántas por mitad y si hay búnker en el centro. */
 type MapStyle = "aleatorio" | "urbano" | "llanura" | "bosque";
-const STYLES: Record<MapStyle, { pool: TerrainKind[]; min: number; extra: number; center: number }> = {
-  aleatorio: { pool: ["ruinaGrande", "ruina", "ruina", "cajas", "crater", "barricada", "barricada", "cajas", "bosque"], min: 5, extra: 2, center: 0.8 },
-  urbano: { pool: ["ruinaGrande", "ruina", "ruina", "ruina", "barricada", "barricada", "crater"], min: 6, extra: 2, center: 1 },
-  llanura: { pool: ["crater", "crater", "barricada", "cajas"], min: 2, extra: 2, center: 0.4 },
-  bosque: { pool: ["bosque", "bosque", "bosque", "bosque", "ruina", "crater"], min: 5, extra: 2, center: 0.5 },
+// `cover`: pulgadas cuadradas de escenografía que tapa la visión, como mínimo, en cada mitad
+// (#87: con poca, el Enjambre llega a la Legión sin un sitio donde esconderse y pierde casi
+// siempre; el mapa de ejemplo tiene unas 96 por mitad, casi todas en la franja central).
+const STYLES: Record<MapStyle, { pool: TerrainKind[]; min: number; extra: number; center: number; cover: number }> = {
+  aleatorio: { pool: ["ruinaGrande", "ruina", "ruina", "cajas", "crater", "barricada", "barricada", "cajas", "bosque"], min: 5, extra: 2, center: 0.8, cover: 90 },
+  urbano: { pool: ["ruinaGrande", "ruinaGrande", "ruina", "ruina", "ruina", "barricada", "crater"], min: 7, extra: 2, center: 1, cover: 120 },
+  llanura: { pool: ["crater", "crater", "barricada", "cajas"], min: 2, extra: 2, center: 0.4, cover: 24 },
+  bosque: { pool: ["bosque", "bosque", "bosque", "bosque", "ruina", "crater"], min: 5, extra: 2, center: 0.5, cover: 140 },
 };
 
 function mulberry(seed: number) {
@@ -49,11 +52,15 @@ export function randomMap(seed: number, style: MapStyle = "aleatorio"): TerrainP
   const pool = S.pool;
   const want = S.min + Math.floor(rnd() * S.extra);    // por mitad (se repite girado en la otra)
   const hw = BOARD.w / 2, hd = BOARD.d / 2;
-  for (let tries = 0, placed = 0; placed < want && tries < 800; tries++) {
-    const kind = pool[Math.floor(rnd() * pool.length)];
+  let cover = 0;
+  const blocking = pool.filter((k) => TERRAIN_RULES[k].blocks);
+  for (let tries = 0, placed = 0; (placed < want || cover < S.cover) && tries < 1200; tries++) {
+    // Si ya hay bastantes piezas pero falta cobertura, solo piezas que tapan
+    const kind = placed >= want && blocking.length ? blocking[Math.floor(rnd() * blocking.length)] : pool[Math.floor(rnd() * pool.length)];
     const f = TERRAIN[kind], r = reach(kind);
     const x = (rnd() * 2 - 1) * (hw - f.w / 2 - 1);
-    const z = -(1.5 + rnd() * (hd - f.d / 2 - 2.5));    // la mitad del Enjambre (z < 0)
+    // La mitad del Enjambre (z < 0); lo que tapa la visión, mejor hacia el centro de la mesa
+    const z = -(1.5 + (TERRAIN_RULES[kind].blocks ? rnd() ** 1.6 : rnd()) * (hd - f.d / 2 - 2.5));
     const rot = Math.floor(rnd() * 8) * (Math.PI / 4);
     // Sólida: fuera de las zonas de despliegue
     if (TERRAIN_RULES[kind].solid && Math.abs(z) + r > hd - DEPLOY_DEPTH - 0.5) continue;
@@ -66,6 +73,7 @@ export function randomMap(seed: number, style: MapStyle = "aleatorio"): TerrainP
     add(kind, x, z, rot);
     add(kind, -x, -z, rot + Math.PI);
     placed++;
+    if (TERRAIN_RULES[kind].blocks) cover += f.w * f.d;
   }
   return out;
 }
