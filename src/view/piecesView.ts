@@ -190,7 +190,8 @@ function placedOf(it: Item): Placed {
 }
 
 function shadowed(g: THREE.Group): THREE.Group {
-  g.traverse((o) => { if ((o as THREE.Mesh).isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+  // Lo que brilla (ojos, visores) no hace falta que proyecte sombra: una llamada menos por miniatura
+  g.traverse((o) => { const m = o as THREE.Mesh; if (m.isMesh) { const glow = ((m.material as THREE.MeshStandardMaterial).emissiveIntensity ?? 0) > 0; m.castShadow = !glow; m.receiveShadow = !glow; } });
   return g;
 }
 

@@ -9,6 +9,16 @@ Plan completo (visión, facciones, roadmap y backlog): documento *Mesa de Guerra
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor.
 
+## Novedades 0.24 · fase 6, acabado (#54–#58)
+- **Pantalla de inicio (#54):** al abrir el juego, *Jugar contra la IA* (bando, dificultad, misión y mapa en un paso), *Continuar la partida*, *Tutorial*, *Mesa libre*, *Ejércitos*, *En línea* y *Ajustes*. Se vuelve con **Menú**; se puede desactivar.
+- **Ajustes en un solo sitio (#55):** sonido y volumen, rejilla, gráficos, velocidad de los ataques, si la cámara sigue a la IA, el aviso al pasar de fase con cosas pendientes, los anillos de ayuda y las probabilidades al pasar el ratón. Se recuerdan en el navegador.
+- **Reservas (#56):** las unidades con *Despliegue profundo* (Legión) o *Túneles* (Enjambre) pueden empezar fuera de la mesa: casilla *En reserva* en Ejércitos, como mucho la mitad de los puntos. Desde la **ronda 2**, en tu movimiento, el panel de turno muestra **Llegar**: clic y luego clic en la mesa; en rojo las zonas prohibidas (9" de cualquier enemigo) y en verde dónde caerían las miniaturas. Llegar cuenta como su movimiento (disparan y cargan con normalidad). **Lo que no haya llegado al acabar la ronda 3 se pierde** (en *Caza de presas* da PV al rival); en la ronda 3 cuentan como pendientes y *Tab* las trae.
+- **Unidades nuevas (#57):**
+  - **Exterminadores** (Legión, 5 por 200 pts): M5 R5 Sv2+ Inv4+ H3; bólter de asalto (24", A2, Ráfaga 2) y puño de energía (A3, F8, FP−2, D2). Despliegue profundo.
+  - **Acechadores** (Enjambre, 3 por 75 o 6 por 150 pts): M8 R5 Sv4+ H3; cuchillas dobles (A5, F6, FP−2, Sostenida 1). Túneles.
+  - La IA trae sus reservas buscando el mejor sitio (cerca de objetivos que no controla y de presas al alcance de sus armas o de una carga).
+- **Rendimiento (#58):** cada miniatura y pieza de escenografía es ahora **una sola malla** con color por vértice (antes una por color): de unas 1.400 llamadas de dibujo a unas 380 con 128 miniaturas en la mesa, y la décima parte de objetos que hacen sombra. El **mapa de sombras solo se repinta cuando algo se mueve**. Nuevo ajuste **Gráficos: Rápidos** (sin sombras y a resolución 1×) para equipos modestos.
+
 ## Novedades 0.23 · miniaturas sueltas y hitboxes de la escenografía
 - **Mover miniaturas sueltas en modo reglas:** el primer clic elige la unidad entera; **otro clic en una de sus miniaturas** deja solo esa, y se arrastra sola (con su límite de movimiento, los anillos y el aviso de coherencia). Arrastrar una miniatura ya elegida mueve lo que esté elegido (la unidad o esa sola). Sigue valiendo **Alt+clic**. La ficha de la unidad lo explica.
 - **Hitboxes de la escenografía a la medida de los modelos:** lo que no se pisa ni se cruza son ahora las partes sólidas de verdad, medidas sobre cada modelo: los **muros** de las ruinas (se puede entrar por los lados abiertos y quedarse dentro, a cubierto), cada **contenedor** y las cajas sueltas, el **cuerpo del búnker** y la **barricada** (se cruza, pero no se acaba encima). El cráter no tiene: se entra. Antes contaba el rectángulo entero de la pieza (y las ruinas no frenaban nada).

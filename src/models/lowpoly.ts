@@ -65,22 +65,48 @@ export function spike(a: V3, b: V3, r: number, color: string, sides = 5): Part {
   return along(new THREE.ConeGeometry(r, 1, sides), a, b, color);
 }
 
-/** Fusiona las piezas en un grupo con una malla por color. */
+/** Material único con color por vértice (mismo acabado que `mat`). */
+let vcMat: THREE.MeshStandardMaterial | null = null;
+export function vertexColorMat(): THREE.MeshStandardMaterial {
+  return vcMat ??= new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.82, metalness: 0.05 });
+}
+
+const tmpColor = new THREE.Color();
+/** Copia la geometría con un atributo de color uniforme (en espacio lineal, como `mat`). */
+function painted(geo: THREE.BufferGeometry, color: string): THREE.BufferGeometry {
+  tmpColor.set(color);
+  const n = geo.getAttribute("position").count;
+  const c = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) { c[i * 3] = tmpColor.r; c[i * 3 + 1] = tmpColor.g; c[i * 3 + 2] = tmpColor.b; }
+  geo.setAttribute("color", new THREE.BufferAttribute(c, 3));
+  return geo;
+}
+
+/**
+ * Fusiona las piezas en un grupo: todo lo de color plano en UNA malla con color por vértice
+ * (una llamada de dibujo y una de sombra por modelo, #58) y lo que brilla, aparte por color.
+ */
 export function build(parts: Part[], shadows = true): THREE.Group {
-  const byColor = new Map<string, THREE.BufferGeometry[]>();
-  for (const p of parts) {
-    const k = p.color + (p.glow ? "*" : "");
-    if (!byColor.has(k)) byColor.set(k, []);
-    byColor.get(k)!.push(p.geo);
-  }
   const g = new THREE.Group();
-  for (const [k, geos] of byColor) {
-    const merged = mergeGeometries(geos, false)!;
-    const mesh = new THREE.Mesh(merged, mat(k.replace("*", ""), k.endsWith("*")));
+  const flat = parts.filter((p) => !p.glow);
+  if (flat.length) {
+    const merged = mergeGeometries(flat.map((p) => painted(p.geo, p.color)), false)!;
+    const mesh = new THREE.Mesh(merged, vertexColorMat());
     mesh.castShadow = shadows;
     mesh.receiveShadow = shadows;
     g.add(mesh);
-    for (const geo of geos) geo.dispose();
   }
+  const glowBy = new Map<string, THREE.BufferGeometry[]>();
+  for (const p of parts) if (p.glow) {
+    if (!glowBy.has(p.color)) glowBy.set(p.color, []);
+    glowBy.get(p.color)!.push(p.geo);
+  }
+  for (const [color, geos] of glowBy) {
+    const mesh = new THREE.Mesh(mergeGeometries(geos, false)!, mat(color, true));
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+    g.add(mesh);
+  }
+  for (const p of parts) p.geo.dispose();
   return g;
 }

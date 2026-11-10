@@ -9,11 +9,13 @@ export interface GameSettings {
   aiSide: Faction | null; aiLevel: AiLevel; mission: MissionId; map: "actual" | "ejemplo" | "aleatorio"; diceSpeed: "normal" | "rapido" | "instante";
   /** Ajustes (#55) */
   volume: number; followAi: boolean; guideRings: boolean; confirmAdvance: boolean; hoverTips: boolean; showMenu: boolean;
+  /** Gráficos (#58): alta = sombras suaves y pantalla nítida; rapida = sin sombras y a 1×. */
+  graphics: "alta" | "rapida";
 }
 
 const KEY = "mesa-de-guerra.ajustes";
 const DEFAULTS: GameSettings = { aiSide: "swarm", aiLevel: "normal", mission: "tomar", map: "actual", diceSpeed: "normal",
-  volume: 0.55, followAi: true, guideRings: true, confirmAdvance: true, hoverTips: true, showMenu: true };
+  volume: 0.55, followAi: true, guideRings: true, confirmAdvance: true, hoverTips: true, showMenu: true, graphics: "alta" };
 
 export const AI_LEVEL_NAME: Record<AiLevel, string> = { facil: "Fácil", normal: "Normal", dificil: "Difícil" };
 

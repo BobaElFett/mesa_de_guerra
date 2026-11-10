@@ -65,6 +65,9 @@ const app = document.getElementById("app")!;
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
+// El mapa de sombras solo se vuelve a pintar cuando algo que hace sombra se mueve (#58)
+renderer.shadowMap.autoUpdate = false;
+renderer.shadowMap.needsUpdate = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 app.appendChild(renderer.domElement);
@@ -89,6 +92,29 @@ key.shadow.normalBias = 0.06;
 const rim = new THREE.DirectionalLight("#9fb4ff", 0.5);
 rim.position.set(40, 30, -50);
 scene.add(hemi, key, key.target, rim);
+
+/** Firma de todo lo que proyecta sombra: si cambia, hay que repintar el mapa de sombras. */
+let shadowSig = NaN;
+function shadowSignature(): number {
+  let h = 0, n = 0;
+  scene.traverseVisible((o) => {
+    if (!(o as THREE.Mesh).isMesh || !o.castShadow) return;
+    const e = o.matrixWorld.elements;
+    h = (h * 31 + Math.round(e[12] * 200) * 7 + Math.round(e[13] * 200) * 13 + Math.round(e[14] * 200) * 17 + Math.round(e[0] * 1000) + Math.round(e[2] * 1000) * 3) | 0;
+    n++;
+  });
+  return h ^ (n << 20);
+}
+/** Gráficos (#58): calidad alta o rápidos (sin sombras y a resolución 1×). */
+function applyGraphics() {
+  const fast = settings.graphics === "rapida";
+  renderer.setPixelRatio(fast ? 1 : Math.min(window.devicePixelRatio, 2));
+  if (key.castShadow === fast) {
+    key.castShadow = !fast;
+    scene.traverse((o) => { const m = (o as THREE.Mesh).material as THREE.Material | undefined; if (m) m.needsUpdate = true; });
+  }
+  renderer.shadowMap.needsUpdate = true;
+}
 
 // --- Mesa, estado y miniaturas -------------------------------------------
 const table = new Table();
@@ -607,6 +633,7 @@ function resize() {
   cam.resize(window.innerWidth, window.innerHeight);
 }
 window.addEventListener("resize", resize);
+applyGraphics();
 resize();
 
 const clock = new THREE.Clock();
@@ -628,6 +655,11 @@ renderer.setAnimationLoop(() => {
   tape.update();
   updateMoveRings();
   tray.update(dt);
+  if (key.castShadow) {
+    scene.updateMatrixWorld();
+    const sig = shadowSignature();
+    if (sig !== shadowSig) { shadowSig = sig; renderer.shadowMap.needsUpdate = true; }
+  }
   renderer.render(scene, cam.camera);
 });
 
@@ -710,7 +742,7 @@ const menu = new StartMenu();
 const settingsDlg = new SettingsDialog();
 sfx.setVolume(settings.volume);
 settingsDlg.sound = { get: () => sfx.on, set: (v) => { if (v !== sfx.on) { sfx.setOn(v); paintSound(); } }, volume: (v) => sfx.setVolume(v) };
-settingsDlg.onChange = () => { speedSel.value = settings.diceSpeed; applySpeed(); guideKey = ""; refresh(); };
+settingsDlg.onChange = () => { speedSel.value = settings.diceSpeed; applySpeed(); applyGraphics(); guideKey = ""; refresh(); };
 menu.continueInfo = () => {
   const s = bus.state;
   if (!s.pieces.length && !bus.length) return null;
@@ -745,4 +777,4 @@ menu.onQuick = (q) => {
 if (settings.showMenu) menu.show();
 
 // Para pruebas desde la consola
-(window as unknown as { mesa: unknown }).mesa = { bus, cam, pieces, controls, tape, ranges, tray, tables, shots, armies, ai, endDialog, fightOptions, net, tactics: { aiStep, fightStep, canFight }, stateHash };
+(window as unknown as { mesa: unknown }).mesa = { bus, renderer, scene, cam, pieces, controls, tape, ranges, tray, tables, shots, armies, ai, endDialog, fightOptions, net, tactics: { aiStep, fightStep, canFight }, stateHash };

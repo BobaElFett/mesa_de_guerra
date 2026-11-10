@@ -415,11 +415,13 @@ export function makeMiniature(kind: ModelKind, pose = 0, leader = false): THREE.
     const r = BASE_RADIUS[kind];
     const legion = ["legionario", "capitan", "pesado", "andador"].includes(kind);
     const rim = leader || kind === "capitan" || kind === "tirano" ? (legion ? LEG.trim : SW.glow) : legion ? LEG.rim : SW.rim;
-    proto.add(build(peana(r, rim, pose * 7 + 3)));
     const [parts, scale] = bodyOf(kind, pose, leader);
-    const body = build(parts);
-    if (scale !== 1) { body.scale.setScalar(scale); body.position.y = Y0 * (1 - scale); }
-    proto.add(body);
+    // El cuerpo escalado se hornea en la geometría: peana y cuerpo en una sola malla (#58)
+    if (scale !== 1) {
+      const m = new THREE.Matrix4().makeTranslation(0, Y0 * (1 - scale), 0).multiply(new THREE.Matrix4().makeScale(scale, scale, scale));
+      for (const q of parts) q.geo.applyMatrix4(m);
+    }
+    proto.add(build([...peana(r, rim, pose * 7 + 3), ...parts]));
     cache.set(key, proto);
   }
   return proto.clone();

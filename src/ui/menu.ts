@@ -100,6 +100,7 @@ export class SettingsDialog {
     $<HTMLInputElement>("set-grid").checked = $("grid").classList.contains("on");
     $<HTMLInputElement>("set-volume").value = String(settings.volume);
     $<HTMLSelectElement>("set-speed").value = settings.diceSpeed;
+    $<HTMLSelectElement>("set-graphics").value = settings.graphics;
     $<HTMLInputElement>("set-follow").checked = settings.followAi;
     $<HTMLInputElement>("set-confirm").checked = settings.confirmAdvance;
     $<HTMLInputElement>("set-rings").checked = settings.guideRings;
@@ -120,6 +121,7 @@ export class SettingsDialog {
     settings.volume = Number($<HTMLInputElement>("set-volume").value);
     this.sound.volume(settings.volume);
     settings.diceSpeed = $<HTMLSelectElement>("set-speed").value as typeof settings.diceSpeed;
+    settings.graphics = $<HTMLSelectElement>("set-graphics").value as typeof settings.graphics;
     settings.followAi = $<HTMLInputElement>("set-follow").checked;
     settings.confirmAdvance = $<HTMLInputElement>("set-confirm").checked;
     settings.guideRings = $<HTMLInputElement>("set-rings").checked;
