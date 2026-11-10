@@ -9,6 +9,16 @@ Plan completo (visión, facciones, roadmap y backlog): documento *Mesa de Guerra
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor.
 
+## Novedades 0.25 · fase 7, profundidad y ayudas (#59–#62)
+- **Sugerir jugada (#59):** botón **Sugerir** en el panel de turno, o tecla **H**: enseña lo que haría la IA Difícil ahora (en dorado: la unidad, adónde movería, a quién dispararía o cargaría) y lo explica en una frase. No hace nada: la mesa y los dados no cambian.
+- **Línea de visión (#60):** en el disparo, con tu unidad elegida y el ratón sobre un enemigo, cada miniatura traza su línea a la miniatura enemiga que mejor ve: **verde** la ve, **naranja** con cobertura, **roja** no ve a ninguna, **gris discontinua** la ve pero no llega.
+- **Repetición (#61):** al acabar, **Ver repetición** vuelve a jugar la batalla desde el despliegue, con disparos y dados animados. Pausa (*Espacio*), paso a paso, barra para saltar, velocidad de 0,5× a 4× (a 4× sin esperar animaciones) y *Esc* para salir. La partida no cambia.
+- **Unidades nuevas (#62):**
+  - **Motoristas de Asalto** (Legión, 3 por 110 o 6 por 220 pts): M12 R5 Sv3+ H2 CO1; bólter gemelo (18", A3, F4, FP−1) y cuchillo. *Turbo*: al avanzar suman 6" sin tirar.
+  - **Carnífice** (Enjambre, 1 por 190 pts): M8 R9 Sv2+ H10 CO3; lanzapinchos (24", D6 ataques, F6, FP−1, Explosiva) y guadañas monstruosas (A5, F9, FP−2, D3). *Aterrador*: los enemigos a 6" o menos chequean moral con −1 al Liderazgo. No cuenta para el límite de un Andador o Tirano.
+  - Puntos ajustados con partidas IA Difícil contra IA Difícil: 6 Motoristas contra el Carnífice quedan parejos.
+- **Arreglo:** la peana de los Exterminadores tenía el borde del color del Enjambre.
+
 ## Novedades 0.24 · fase 6, acabado (#54–#58)
 - **Pantalla de inicio (#54):** al abrir el juego, *Jugar contra la IA* (bando, dificultad, misión y mapa en un paso), *Continuar la partida*, *Tutorial*, *Mesa libre*, *Ejércitos*, *En línea* y *Ajustes*. Se vuelve con **Menú**; se puede desactivar.
 - **Ajustes en un solo sitio (#55):** sonido y volumen, rejilla, gráficos, velocidad de los ataques, si la cámara sigue a la IA, el aviso al pasar de fase con cosas pendientes, los anillos de ayuda y las probabilidades al pasar el ratón. Se recuerdan en el navegador.

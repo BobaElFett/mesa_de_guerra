@@ -1,4 +1,5 @@
 import { applyArrival } from "../rules/reserves";
+import { DATASHEETS } from "../rules/datasheets";
 import { note, unitName } from "../rules/history";
 import { declareCharge, resolveReaction } from "../rules/reactions";
 import { applyStratagem, StratId } from "../rules/stratagems";
@@ -147,7 +148,11 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
       if (!s.units.some((u) => u.id === cmd.unit)) break;
       if (s.rulesMode && cmd.kind === "retirarse") note(s, "mover", `${unitName(s, cmd.unit)} se retira del combate`);
       const move: { kind: MoveKind; advance?: number } = { kind: cmd.kind };
-      if (cmd.kind === "avanzar") {
+      const turbo = cmd.kind === "avanzar" && DATASHEETS[s.units.find((u) => u.id === cmd.unit)!.datasheet].abilities.includes("turbo");
+      if (turbo) {
+        move.advance = 6;
+        if (s.rulesMode) note(s, "mover", `${unitName(s, cmd.unit)} acelera: +6"`);
+      } else if (cmd.kind === "avanzar") {
         const [[d], rng] = rollDice(s.rng, 1, 6);
         s.rng = rng;
         move.advance = d;

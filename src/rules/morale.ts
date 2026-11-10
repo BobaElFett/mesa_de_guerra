@@ -45,6 +45,15 @@ export function inSynapse(s: GameState, unitId: string): boolean {
     && unitModels(s, o.id).some((q) => mine.some((p) => gap(disc(p), disc(q)) <= SYNAPSE_RANGE + 1e-6)));
 }
 
+/** Aterrador (#62): ¿hay un enemigo con Aterrador a 6" o menos? Entonces −1 al Liderazgo. */
+export const TERROR_RANGE = 6;
+function nearTerror(s: GameState, unitId: string): boolean {
+  const u = s.units.find((x) => x.id === unitId)!;
+  const mine = unitModels(s, unitId);
+  return s.units.some((o) => o.faction !== u.faction && DATASHEETS[o.datasheet].abilities.includes("aterrador")
+    && unitModels(s, o.id).some((q) => mine.some((p) => gap(disc(p), disc(q)) <= TERROR_RANGE + 1e-6)));
+}
+
 /** ¿Es Sináptica la propia unidad? (también supera sus chequeos) */
 function isSynaptic(s: GameState, unitId: string): boolean {
   const u = s.units.find((x) => x.id === unitId);
@@ -62,7 +71,7 @@ export function runMoraleTests(s: GameState): MoraleEntry[] {
     if (u.faction !== faction) continue;
     u.shocked = false;
     if (u.reserve || !belowHalf(s, u.id)) continue;   // en reserva no chequea
-    const need = DATASHEETS[u.datasheet].profile.Ld;
+    const need = DATASHEETS[u.datasheet].profile.Ld + (nearTerror(s, u.id) ? 1 : 0);
     if (isSynaptic(s, u.id) || inSynapse(s, u.id)) {
       out.push({ turn: s.turn, player: s.active, unit: u.id, dice: null, need, passed: true });
       continue;

@@ -402,6 +402,64 @@ function andador(pose: number): Part[] {
   return p;
 }
 
+// --- Motorista de Asalto (#62) ------------------------------------------------
+function moto(pose: number): Part[] {
+  const A = LEG, p: Part[] = [];
+  const lean = [0, 0.06, -0.06][pose % 3], turn = [0, 0.18, -0.14][pose % 3];
+  const wheel = (z: number, ry: number) => {
+    p.push(place(new THREE.CylinderGeometry(0.34, 0.34, 0.2, 10).rotateZ(Math.PI / 2), A.dark, 0, y(0.34), z, 0, ry, 0));
+    p.push(place(new THREE.CylinderGeometry(0.16, 0.16, 0.22, 6).rotateZ(Math.PI / 2), A.metal, 0, y(0.34), z, 0, ry, 0));
+  };
+  wheel(0.95, turn);
+  wheel(-0.85, 0);
+  // Chasis, depósito y carenado delantero
+  p.push(box(0.36, 0.3, 1.5, A.dark, 0, y(0.4), 0.02, 0, 0, lean));
+  p.push(box(0.5, 0.32, 0.9, A.armor, 0, y(0.6), 0.25, -0.08, 0, lean));
+  p.push(box(0.62, 0.42, 0.34, A.armorD, 0, y(0.62), 0.85, -0.25, turn, lean));
+  p.push(box(0.46, 0.08, 0.2, A.trim, 0, y(1.02), 0.82, -0.25, turn, lean));
+  p.push(place(new THREE.BoxGeometry(0.14, 0.08, 0.04), "#ffe9a8", 0, y(0.78), 1.03, 0, turn, 0, true));   // faro
+  // Bólter gemelo a los lados del carenado
+  for (const s of [-1, 1]) p.push(segment([s * 0.24, y(0.66), 0.8], [s * 0.24, y(0.68), 1.32], 0.08, 0.08, A.metal));
+  // Asiento, colín y tubos de escape
+  p.push(box(0.4, 0.12, 0.55, A.dark, 0, y(0.82), -0.38, 0, 0, lean));
+  p.push(box(0.52, 0.22, 0.5, A.armor, 0, y(0.6), -0.72, 0.15, 0, lean));
+  for (const s of [-1, 1]) p.push(segment([s * 0.3, y(0.38), -0.3], [s * 0.34, y(0.46), -1.05], 0.09, 0.09, A.metal));
+  // Piloto: piernas, torso inclinado, hombreras, casco y brazos al manillar
+  const hip: V3 = [lean * -1.2, y(1.0), -0.3];
+  for (const s of [-1, 1]) {
+    const knee: V3 = [s * 0.3, y(0.95), 0.18], foot: V3 = [s * 0.32, y(0.5), 0.05];
+    p.push(segment([hip[0] + s * 0.13, hip[1], hip[2]], knee, 0.19, 0.2, A.armorD));
+    p.push(segment(knee, foot, 0.16, 0.17, A.armor));
+  }
+  const chest: V3 = [hip[0] - lean * 0.8, y(1.55), -0.08];
+  p.push(segment(hip, chest, 0.5, 0.36, A.armor));
+  p.push(box(0.34, 0.08, 0.05, A.trim, chest[0], chest[1] - 0.22, chest[2] + 0.19, 0.35));
+  for (const s of [-1, 1]) {
+    p.push(box(0.3, 0.26, 0.36, A.armor, chest[0] + s * 0.34, chest[1] - 0.12, chest[2] - 0.02, 0, 0, s * -0.25));
+    p.push(box(0.32, 0.05, 0.38, A.trim, chest[0] + s * 0.35, chest[1] + 0.14, chest[2] - 0.02, 0, 0, s * -0.25));
+    const hand: V3 = [s * 0.3, y(1.08), 0.7];
+    p.push(segment([chest[0] + s * 0.3, chest[1] - 0.05, chest[2] + 0.05], hand, 0.13, 0.14, A.armorD));
+  }
+  p.push(segment([-0.32, y(1.08), 0.72], [0.32, y(1.08), 0.72], 0.05, 0.05, A.metal));      // manillar
+  p.push(box(0.24, 0.24, 0.27, A.armorD, chest[0], chest[1] + 0.12, chest[2] + 0.1));
+  p.push(place(new THREE.BoxGeometry(0.18, 0.05, 0.03), A.visor, chest[0], chest[1] + 0.26, chest[2] + 0.24, 0, 0, 0, true));
+  return p;
+}
+
+// --- Carnífice (#62): bestia de guerra con guadañas y lanzapinchos ---------------
+function carnifice(pose: number): Part[] {
+  const p = garra(pose, true, { gun: "bio", monster: true });
+  const C = SW;
+  // Caparazón dorsal en placas y hileras de púas
+  for (let i = 0; i < 4; i++) {
+    const zz = 0.05 - i * 0.16, yy = 0.92 - i * 0.07;
+    p.push(box(0.42 - i * 0.05, 0.08, 0.2, i % 2 ? C.shell : C.shellD, 0, y(yy), zz, -0.35));
+    for (const s of [-1, 1]) p.push(spike([s * 0.12, y(yy + 0.05), zz], [s * 0.3, y(yy + 0.32), zz - 0.12], 0.045, C.bone));
+  }
+  p.push(spike([0, y(0.9), 0.12], [0, y(1.22), 0.04], 0.05, C.bone));
+  return p;
+}
+
 // --- Fábrica con caché ----------------------------------------------------------
 
 const cache = new Map<string, THREE.Group>();
@@ -413,7 +471,7 @@ export function makeMiniature(kind: ModelKind, pose = 0, leader = false): THREE.
   if (!proto) {
     proto = new THREE.Group();
     const r = BASE_RADIUS[kind];
-    const legion = ["legionario", "capitan", "pesado", "andador"].includes(kind);
+    const legion = ["legionario", "capitan", "pesado", "andador", "exterminador", "moto"].includes(kind);
     const rim = leader || kind === "capitan" || kind === "tirano" ? (legion ? LEG.trim : SW.glow) : legion ? LEG.rim : SW.rim;
     const [parts, scale] = bodyOf(kind, pose, leader);
     // El cuerpo escalado se hornea en la geometría: peana y cuerpo en una sola malla (#58)
@@ -440,6 +498,8 @@ function bodyOf(kind: ModelKind, pose: number, leader: boolean): [Part[], number
     case "tirano": return [garra(pose, true, { gun: "bio", crown: true, monster: true }), 2.5];
     case "exterminador": return [legionario(pose, false, "exterminador"), 1.22];
     case "acechador": return [garra(pose, true, { monster: true }), 1.55];
+    case "moto": return [moto(pose), 1];
+    case "carnifice": return [carnifice(pose), 2.9];
   }
 }
 
