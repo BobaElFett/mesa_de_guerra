@@ -27,6 +27,9 @@ import { ActionMenu } from "./ui/actionMenu";
 import { Effects } from "./view/effects";
 import { SolidsView } from "./view/solidsView";
 import { ArrivalView } from "./view/arrivalView";
+import { SuggestView } from "./view/suggestView";
+import { LosView } from "./view/losView";
+import { suggest } from "./ai/suggest";
 import { arrivalBlocked, arrivalPlacement } from "./rules/reserves";
 import { Tutorial } from "./ui/tutorial";
 import { SettingsDialog, StartMenu } from "./ui/menu";
@@ -297,6 +300,27 @@ document.getElementById("bot-phase")!.addEventListener("click", () => {
   if (bus.state.phase === "despliegue") { bus.dispatch({ type: "nextPhase" }); return; }
   aiPlayPhase(bus, settings.aiLevel, settings.aiLevel, { humanDefends: true });
 });
+// Línea de visión al apuntar (#60)
+const los = new LosView();
+scene.add(los.group);
+// Sugerir jugada (#59)
+const suggestView = new SuggestView();
+scene.add(suggestView.group);
+let suggestAt = -1;
+function showSuggestion() {
+  const s = bus.state;
+  if (!s.rulesMode || s.gameOver) return;
+  if (ai.isAiTurn() && !ai.paused) { toast("Ahora juega la IA."); return; }
+  const sg = suggest(bus);
+  suggestView.show(s, sg.unit, sg.cmds);
+  suggestAt = bus.length;
+  toast(`Sugerencia: ${sg.text}`);
+  if (sg.unit) {
+    const ps = s.pieces.filter((p) => p.unit === sg.unit);
+    if (ps.length) cam.panTo(ps.reduce((a, p) => a + p.x, 0) / ps.length, ps.reduce((a, p) => a + p.z, 0) / ps.length, 40);
+  }
+}
+document.getElementById("suggest")!.addEventListener("click", showSuggestion);
 // Acciones sobre el tablero (#46) y guía de la fase (#47)
 /** ¿Puede este jugador mandar sobre ese bando? (no sobre el de la IA ni, en línea, el del rival) */
 function controllable(f: "legion" | "swarm"): boolean {
@@ -586,6 +610,8 @@ function refresh(_s?: unknown, cmd?: Command | null) {
   hud.render(bus.state);
   netStatus();
   updateReaction();
+  if (suggestAt >= 0 && bus.length !== suggestAt) { suggestView.clear(); suggestAt = -1; }
+  $btn("suggest").hidden = !bus.state.rulesMode || bus.state.gameOver || (ai.isAiTurn() && !ai.paused) || runtime.online;
   const aiBtn = $btn("bot-phase");
   aiBtn.textContent = settings.aiSide ? (ai.paused ? "Reanudar IA" : "Pausar IA") : "IA";
   aiBtn.title = settings.aiSide ? `La IA (${AI_LEVEL_NAME[settings.aiLevel]}) lleva ${FACTIONS[settings.aiSide].of.replace(/^de /, "").replace(/^del /, "el ")}` : "La IA juega esta fase por el bando activo";
@@ -605,6 +631,7 @@ window.addEventListener("keydown", (e) => {
   if (mod && (e.code === "KeyY" || (e.code === "KeyZ" && e.shiftKey))) { e.preventDefault(); bus.redo(); return; }
   if (mod) return;
   if (e.code === "KeyG") { gridOn = !gridOn; table.setGridVisible(gridOn); document.getElementById("grid")!.classList.toggle("on", gridOn); }
+  if (e.code === "KeyH") showSuggestion();
   if (e.code === "KeyV") document.getElementById("topdown")!.classList.toggle("on", cam.topDown);
   if (e.code === "Space") { e.preventDefault(); hud.rollNow(); }
   if (e.code === "Equal" || e.code === "NumpadAdd") hud.rollMore(1);
@@ -648,6 +675,7 @@ renderer.setAnimationLoop(() => {
   const targets = targetHover ? new Set(bus.state.pieces.filter((p) => p.unit === targetHover).map((p) => p.id)) : undefined;
   const shockedIds = bus.state.rulesMode ? new Set(bus.state.pieces.filter((p) => bus.state.units.find((u) => u.id === p.unit)?.shocked).map((p) => p.id)) : undefined;
   updateGuide();
+  los.update(bus.state, targetHover ? actor() : null, targetHover);
   pieces.matPending.opacity = 0.35 + 0.3 * Math.sin(performance.now() / 260);
   pieces.highlight(controls.selected, controls.hovered, controls.selected.size ? coherencyWarnings() : undefined, targets, shockedIds, canTargetIds, pendingIds);
   shots.update(dt);
@@ -777,4 +805,4 @@ menu.onQuick = (q) => {
 if (settings.showMenu) menu.show();
 
 // Para pruebas desde la consola
-(window as unknown as { mesa: unknown }).mesa = { bus, renderer, scene, cam, pieces, controls, tape, ranges, tray, tables, shots, armies, ai, endDialog, fightOptions, net, tactics: { aiStep, fightStep, canFight }, stateHash };
+(window as unknown as { mesa: unknown }).mesa = { bus, renderer, scene, los, suggestView, showSuggestion, hoverTarget: (u: string | null) => { targetHover = u; }, cam, pieces, controls, tape, ranges, tray, tables, shots, armies, ai, endDialog, fightOptions, net, tactics: { aiStep, fightStep, canFight }, stateHash };
