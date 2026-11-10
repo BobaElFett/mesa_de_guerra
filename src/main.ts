@@ -351,6 +351,20 @@ document.getElementById("bot-phase")!.addEventListener("click", () => {
 // Línea de visión al apuntar (#60)
 const los = new LosView();
 scene.add(los.group);
+// Deshacer mi jugada (#75): contra la IA, un Ctrl+Z vuelve a antes de tu última acción
+// (con todo lo que hizo la IA después). Ctrl+Alt+Z deshace una sola orden.
+function undoMine() {
+  if (!settings.aiSide || runtime.online || runtime.spectate || !bus.state.rulesMode) { bus.undo(); return; }
+  const n = bus.undoMine();
+  if (n > 1) {
+    // Si al volver atrás sigue siendo su turno, la IA se pausa (si no, lo rehace todo enseguida)
+    const theirs = ai.isAiTurn();
+    if (theirs) ai.paused = true;
+    toast(`Deshecha tu última jugada y ${n - 1} orden${n > 2 ? "es" : ""} de la IA.${theirs ? " La IA queda en pausa: Reanudar IA cuando quieras." : ""}`);
+  }
+  refresh();
+}
+hud.onUndo = undoMine;
 // Sugerir jugada (#59)
 const suggestView = new SuggestView();
 scene.add(suggestView.group);
@@ -701,7 +715,7 @@ window.addEventListener("keydown", (e) => {
     if (e.code === "Space") { e.preventDefault(); replay.togglePlay(); }
     return;
   }
-  if (mod && e.code === "KeyZ" && !e.shiftKey) { e.preventDefault(); bus.undo(); return; }
+  if (mod && e.code === "KeyZ" && !e.shiftKey) { e.preventDefault(); e.altKey ? bus.undo() : undoMine(); return; }
   if (mod && (e.code === "KeyY" || (e.code === "KeyZ" && e.shiftKey))) { e.preventDefault(); bus.redo(); return; }
   if (mod) return;
   if (e.code === "KeyG") { gridOn = !gridOn; table.setGridVisible(gridOn); document.getElementById("grid")!.classList.toggle("on", gridOn); }

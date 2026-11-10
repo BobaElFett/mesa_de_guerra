@@ -235,7 +235,7 @@ export class Hud {
   private confirmNew = 0;
 
   constructor(private bus: CommandBus, private actions: HudActions) {
-    $("undo").addEventListener("click", () => bus.undo());
+    $("undo").addEventListener("click", () => this.onUndo());
     $("redo").addEventListener("click", () => bus.redo());
     $("end-turn").addEventListener("click", () => this.advance());
     $("mode").addEventListener("click", () => bus.dispatch({ type: "setRulesMode", on: !bus.state.rulesMode }));
@@ -371,6 +371,9 @@ export class Hud {
     if (el.innerHTML !== html) el.innerHTML = html;
     el.hidden = false;
   }
+
+  /** Deshacer (main decide si es una orden o «mi jugada» contra la IA). */
+  onUndo: () => void = () => this.bus.undo();
 
   /** El jugador quiere traer una unidad de la reserva (main entra en modo colocación). */
   onArrive: (unit: string) => void = () => {};

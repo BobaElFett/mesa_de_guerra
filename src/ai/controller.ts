@@ -57,6 +57,10 @@ export class AiController {
 
   /** Antes de que el jugador pase de fase: que la IA acabe sus combates pendientes. */
   flushFights() {
+    this.bus.byAi = true;
+    try { this.flush(); } finally { this.bus.byAi = false; }
+  }
+  private flush() {
     const s = this.bus.state;
     if (!this.side || !s.rulesMode || s.phase !== "combate") return;
     for (let g = 0; g < 30 && canFight(this.bus.state, this.side); g++) fightStep(this.bus, this.side, settings.aiLevel);
@@ -66,6 +70,11 @@ export class AiController {
   private deployed = false;
 
   update(dt: number) {
+    this.bus.byAi = true;
+    try { this.tick(dt); } finally { this.bus.byAi = false; }
+  }
+
+  private tick(dt: number) {
     const s = this.bus.state;
     const side = this.side;
     // Despliegue (#51): la IA recoloca su ejército una vez; luego empieza el jugador

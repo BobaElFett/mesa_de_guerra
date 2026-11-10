@@ -290,8 +290,28 @@ export class CommandBus {
     this.applyCmd(cmd);
   }
 
+  /** Lo está ordenando la IA (#75): se apunta junto a cada orden para «deshacer mi jugada». */
+  byAi = false;
+  private aiMarks: boolean[] = [];
+
+  /**
+   * Deshacer mi jugada (#75): vuelve atrás todo lo que hizo la IA después de la última orden
+   * del jugador, y esa orden también. Devuelve cuántas órdenes se deshicieron. Solo sin red.
+   */
+  undoMine(): number {
+    if (this.remote || !this.canUndo) return 0;
+    const from = this.cursor;
+    while (this.cursor > 0 && this.aiMarks[this.cursor - 1]) this.cursor--;
+    if (this.cursor > 0) this.cursor--;
+    this.state = this.replay();
+    this.emit(null);
+    return from - this.cursor;
+  }
+
   private applyCmd(cmd: Command) {
     this.log.length = this.cursor;          // una orden nueva descarta lo deshecho
+    this.aiMarks.length = this.cursor;
+    this.aiMarks.push(this.byAi);
     this.log.push(cmd);
     this.cursor++;
     this.state = applyCommand(this.state, cmd);

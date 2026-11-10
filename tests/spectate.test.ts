@@ -26,3 +26,25 @@ test("modo espectador: la IA juega los dos bandos de principio a fin (con combat
     }
   } finally { runtime.spectate = false; }
 });
+
+test("deshacer mi jugada: vuelve a antes de la última orden del jugador, con todo lo de la IA", async () => {
+  const { AiController } = await import("../src/ai/controller");
+  const { settings: st, runtime: rt } = await import("../src/ai/settings");
+  rt.spectate = false; st.aiSide = "swarm"; st.aiLevel = "normal";
+  const bus = new CommandBus(41);
+  bus.dispatch({ type: "setArmies", legion: TEST_LEGION, swarm: TEST_SWARM, mission: "tomar" });
+  bus.dispatch({ type: "setRulesMode", on: true });
+  const ai = new AiController(bus, () => false);
+  for (let i = 0; i < 5; i++) ai.update(1);                 // la IA despliega
+  while (bus.state.phase === "despliegue" || bus.state.active !== 0) bus.dispatch({ type: "nextPhase" });
+  // El jugador pasa todas sus fases (la última da el turno a la IA)
+  while (bus.state.active === 0) bus.dispatch({ type: "nextPhase" });
+  const mine = bus.length;
+  for (let i = 0; i < 60 && bus.state.active === 1; i++) ai.update(1);   // la IA juega su turno
+  assert.ok(bus.length > mine + 2, "la IA ha hecho cosas");
+  const n = bus.undoMine();
+  assert.equal(bus.length, mine - 1);
+  assert.equal(n, bus.total - (mine - 1));
+  assert.equal(bus.state.active, 0, "vuelve al turno del jugador");
+  st.aiSide = "swarm";
+});
