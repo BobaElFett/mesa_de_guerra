@@ -9,6 +9,16 @@ Plan completo (visión, facciones, roadmap y backlog): documento *Mesa de Guerra
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor.
 
+## Novedades 0.28 · fase 10, campaña (#70–#72)
+- **Campaña de tres batallas (#70):** botón *Campaña* en el menú. Eliges bando, dificultad y listas, y juegas seguidas:
+  1. *Cabeza de playa* (Toma y mantén);
+  2. *La reliquia en la oscuridad* (Reliquia, de noche);
+  3. *Cacería bajo la tormenta* (Caza de presas, con tormenta).
+
+  Cada una en un mapa aleatorio simétrico. Al acabar cada batalla, *Seguir la campaña* apunta el resultado; gana quien gane más batallas (si empatan, más PV en total). Se guarda en el navegador y el menú enseña por dónde vas.
+- **Veteranía (#71):** entre batallas, las unidades que sobreviven y han hecho daño pasan a **Veteranas** (en los dos bandos): repiten los 1 al herir y llevan un anillo dorado con galones en la peana. Las destruidas vuelven con reclutas, sin veteranía.
+- **Pantalla táctil (#72):** un dedo selecciona y arrastra como el ratón; dos dedos pellizcan para acercar, giran para rotar la vista y se mueven juntos para desplazarla. Tocar un enemigo abre el menú de acciones y dibuja la línea de visión.
+
 ## Novedades 0.27 · fase 9, pulido (#66–#69)
 - **El equipo cuenta en las bajas (#66):** los puntos destruidos (estadísticas, *Caza de presas*) y la regla de la mitad en reserva incluyen el coste del equipo opcional.
 - **Modo espectador (#67):** en la partida rápida, *Tu ejército: Ninguno*. La IA despliega y juega los dos bandos (combates alternos y fuego defensivo incluidos) y la cámara sigue la acción. *Pausar IA* la detiene; *Dejar de mirar* te devuelve la mesa con la IA llevando su bando, en pausa.

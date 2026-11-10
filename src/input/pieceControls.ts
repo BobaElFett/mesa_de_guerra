@@ -77,11 +77,30 @@ export class PieceControls {
     dom.addEventListener("pointerdown", (e) => this.down(e));
     dom.addEventListener("pointermove", (e) => this.move(e));
     dom.addEventListener("pointerup", (e) => this.up(e));
+    dom.addEventListener("pointercancel", (e) => { this.touches.delete(e.pointerId); this.cancelGesture(); });
     window.addEventListener("keydown", (e) => this.key(e));
   }
 
   // --- Entrada -----------------------------------------------------------
+  // --- Pantalla táctil (#72) ---------------------------------------------
+  private touches = new Set<number>();
+  /** Hay o ha habido dos dedos en este toque: la cámara manda y no se mueve nada. */
+  private multi = false;
+  private pressTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Deja el gesto en curso sin aplicar nada (la selección se queda). */
+  cancelGesture() {
+    if (this.pressTimer) { clearTimeout(this.pressTimer); this.pressTimer = null; }
+    if (this.g.kind === "piece" && this.g.dragging) { this.view.dragging.clear(); this.onDragInfo(null, 0, 0); }
+    this.box.hidden = true;
+    this.g = { kind: "none" };
+  }
+
   private down(e: PointerEvent) {
+    if (e.pointerType === "touch") {
+      this.onHover(null, e.clientX, e.clientY);         // la ficha de un toque largo anterior se quita
+      this.touches.add(e.pointerId);
+      if (this.touches.size > 1) { this.multi = true; this.cancelGesture(); return; }
+    }
     if (e.button !== 0 || this.blocked()) return;
     this.setRay(e);
     const id = this.pick();
@@ -92,6 +111,8 @@ export class PieceControls {
       this.g = { kind: "box", sx: e.clientX, sy: e.clientY, additive: e.shiftKey };
       return;
     }
+    // Táctil: no hay «pasar por encima»; se avisa antes para que la línea de visión salga con el menú
+    if (e.pointerType === "touch") this.onHover(id, e.clientX, e.clientY);
     if (!e.shiftKey && this.interceptClick(id, e.clientX, e.clientY)) { this.g = { kind: "none" }; return; }
     // Mayús+clic sobre una seleccionada la quita (sin arrastre)
     if (e.shiftKey && this.selected.has(id)) {
@@ -122,6 +143,7 @@ export class PieceControls {
   }
 
   private move(e: PointerEvent) {
+    if (this.multi) return;
     this.setRay(e);
     const g = this.g;
     if (g.kind === "none") {
@@ -167,6 +189,11 @@ export class PieceControls {
   }
 
   private up(e: PointerEvent) {
+    if (e.pointerType === "touch") {
+      this.touches.delete(e.pointerId);
+      if (this.pressTimer) { clearTimeout(this.pressTimer); this.pressTimer = null; }
+      if (this.multi) { if (!this.touches.size) this.multi = false; this.cancelGesture(); return; }
+    }
     if (e.button !== 0) return;
     const g = this.g;
     this.g = { kind: "none" };

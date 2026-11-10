@@ -104,6 +104,37 @@ export class TableCamera {
     this.dom.addEventListener("pointerup", (e) => {
       if (this.drag && e.button === this.drag.button) this.drag = null;
     });
+    // Pantalla táctil (#72): con dos dedos, pellizcar acerca, girar los dedos gira y moverlos desplaza
+    const touches = new Map<number, { x: number; y: number }>();
+    let two: { d: number; a: number; mx: number; my: number } | null = null;
+    const pair = () => {
+      const [a, b] = [...touches.values()];
+      return { d: Math.hypot(b.x - a.x, b.y - a.y), a: Math.atan2(b.y - a.y, b.x - a.x), mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
+    };
+    this.dom.addEventListener("pointerdown", (e) => {
+      if (e.pointerType !== "touch") return;
+      touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      two = touches.size === 2 ? pair() : null;
+    });
+    this.dom.addEventListener("pointermove", (e) => {
+      if (e.pointerType !== "touch" || !touches.has(e.pointerId)) return;
+      touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (touches.size !== 2 || !two) return;
+      const now = pair();
+      if (now.d > 10) this.targetDistance = THREE.MathUtils.clamp(this.targetDistance * (two.d / now.d), this.minDistance, this.maxDistance);
+      let da = now.a - two.a;
+      if (da > Math.PI) da -= Math.PI * 2;
+      if (da < -Math.PI) da += Math.PI * 2;
+      this.yaw += da;
+      const dx = now.mx - two.mx, dy = now.my - two.my, k = this.distance * 0.0016;
+      const sin = Math.sin(this.yaw), cos = Math.cos(this.yaw);
+      this.target.x -= (dx * cos + dy * sin) * k;
+      this.target.z -= (-dx * sin + dy * cos) * k;
+      two = now;
+    });
+    const lift = (e: PointerEvent) => { if (e.pointerType !== "touch") return; touches.delete(e.pointerId); two = touches.size === 2 ? pair() : null; };
+    this.dom.addEventListener("pointerup", lift);
+    this.dom.addEventListener("pointercancel", lift);
     this.dom.addEventListener("contextmenu", (e) => e.preventDefault());
     this.dom.addEventListener("auxclick", (e) => e.preventDefault());
   }

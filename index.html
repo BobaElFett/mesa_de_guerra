@@ -13,7 +13,7 @@
   }
   html, body { margin: 0; height: 100%; overflow: hidden; background: #17191e; font-family: "Segoe UI", system-ui, sans-serif; color: var(--ink); }
   #app { position: fixed; inset: 0; }
-  canvas { display: block; }
+  canvas { display: block; touch-action: none; }
   /* Tamaño de la interfaz (#69): todo menos la mesa en 3D */
   body > :not(#app) { zoom: var(--ui, 1); }
   [hidden] { display: none !important; }
@@ -283,7 +283,7 @@
 <div id="help" class="panel">
   <h1 class="title">Mesa de Guerra</h1>
   <button id="help-toggle">Ocultar</button>
-  <div class="sub">Pulido (v0.27)</div>
+  <div class="sub">Campaña (v0.28)</div>
   <button id="tutorial-start" class="primary" style="width:100%;margin:4px 0 6px">Tutorial: aprende a jugar (5 min)</button>
   <h2>Cámara</h2>
   <ul>
@@ -315,6 +315,8 @@
     <li><b>Repetición</b>: al acabar, <i>Ver repetición</i> vuelve a jugar la batalla desde el despliegue (pausa con <kbd>Espacio</kbd>, a 4× sin animaciones, <kbd>Esc</kbd> sale)</li>
     <li><b>Mirar IA contra IA</b>: en la partida rápida, «Tu ejército: Ninguno». <i>Pausar IA</i> para y <i>Dejar de mirar</i> te da la mesa</li>
     <li><kbd>H</kbd> o <b>Sugerir</b>: lo que haría la IA Difícil ahora (en dorado: quién, adónde y contra quién). No hace nada: tú decides</li>
+    <li><b>Campaña</b>: tres batallas seguidas contra la IA desde el menú; las unidades que sobreviven y hacen daño pasan a Veteranas (repiten los 1 al herir)</li>
+    <li><b>Táctil</b>: dos dedos para acercar, girar y desplazar la vista</li>
     <li><b>Equipo</b>: en Ejércitos, casillas debajo de cada unidad para cambiar armas (con su coste)</li>
     <li><b>Reservas</b>: Exterminadores y Acechadores pueden empezar fuera (casilla en Ejércitos). Desde la ronda 2, <b>Llegar</b> en el panel de turno y clic en la mesa, a más de 9" de los enemigos; si al acabar la ronda 3 no han llegado, se pierden</li>
     <li><b>Pausar IA</b> para tomar el control de su bando</li>
