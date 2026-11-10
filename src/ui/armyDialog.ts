@@ -1,3 +1,4 @@
+import { randomList } from "../rules/randomList";
 import { canReserve } from "../rules/reserves";
 import { mapFor } from "../rules/maps";
 import { MISSIONS, MissionId } from "../rules/missions";
@@ -159,6 +160,9 @@ export class ArmyDialog {
       saved[f] = [clone(list), ...saved[f].filter((x) => x.name !== name)].slice(0, 20);
       writeSaved(saved);
       this.notify(`Lista guardada: «${name}»`);
+    } else if (b.dataset.act === "random") {
+      this.lists[f] = randomList(f, Math.floor(Math.random() * 2 ** 31));
+      this.render();
     } else if (b.dataset.act === "clear") {
       this.lists[f] = { name: "", units: [] };
     } else if (b.dataset.act === "delete-saved") {
@@ -250,6 +254,7 @@ export class ArmyDialog {
           <button data-side="${f}" data-act="save">Guardar</button>
           <button data-side="${f}" data-act="delete-saved" title="Borra la lista elegida en el desplegable">Borrar</button>
           <button data-side="${f}" data-act="clear" title="Vaciar">Vaciar</button>
+          <button data-side="${f}" data-act="random" title="Una lista válida de 500 puntos, con equipo y reservas al azar">Al azar</button>
         </div>
       </div>`;
     }).join("");

@@ -34,6 +34,7 @@ import { CampaignDialog, loadCampaign, saveCampaign } from "./ui/campaign";
 import { recordGame, RecordDialog } from "./ui/record";
 import { CAMPAIGN, recordBattle } from "./rules/campaign";
 import { randomMap } from "./rules/maps";
+import { randomList } from "./rules/randomList";
 import { suggest } from "./ai/suggest";
 import { arrivalBlocked, arrivalPlacement } from "./rules/reserves";
 import { Tutorial } from "./ui/tutorial";
@@ -894,7 +895,10 @@ menu.onQuick = (q) => {
   settings.aiLevel = q.level; settings.mission = q.mission; settings.map = q.map;
   saveSettings();
   let lists = { legion: TEST_LEGION, swarm: TEST_SWARM };
-  if (q.lists === "mias") {
+  if (q.lists === "azar") {
+    const seed = Math.floor(Math.random() * 2 ** 30);
+    lists = { legion: randomList("legion", seed), swarm: randomList("swarm", seed + 1) };
+  } else if (q.lists === "mias") {
     const mine = armies.current();
     const bad = (["legion", "swarm"] as const).some((f) => validateList(mine[f], f).length);
     if (bad) toast("Tus listas de Ejércitos no son válidas: se usan las de prueba.");
@@ -913,8 +917,9 @@ menu.onQuick = (q) => {
 };
 // Campaña (#70)
 const campaign = new CampaignDialog();
-campaign.lists = (mine) => {
-  if (!mine) return { legion: TEST_LEGION, swarm: TEST_SWARM };
+campaign.lists = (which) => {
+  if (which === "prueba") return { legion: TEST_LEGION, swarm: TEST_SWARM };
+  if (which === "azar") { const seed = Math.floor(Math.random() * 2 ** 30); return { legion: randomList("legion", seed), swarm: randomList("swarm", seed + 1) }; }
   const l = armies.current();
   const bad = (["legion", "swarm"] as const).filter((f) => validateList(l[f], f).length);
   return bad.length ? "Tus listas de Ejércitos no son válidas: corrígelas o usa las de prueba." : { legion: l.legion, swarm: l.swarm };

@@ -8,7 +8,7 @@ import { modal } from "./modal";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 
-export interface QuickGame { side: Faction | "mirar"; level: AiLevel; mission: MissionId; map: "aleatorio" | "ejemplo"; lists: "prueba" | "mias"; conditions?: "" | "noche" | "tormenta" }
+export interface QuickGame { side: Faction | "mirar"; level: AiLevel; mission: MissionId; map: "aleatorio" | "ejemplo"; lists: "prueba" | "mias" | "azar"; conditions?: "" | "noche" | "tormenta" }
 
 export class StartMenu {
   onContinue: () => void = () => {};

@@ -18,7 +18,7 @@ export function randomList(faction: Faction, seed: number, limit = POINTS_LIMIT)
     const units: ArmyEntry[] = [];
     const cost = (e: ArmyEntry) => (unitPoints(DATASHEETS[e.datasheet], e.models) ?? 0) + optionPoints(DATASHEETS[e.datasheet], e.models, e.options);
     const add = (ds: Datasheet): ArmyEntry | null => {
-      const size = pick(ds.sizes);
+      const size = rnd() < 0.6 ? ds.sizes[0] : pick(ds.sizes);   // más unidades, más pequeñas
       const e: ArmyEntry = { datasheet: ds.id as DatasheetId, models: size.models };
       // Equipo: cada opción con un 40 %; las que se excluyen, una sola
       const taken = new Set<string>();
