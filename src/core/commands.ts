@@ -319,6 +319,31 @@ export class CommandBus {
     this.emit(null);
   }
 
+  /** Las órdenes de la partida (también las deshechas), para la repetición. */
+  get commands(): readonly Command[] { return this.log; }
+  get total() { return this.log.length; }
+
+  /**
+   * Repetición (#61): coloca el cursor en `n` sin descartar nada (como deshacer o rehacer de
+   * golpe). Solo sin red.
+   */
+  seek(n: number) {
+    if (this.remote) return;
+    this.cursor = Math.max(0, Math.min(n, this.log.length));
+    this.state = this.replay();
+    this.emit(null);
+  }
+
+  /** Repetición: rehace la siguiente orden avisando con ella (para animar disparos y dados). */
+  stepForward(): Command | null {
+    if (this.remote || !this.canRedo) return null;
+    const cmd = this.log[this.cursor];
+    this.state = applyCommand(this.state, cmd);
+    this.cursor++;
+    this.emit(cmd);
+    return cmd;
+  }
+
   /** Aplica una operación sin pasar por el gancho de red (la que llega del anfitrión). */
   apply(op: BusOp) {
     switch (op.k) {

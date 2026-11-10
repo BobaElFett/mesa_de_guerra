@@ -225,6 +225,9 @@
   #action-menu > button, #action-menu .off { display: block; width: 100%; text-align: left; margin: 2px 0; padding: 4px 8px; box-sizing: border-box; }
   #action-menu span { display: block; font-size: 11.5px; color: var(--dim); font-weight: 400; }
   #action-menu .off { opacity: .55; border: 1px dashed var(--line); border-radius: 4px; }
+  #replay { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); z-index: 30; display: flex; gap: 8px; align-items: center; padding: 8px 12px; }
+  #replay input[type=range] { width: 220px; }
+  body.replaying #turn, body.replaying #reserves, body.replaying #action-menu, body.replaying #board-tip { pointer-events: none; opacity: 0.55; }
   #reserves { font-size: 12px; text-align: center; padding: 4px 0 2px; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; align-items: center; }
   #reserves button { font-size: 12px; padding: 3px 8px; border-color: #7dff9a88; }
   #reserves .warn { color: #ffb36b; }
@@ -287,6 +290,7 @@
     <li>Objetivos: los controla quien sume más CO a 3"; los PV, arriba a la derecha</li>
     <li>Estratagemas (1 PM): botones en la ficha de la unidad, en tu turno</li>
     <li><b>Línea de visión</b>: en el disparo, con tu unidad elegida y el ratón sobre un enemigo, cada miniatura traza su línea: <span style="color:#6dff8a">verde</span> lo ve, <span style="color:#ffb34a">naranja</span> con cobertura, <span style="color:#ff4a3a">roja</span> no ve, gris discontinua fuera de alcance</li>
+    <li><b>Repetición</b>: al acabar, <i>Ver repetición</i> vuelve a jugar la batalla desde el despliegue (pausa con <kbd>Espacio</kbd>, a 4× sin animaciones, <kbd>Esc</kbd> sale)</li>
     <li><kbd>H</kbd> o <b>Sugerir</b>: lo que haría la IA Difícil ahora (en dorado: quién, adónde y contra quién). No hace nada: tú decides</li>
     <li><b>Reservas</b>: Exterminadores y Acechadores pueden empezar fuera (casilla en Ejércitos). Desde la ronda 2, <b>Llegar</b> en el panel de turno y clic en la mesa, a más de 9" de los enemigos; si al acabar la ronda 3 no han llegado, se pierden</li>
     <li><b>Pausar IA</b> para tomar el control de su bando</li>
@@ -467,6 +471,15 @@
 <div id="tutorial" class="panel" hidden></div>
 <div id="board-tip" class="panel" hidden></div>
 <div id="action-menu" class="panel" hidden></div>
+<div id="replay" class="panel" hidden>
+  <b>Repetición</b> <span id="replay-info" class="dim"></span>
+  <button data-r="start" title="Desde el despliegue">Inicio</button>
+  <button data-r="play" id="replay-play" title="Espacio">Pausa</button>
+  <button data-r="step" title="Siguiente orden">Paso</button>
+  <select id="replay-speed" title="Velocidad"><option value="0.5">0,5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select>
+  <input type="range" id="replay-pos" min="0" value="0"> <span id="replay-count" class="dim"></span>
+  <button data-r="exit" class="primary" title="Esc">Salir</button>
+</div>
 <div id="toast" hidden></div>
 <div id="measure" hidden></div>
 <div id="tape-label" hidden></div>

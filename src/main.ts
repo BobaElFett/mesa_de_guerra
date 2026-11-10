@@ -29,6 +29,7 @@ import { SolidsView } from "./view/solidsView";
 import { ArrivalView } from "./view/arrivalView";
 import { SuggestView } from "./view/suggestView";
 import { LosView } from "./view/losView";
+import { Replay } from "./ui/replay";
 import { suggest } from "./ai/suggest";
 import { arrivalBlocked, arrivalPlacement } from "./rules/reserves";
 import { Tutorial } from "./ui/tutorial";
@@ -144,7 +145,7 @@ const picker = new Picker(renderer.domElement, cam.camera, pieces);
 const tape = new TapeMeasure(renderer.domElement, picker, pieces);
 scene.add(tape.group);
 const controls = new PieceControls(renderer.domElement, picker, pieces, bus);
-controls.blocked = () => tape.active;
+controls.blocked = () => tape.active || replay.active;
 const ranges = new RangeRings();
 scene.add(ranges.group);
 
@@ -282,7 +283,8 @@ hud.onCharge = (unit, target) => {
 hud.onFight = (unit, target) => bus.dispatch({ type: "fight", unit, target });
 // IA: con un bando a cargo de la IA, el botón la pausa o la reanuda; sin IA, juega la fase
 // en curso por el bando activo (para probar o para ver una partida entera)
-const ai = new AiController(bus, () => shots.playing || endDialog.open || modal.open);
+const replay = new Replay(bus);
+const ai = new AiController(bus, () => shots.playing || endDialog.open || modal.open || replay.active);
 ai.onAction = (t) => toast(`IA · ${t}`);
 ai.onFocus = (u) => {
   if (!settings.followAi) return;
@@ -564,6 +566,18 @@ document.getElementById("test-armies")!.addEventListener("click", () => {
   toast(`Ejércitos de prueba desplegados (${listPoints(TEST_LEGION)} y ${listPoints(TEST_SWARM)} puntos) · ${MISSIONS[settings.mission].name}`);
 });
 missionPanel.onShowSummary = () => endDialog.show(bus.state);
+// Repetición (#61)
+endDialog.onReplay = () => { stopArrival(); controls.selected.clear(); replay.begin(); };
+replay.busy = () => shots.playing;
+replay.skipFx = () => shots.finish();
+replay.onCommand = (c) => {
+  if (!settings.followAi) return;
+  const s = bus.state;
+  const unit = "unit" in c ? (c as { unit: string }).unit : c.type === "moveMany" ? s.pieces.find((p) => p.id === c.moves[0]?.id)?.unit : null;
+  const ps = unit ? s.pieces.filter((p) => p.unit === unit) : [];
+  if (ps.length) cam.panTo(ps.reduce((a, p) => a + p.x, 0) / ps.length, ps.reduce((a, p) => a + p.z, 0) / ps.length, 60);
+};
+replay.onExit = () => refresh();
 endDialog.onNewGame = () => armies.show();
 let wasOver = bus.state.gameOver;
 hud.onSheetToggle = () => hud.renderSelection(bus.state, controls.selected, coherencyWarnings());
@@ -588,7 +602,7 @@ function refresh(_s?: unknown, cmd?: Command | null) {
   solids.sync(bus.state.terrain);
   if (arriving && arrivalBlocked(bus.state, arriving)) stopArrival();
   missionPanel.render(bus.state);
-  if (bus.state.gameOver && !wasOver && bus.state.mission) setTimeout(() => endDialog.show(bus.state), shots.playing ? 2500 : 600);
+  if (bus.state.gameOver && !wasOver && bus.state.mission && !replay.active) setTimeout(() => endDialog.show(bus.state), shots.playing ? 2500 : 600);
   wasOver = bus.state.gameOver;
   if (newAttacks.length) { playAttackFx(newAttacks); shots.playAll(newAttacks, bus.state); }
   soundFor(cmd ?? null);
@@ -618,7 +632,7 @@ function refresh(_s?: unknown, cmd?: Command | null) {
   if (ai.isAiTurn() && !ai.paused) $btn("end-turn").disabled = true;
   if (runtime.online) aiBtn.hidden = true;
   hud.renderSelection(bus.state, controls.selected, coherencyWarnings());
-  if (net?.session?.role !== "guest") writeTable(bus.serialize());   // el invitado no pisa su mesa guardada
+  if (net?.session?.role !== "guest" && !replay.active) writeTable(bus.serialize());   // el invitado no pisa su mesa guardada
 }
 bus.onChange(refresh);
 refresh();
@@ -627,6 +641,11 @@ refresh();
 window.addEventListener("keydown", (e) => {
   if ((e.target as HTMLElement)?.tagName === "INPUT" || modal.open) return;
   const mod = e.ctrlKey || e.metaKey;
+  if (replay.active) {
+    if (e.code === "Escape") replay.exit();
+    if (e.code === "Space") { e.preventDefault(); replay.togglePlay(); }
+    return;
+  }
   if (mod && e.code === "KeyZ" && !e.shiftKey) { e.preventDefault(); bus.undo(); return; }
   if (mod && (e.code === "KeyY" || (e.code === "KeyZ" && e.shiftKey))) { e.preventDefault(); bus.redo(); return; }
   if (mod) return;
@@ -672,6 +691,7 @@ renderer.setAnimationLoop(() => {
   effects.update(dt);
   solids.group.visible = (bus.state.rulesMode && pieces.dragging.size > 0) || !terrainPanel.hidden;
   ai.update(dt);
+  replay.update(dt);
   const targets = targetHover ? new Set(bus.state.pieces.filter((p) => p.unit === targetHover).map((p) => p.id)) : undefined;
   const shockedIds = bus.state.rulesMode ? new Set(bus.state.pieces.filter((p) => bus.state.units.find((u) => u.id === p.unit)?.shocked).map((p) => p.id)) : undefined;
   updateGuide();
@@ -805,4 +825,4 @@ menu.onQuick = (q) => {
 if (settings.showMenu) menu.show();
 
 // Para pruebas desde la consola
-(window as unknown as { mesa: unknown }).mesa = { bus, renderer, scene, los, suggestView, showSuggestion, hoverTarget: (u: string | null) => { targetHover = u; }, cam, pieces, controls, tape, ranges, tray, tables, shots, armies, ai, endDialog, fightOptions, net, tactics: { aiStep, fightStep, canFight }, stateHash };
+(window as unknown as { mesa: unknown }).mesa = { bus, renderer, scene, replay, los, suggestView, showSuggestion, hoverTarget: (u: string | null) => { targetHover = u; }, cam, pieces, controls, tape, ranges, tray, tables, shots, armies, ai, endDialog, fightOptions, net, tactics: { aiStep, fightStep, canFight, aiPlayPhase }, stateHash };

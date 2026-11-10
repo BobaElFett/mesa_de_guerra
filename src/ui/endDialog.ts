@@ -10,6 +10,7 @@ const $ = (id: string) => document.getElementById(id)!;
 
 export class EndDialog {
   onNewGame: () => void = () => {};
+  onReplay: () => void = () => {};
 
   constructor() {
     $("end-backdrop").addEventListener("pointerdown", (e) => { if (e.target === $("end-backdrop")) this.hide(); });
@@ -17,6 +18,7 @@ export class EndDialog {
       const b = (e.target as HTMLElement).closest("button");
       if (b?.dataset.act === "close") this.hide();
       if (b?.dataset.act === "new") { this.hide(); this.onNewGame(); }
+      if (b?.dataset.act === "replay") { this.hide(); this.onReplay(); }
     });
     window.addEventListener("keydown", (e) => { if (e.code === "Escape" && !$("end-backdrop").hidden) this.hide(); });
   }
@@ -48,8 +50,8 @@ export class EndDialog {
       + `<tr><td>Puntos de ejército perdidos</td><td>${pointsLost(s, "legion")}</td><td>${pointsLost(s, "swarm")}</td></tr></table>`
       + `<h3>Unidades destruidas por la ${FACTIONS.legion.name}</h3><ul>${kills(0)}</ul>`
       + `<h3>Unidades destruidas por ${FACTIONS.swarm.name}</h3><ul>${kills(1)}</ul>`
-      + `<div class="row" style="justify-content:flex-end;gap:6px;margin-top:10px"><span class="dim" style="font-size:12px;margin-right:auto">Ctrl+Z vuelve atrás para revisar la partida.</span>`
-      + `<button data-act="close">Cerrar</button><button data-act="new" class="primary">Nueva partida</button></div>`;
+      + `<div class="row" style="justify-content:flex-end;gap:6px;margin-top:10px"><span class="dim" style="font-size:12px;margin-right:auto">La repetición vuelve a jugar la batalla desde el despliegue.</span>`
+      + `<button data-act="close">Cerrar</button><button data-act="replay">Ver repetición</button><button data-act="new" class="primary">Nueva partida</button></div>`;
     $("end-backdrop").hidden = false;
     modal.open = true;
   }
