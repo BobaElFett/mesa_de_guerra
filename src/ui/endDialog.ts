@@ -12,6 +12,7 @@ const $ = (id: string) => document.getElementById(id)!;
 export class EndDialog {
   onNewGame: () => void = () => {};
   onReplay: () => void = () => {};
+  onCampaign: () => void = () => {};
 
   constructor() {
     $("end-backdrop").addEventListener("pointerdown", (e) => { if (e.target === $("end-backdrop")) this.hide(); });
@@ -20,6 +21,7 @@ export class EndDialog {
       if (b?.dataset.act === "close") this.hide();
       if (b?.dataset.act === "new") { this.hide(); this.onNewGame(); }
       if (b?.dataset.act === "replay") { this.hide(); this.onReplay(); }
+      if (b?.dataset.act === "campaign") { this.hide(); this.onCampaign(); }
     });
     window.addEventListener("keydown", (e) => { if (e.code === "Escape" && !$("end-backdrop").hidden) this.hide(); });
   }
@@ -59,7 +61,7 @@ export class EndDialog {
       + mvpLine
       + `<div class="stats-wrap">${table("legion")}${table("swarm")}</div>`
       + `<div class="row" style="justify-content:flex-end;gap:6px;margin-top:10px">`
-      + `<button data-act="close">Cerrar</button><button data-act="replay">Ver repetición</button><button data-act="new" class="primary">Nueva partida</button></div>`;
+      + `<button data-act="close">Cerrar</button><button data-act="replay">Ver repetición</button>${s.campaignBattle ? `<button data-act="campaign" class="primary">Seguir la campaña</button>` : `<button data-act="new" class="primary">Nueva partida</button>`}</div>`;
     $("end-backdrop").hidden = false;
     modal.open = true;
   }

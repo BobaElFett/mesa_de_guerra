@@ -179,6 +179,7 @@ export function performAttack(s: GameState, kind: AttackLogEntry["kind"], unitId
     target: { profile: tds.profile, models: targetModels, armored: tds.abilities.includes("blindado") },
     distance: extra.distance, stationary: extra.stationary, cover: extra.cover,
     rerollHitOnes: underCommand(s, unitId) && !extra.overwatch,
+    rerollWoundOnes: !!attacker.veteran && !extra.mortal,
     onlySixes: extra.overwatch,
     mortal: extra.mortal,
     woundMod: kind === "disparo" && !extra.overwatch && hasStrat(s, "punteria", unitId) ? 1 : 0,

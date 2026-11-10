@@ -30,6 +30,9 @@ import { ArrivalView } from "./view/arrivalView";
 import { SuggestView } from "./view/suggestView";
 import { LosView } from "./view/losView";
 import { Replay } from "./ui/replay";
+import { CampaignDialog, loadCampaign, saveCampaign } from "./ui/campaign";
+import { CAMPAIGN, recordBattle } from "./rules/campaign";
+import { randomMap } from "./rules/maps";
 import { suggest } from "./ai/suggest";
 import { arrivalBlocked, arrivalPlacement } from "./rules/reserves";
 import { Tutorial } from "./ui/tutorial";
@@ -643,6 +646,7 @@ function refresh(_s?: unknown, cmd?: Command | null) {
   applyAtmosphere(bus.state.rulesMode ? bus.state.conditions : undefined);
   if (arriving && arrivalBlocked(bus.state, arriving)) stopArrival();
   missionPanel.render(bus.state);
+  if (bus.state.gameOver && !wasOver) recordCampaign();
   if (bus.state.gameOver && !wasOver && bus.state.mission && !replay.active) setTimeout(() => endDialog.show(bus.state), shots.playing ? 2500 : 600);
   wasOver = bus.state.gameOver;
   if (newAttacks.length) { playAttackFx(newAttacks); shots.playAll(newAttacks, bus.state); }
@@ -868,6 +872,44 @@ menu.onQuick = (q) => {
   if (runtime.spectate) { settings.followAi = true; toast(`${MISSIONS[q.mission].name}: IA ${AI_LEVEL_NAME[q.level]} contra IA ${AI_LEVEL_NAME[q.level]}. Pausa con el botón de la IA; «Dejar de mirar» te devuelve la mesa.`); return; }
   toast(`${MISSIONS[q.mission].name} contra la IA (${AI_LEVEL_NAME[q.level]}). Coloca tu ejército y pulsa Empezar partida.`);
 };
+// Campaña (#70)
+const campaign = new CampaignDialog();
+campaign.lists = (mine) => {
+  if (!mine) return { legion: TEST_LEGION, swarm: TEST_SWARM };
+  const l = armies.current();
+  const bad = (["legion", "swarm"] as const).filter((f) => validateList(l[f], f).length);
+  return bad.length ? "Tus listas de Ejércitos no son válidas: corrígelas o usa las de prueba." : { legion: l.legion, swarm: l.swarm };
+};
+campaign.onPlay = (c, n) => {
+  const b = CAMPAIGN[n - 1];
+  runtime.spectate = false;
+  settings.aiSide = c.side === "legion" ? "swarm" : "legion";
+  settings.aiLevel = c.level;
+  saveSettings();
+  bus.dispatch({ type: "setTerrain", pieces: randomMap(c.seed + n * 7919) });
+  bus.dispatch({ type: "setArmies", legion: c.lists.legion, swarm: c.lists.swarm, mission: b.mission, campaign: n, ...(b.conditions ? { conditions: b.conditions } : {}) });
+  if (!bus.state.rulesMode) bus.dispatch({ type: "setRulesMode", on: true });
+  ai.paused = false;
+  controls.selected.clear(); controls.onSelectionChange();
+  cam.reset();
+  if (c.side === "swarm") cam.sideOf(1);
+  toast(`${b.name}: ${b.intro} Coloca tu ejército y pulsa Empezar partida.`);
+};
+menu.onCampaign = () => campaign.show();
+function campaignInfo() {
+  const c = loadCampaign(), el = document.getElementById("menu-campaign-info")!;
+  el.textContent = !c ? "tres batallas seguidas contra la IA" : c.results.length >= CAMPAIGN.length ? "campaña terminada: ver el resultado" : `en curso: batalla ${c.results.length + 1} de ${CAMPAIGN.length}`;
+}
+campaignInfo();
+campaign.onChange = campaignInfo;
+endDialog.onCampaign = () => campaign.show();
+/** Al acabar una batalla de la campaña, se apunta el resultado (una sola vez). */
+function recordCampaign() {
+  const s = bus.state, c = loadCampaign();
+  if (!c || !s.campaignBattle || replay.active) return;
+  const next = recordBattle(c, s);
+  if (next) { saveCampaign(next); campaignInfo(); }
+}
 if (settings.showMenu) menu.show();
 
 // Para pruebas desde la consola

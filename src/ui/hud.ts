@@ -99,6 +99,7 @@ function sheetDetails(s: GameState, uid: string): string {
     html += `<tr><td>${w.name}${who}${ab ? `<div class="dim">${ab}</div>` : ""}</td><td>${w.range === "CC" ? "CC" : `${w.range}"`}</td><td>${w.attacks}</td><td>${w.skill ? `${w.skill}+` : "—"}</td><td>${w.strength}</td><td>${w.ap === 0 ? "0" : `−${-w.ap}`}</td><td>${w.damage}</td></tr>`;
   }
   html += `</table>`;
+  if (unit.veteran) html += `<div class="abil"><div><b style="color:#e8b84a">Veterana:</b> sobrevivió a una batalla de la campaña; repite los 1 al herir.</div></div>`;
   if (ds.abilities.length) html += `<div class="abil">${ds.abilities.map((a) => `<div><b>${UNIT_ABILITY_TEXT[a].name}:</b> ${UNIT_ABILITY_TEXT[a].text}</div>`).join("")}</div>`;
   const hurt = models.filter((p) => (p.damage ?? 0) > 0);
   if (hurt.length) html += `<div class="dim">Heridas: ${hurt.map((p) => `${p.leader ? leaderName : p.id} ${ds.profile.W - (p.damage ?? 0)}/${ds.profile.W}`).join(" · ")}</div>`;

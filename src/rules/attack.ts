@@ -77,6 +77,8 @@ export interface AttackInput {
   woundMod?: number;
   /** Repetir los 1 al impactar (Al mando). */
   rerollHitOnes?: boolean;
+  /** Veterana (#71): repite los 1 al herir. */
+  rerollWoundOnes?: boolean;
   /** Fuego defensivo: solo impacta con 6 (sin modificadores). Torrente sigue impactando solo. */
   onlySixes?: boolean;
   /** Heridas mortales: cada impacto hiere solo y no hay salvación (Granadas). */
@@ -150,7 +152,8 @@ export function resolveAttack(input: AttackInput, dice: DiceSource): AttackResul
   let wounds = lethal, critWounds = 0;
   if (input.mortal) wounds = res.hits;
   for (let i = 0; i < (input.mortal ? 0 : res.hits - lethal); i++) {
-    const r = dice.d6();
+    let r = dice.d6();
+    if (r === 1 && input.rerollWoundOnes) r = dice.d6();
     res.woundRolls.push(r);
     const crit = r === 6;
     if (r !== 1 && (crit || r + wmod >= toWound)) {

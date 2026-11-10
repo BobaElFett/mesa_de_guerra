@@ -17,6 +17,8 @@ export interface ArmyEntry {
   reserve?: boolean;
   /** Equipo opcional elegido (#63): ids de `Datasheet.options`. */
   options?: string[];
+  /** Veterana (campaña, #71). */
+  veteran?: boolean;
 }
 export interface ArmyList { name?: string; units: ArmyEntry[] }
 
@@ -104,6 +106,8 @@ export function deployArmies(s: GameState, legion: ArmyList, swarm: ArmyList, mi
       const unit: Unit = { id: `U${++unitN}`, datasheet: b.u.datasheet, faction, startingModels: b.u.models };
       const extra = optionPoints(b.ds, b.u.models, b.u.options);
       if (extra) unit.points = (unitPoints(b.ds, b.u.models) ?? 0) + extra;
+      if (b.u.veteran) unit.veteran = true;
+      unit.entry = b.i;
       if (b.attached) unit.attachedTo = unitIdOf.get(b.u.leads!);
       unitIdOf.set(b.i, unit.id);
       if (b.u.reserve && canReserve(b.ds)) reserved.push(unit.id);

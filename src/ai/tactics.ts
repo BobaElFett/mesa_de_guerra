@@ -185,7 +185,7 @@ function scorePosition(s: GameState, unitId: string, dx: number, dz: number, kin
         if (e.attachedTo && partnerOf(s, e.id)) continue;   // protegido por su escuadra
         const g = groupGap(models, s.pieces.filter((p) => p.unit === e.id));
         if (g > reach(s, w)) continue;
-        const v = attackValue(s, e.id, expectedAttack(s, w, n, e.id, { distance: g, stationary, rerollHitOnes: underCommand(s, unitId) }));
+        const v = attackValue(s, e.id, expectedAttack(s, w, n, e.id, { distance: g, stationary, rerollHitOnes: underCommand(s, unitId), rerollWoundOnes: !!s.units.find((x) => x.id === unitId)?.veteran }));
         wb = Math.max(wb, v);
       }
       best += wb;
@@ -417,7 +417,7 @@ function bestShots(s: GameState, f: Faction, W?: Weights): ShotPick[] {
       for (const t of w.targets) {
         if (t.blocked) continue;
         const e = expectedAttack(s, w.weapon, t.attackers.length, t.unit, {
-          distance: t.distance, stationary, cover: t.cover, rerollHitOnes: underCommand(s, u.id),
+          distance: t.distance, stationary, cover: t.cover, rerollHitOnes: underCommand(s, u.id), rerollWoundOnes: !!u.veteran,
           woundMod: hasStrat(s, "punteria", u.id) ? 1 : 0,
         });
         out.push({ unit: u.id, weapon: w.weapon.id, target: t.unit, value: (attackValue(s, t.unit, e) + 0.01) * (W ? jitter(s, W, `${u.id}|${w.weapon.id}|${t.unit}`) : 1) });

@@ -35,6 +35,7 @@ export interface AttackContext {
   hitMod?: number;
   woundMod?: number;
   rerollHitOnes?: boolean;
+  rerollWoundOnes?: boolean;
   /** Fuego defensivo: solo impactan los 6. */
   onlySixes?: boolean;
   /** Heridas mortales: sin tirada para herir ni salvación. */
@@ -68,7 +69,8 @@ export function expectedAttack(s: GameState, weapon: Weapon, attackers: number, 
     if (hasAbility(weapon, "sostenida")) hits += crits * abilityX(weapon, "sostenida");
   }
   const lethal = hasAbility(weapon, "letal") ? crits : 0;
-  const pw = pD6(woundTarget(weapon.strength, P.T) - clamp1(ctx.woundMod ?? 0));
+  let pw = pD6(woundTarget(weapon.strength, P.T) - clamp1(ctx.woundMod ?? 0));
+  if (ctx.rerollWoundOnes) pw += pw / 6;
   const wounds = ctx.mortal ? hits : lethal + (hits - lethal) * pw;
   const sv = ctx.mortal ? null : saveTarget(P, weapon.ap, !!ctx.cover);
   const pFail = sv === null ? 1 : (clamp(sv, 2, 7) - 1) / 6;

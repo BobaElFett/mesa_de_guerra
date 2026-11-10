@@ -56,7 +56,11 @@ export class PiecesView {
       e.item = item;
     };
     for (const t of state.terrain) upsert(t.id, { kind: "terrain", terrain: t }, () => shadowed(makeTerrain(t.kind)), t, `t:${t.kind}`);
-    for (const p of state.pieces) upsert(p.id, { kind: "mini", piece: p }, () => miniatureFor(p), p, `m:${p.model}:${p.pose ?? 0}:${p.leader ? 1 : 0}`);
+    const vets = new Set(state.units.filter((u) => u.veteran).map((u) => u.id));
+    for (const p of state.pieces) {
+      const vet = !!p.unit && vets.has(p.unit);
+      upsert(p.id, { kind: "mini", piece: p }, () => { const g = miniatureFor(p); if (vet) g.add(veteranMark(BASE_RADIUS[p.model])); return g; }, p, `m:${p.model}:${p.pose ?? 0}:${p.leader ? 1 : 0}:${vet ? "v" : ""}`);
+    }
     for (const [id, e] of this.entries) {
       if (seen.has(id)) { e.dying = undefined; e.group.scale.setScalar(1); continue; }
       if (this.held.has(id)) continue;
@@ -200,4 +204,19 @@ function shortAngle(from: number, to: number): number {
   if (d > Math.PI) d -= Math.PI * 2;
   if (d < -Math.PI) d += Math.PI * 2;
   return d;
+}
+
+// Veterana (#71): anillo dorado en el borde de la peana y tres galones
+const VET_MAT = new THREE.MeshStandardMaterial({ color: "#e8b84a", emissive: "#6a4a10", emissiveIntensity: 0.6, roughness: 0.4, metalness: 0.6 });
+function veteranMark(r: number): THREE.Object3D {
+  const g = new THREE.Group();
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(r + 0.03, 0.045, 4, 28).rotateX(Math.PI / 2), VET_MAT);
+  ring.position.y = 0.2;
+  g.add(ring);
+  for (let i = 0; i < 3; i++) {
+    const c = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.05, 0.06), VET_MAT);
+    c.position.set(-0.22 + i * 0.22, 0.24, r - 0.02);
+    g.add(c);
+  }
+  return g;
 }

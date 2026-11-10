@@ -62,6 +62,10 @@ export interface Unit {
   reserve?: boolean;
   /** Coste total con el equipo opcional (#66); sin él, el de su tamaño inicial. */
   points?: number;
+  /** Veterana de una batalla anterior de la campaña (#71): repite los 1 al herir. */
+  veteran?: boolean;
+  /** Índice de su entrada en la lista de ejército (campaña, #70). */
+  entry?: number;
 }
 
 export type TerrainKind = "ruina" | "ruinaGrande" | "cajas" | "crater" | "bunker" | "barricada";
@@ -117,6 +121,8 @@ export interface GameState {
   vp?: [number, number];     // puntos de victoria de cada jugador
   vpLog?: VpEntry[];
   kills?: KillEntry[];       // unidades destruidas, en orden
+  /** Batalla de la campaña que se juega (1-3, #70). */
+  campaignBattle?: number;
   /** Condiciones de batalla (#68). */
   conditions?: "noche" | "tormenta";
   /** Estadísticas por unidad (#65). */
