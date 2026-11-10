@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { GameState, Piece } from "../core/state";
-import { DATASHEETS, WEAPONS } from "../rules/datasheets";
+import { DATASHEETS, pieceWeaponIds, WEAPONS } from "../rules/datasheets";
+import { reach } from "../rules/conditions";
 import { disc, gap, sight, Sight } from "../rules/geometry";
 
 // Línea de visión al apuntar (#60): desde cada miniatura propia a la miniatura objetivo más
@@ -31,8 +32,8 @@ export class LosView {
     if (!tps.length) return;
     for (const a of own) {
       const u = s.units.find((x) => x.id === a.unit)!;
-      const reach = Math.max(0, ...DATASHEETS[u.datasheet].weapons.map((w) => WEAPONS[w].range).filter((r): r is number => typeof r === "number"));
-      if (!reach) continue;
+      const reachIn = Math.max(0, ...s.pieces.filter((q) => q.id === a.id).flatMap((q) => pieceWeaponIds(DATASHEETS[u.datasheet], q)).map((w) => reach(s, WEAPONS[w])));
+      if (!reachIn) continue;
       let best: { p: Piece; s: Sight; d: number } | null = null;
       let nearest: { p: Piece; d: number } | null = null;
       for (const b of tps) {
@@ -43,7 +44,7 @@ export class LosView {
         const better = !best || (best.s === "cobertura" && sg === "visible") || (best.s === sg && d < best.d);
         if (better) best = { p: b, s: sg, d };
       }
-      const kind: Sight | "lejos" = best ? (best.d > reach ? "lejos" : best.s) : "oculta";
+      const kind: Sight | "lejos" = best ? (best.d > reachIn ? "lejos" : best.s) : "oculta";
       this.summary[kind]++;
       const to = best?.p ?? nearest!.p;
       this.line(a, to, kind);

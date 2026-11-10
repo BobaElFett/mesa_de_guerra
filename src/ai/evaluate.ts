@@ -1,4 +1,5 @@
 import { unitCost as costOf } from "../rules/datasheets";
+import { conditionHitMod } from "../rules/conditions";
 import { pieceWeaponIds } from "../rules/datasheets";
 import { BASE_RADIUS, GameState, Piece } from "../core/state";
 import { abilityX, DATASHEETS, Dice, hasAbility, unitPoints, Weapon, WEAPONS } from "../rules/datasheets";
@@ -58,7 +59,8 @@ export function expectedAttack(s: GameState, weapon: Weapon, attackers: number, 
   let hits: number, crits: number;
   if (hasAbility(weapon, "torrente") || weapon.skill === null) { hits = attacks; crits = 0; }
   else {
-    const mod = clamp1((ctx.hitMod ?? 0) + (hasAbility(weapon, "pesada") && ctx.stationary ? 1 : 0));
+    const storm = !ctx.onlySixes && !ctx.mortal && range > 0 ? conditionHitMod(s, ctx.distance) : 0;
+    const mod = clamp1((ctx.hitMod ?? 0) + storm + (hasAbility(weapon, "pesada") && ctx.stationary ? 1 : 0));
     let p = ctx.onlySixes ? 1 / 6 : pD6(weapon.skill - mod);
     if (ctx.rerollHitOnes && !ctx.onlySixes) p += p / 6;
     hits = attacks * p;

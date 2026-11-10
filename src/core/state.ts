@@ -117,6 +117,8 @@ export interface GameState {
   vp?: [number, number];     // puntos de victoria de cada jugador
   vpLog?: VpEntry[];
   kills?: KillEntry[];       // unidades destruidas, en orden
+  /** Condiciones de batalla (#68). */
+  conditions?: "noche" | "tormenta";
   /** Estadísticas por unidad (#65). */
   stats?: Record<string, { dmg: number; kills: number; pts: number; taken: number; lost: number }>;
   killPts?: [number, number];

@@ -8,7 +8,7 @@ import { modal } from "./modal";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 
-export interface QuickGame { side: Faction | "mirar"; level: AiLevel; mission: MissionId; map: "aleatorio" | "ejemplo"; lists: "prueba" | "mias" }
+export interface QuickGame { side: Faction | "mirar"; level: AiLevel; mission: MissionId; map: "aleatorio" | "ejemplo"; lists: "prueba" | "mias"; conditions?: "" | "noche" | "tormenta" }
 
 export class StartMenu {
   onContinue: () => void = () => {};
@@ -44,6 +44,7 @@ export class StartMenu {
           mission: $<HTMLSelectElement>("q-mission").value as MissionId,
           map: $<HTMLSelectElement>("q-map").value as QuickGame["map"],
           lists: $<HTMLSelectElement>("q-lists").value as QuickGame["lists"],
+          conditions: $<HTMLSelectElement>("q-cond").value as QuickGame["conditions"],
         };
         try { localStorage.setItem("mesa-de-guerra.rapida", JSON.stringify(q)); } catch { /* nada */ }
         this.onQuick(q);
@@ -56,7 +57,7 @@ export class StartMenu {
       const q = JSON.parse(localStorage.getItem("mesa-de-guerra.rapida") ?? "null") as QuickGame | null;
       if (q) {
         $<HTMLSelectElement>("q-side").value = q.side; $<HTMLSelectElement>("q-level").value = q.level;
-        $<HTMLSelectElement>("q-mission").value = q.mission; $<HTMLSelectElement>("q-map").value = q.map; $<HTMLSelectElement>("q-lists").value = q.lists;
+        $<HTMLSelectElement>("q-mission").value = q.mission; $<HTMLSelectElement>("q-map").value = q.map; $<HTMLSelectElement>("q-lists").value = q.lists; $<HTMLSelectElement>("q-cond").value = q.conditions ?? "";
       } else $<HTMLSelectElement>("q-level").value = "normal";
     } catch { /* nada */ }
     desc();

@@ -30,7 +30,7 @@ export type Command =
   /** Sustituye la escenografía por un mapa entero (#51). */
   | { type: "setTerrain"; pieces: TerrainPiece[] }
   /** Sustituye los ejércitos por dos listas desplegadas en sus zonas. */
-  | { type: "setArmies"; legion: ArmyList; swarm: ArmyList; mission?: MissionId }
+  | { type: "setArmies"; legion: ArmyList; swarm: ArmyList; mission?: MissionId; conditions?: "noche" | "tormenta" }
   /** Mesa libre: retirar miniaturas a mano (bajas, recolocar…). */
   | { type: "removePieces"; ids: string[] }
   /** Volver a tirar algunos dados de la última tirada (por índice). */
@@ -114,6 +114,7 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
     }
     case "setArmies": {
       deployArmies(s, cmd.legion, cmd.swarm, cmd.mission);
+      if (cmd.conditions) s.conditions = cmd.conditions; else delete s.conditions;
       break;
     }
     case "removePieces": {

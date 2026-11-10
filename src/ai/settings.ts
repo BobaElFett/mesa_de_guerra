@@ -11,11 +11,13 @@ export interface GameSettings {
   volume: number; followAi: boolean; guideRings: boolean; confirmAdvance: boolean; hoverTips: boolean; showMenu: boolean;
   /** Gráficos (#58): alta = sombras suaves y pantalla nítida; rapida = sin sombras y a 1×. */
   graphics: "alta" | "rapida";
+  /** Condiciones de batalla de la próxima partida (#68). */
+  conditions: "" | "noche" | "tormenta";
 }
 
 const KEY = "mesa-de-guerra.ajustes";
 const DEFAULTS: GameSettings = { aiSide: "swarm", aiLevel: "normal", mission: "tomar", map: "actual", diceSpeed: "normal",
-  volume: 0.55, followAi: true, guideRings: true, confirmAdvance: true, hoverTips: true, showMenu: true, graphics: "alta" };
+  volume: 0.55, followAi: true, guideRings: true, confirmAdvance: true, hoverTips: true, showMenu: true, graphics: "alta", conditions: "" };
 
 export const AI_LEVEL_NAME: Record<AiLevel, string> = { facil: "Fácil", normal: "Normal", dificil: "Difícil" };
 

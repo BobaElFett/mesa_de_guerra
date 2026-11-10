@@ -1,3 +1,4 @@
+import { CONDITIONS } from "../rules/conditions";
 import { FACTIONS, GameState, PLAYERS } from "../core/state";
 import { FIRST_SCORING_ROUND, MISSIONS, objectiveStatus } from "../rules/missions";
 import { MAX_ROUNDS } from "../rules/turn";
@@ -47,6 +48,6 @@ export class MissionPanel {
     el.innerHTML = `<div class="m-head"><span class="m-name">${m.name}</span><span class="dim">ronda ${Math.min(s.turn, MAX_ROUNDS)}/${MAX_ROUNDS}</span>`
       + `<button class="m-fold" data-act="fold">${this.folded ? "Ver" : "Plegar"}</button></div>`
       + `<div class="vp"><span style="color:${C(0)}">Legión <b>${vp[0]}</b></span><span class="dim">PV</span><span style="color:${C(1)}"><b>${vp[1]}</b> Enjambre</span></div>`
-      + `<ul>${rows}</ul>${proj}<div class="m-sum">${m.summary}</div>${end}`;
+      + `<ul>${rows}</ul>${proj}${s.conditions ? `<div class="m-cond"><b>${CONDITIONS[s.conditions].name}:</b> ${CONDITIONS[s.conditions].text}</div>` : ""}<div class="m-sum">${m.summary}</div>${end}`;
   }
 }

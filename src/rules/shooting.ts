@@ -1,3 +1,4 @@
+import { conditionHitMod, reach } from "./conditions";
 import { pieceWeaponIds } from "./datasheets";
 import { recordDamage } from "./stats";
 import { note } from "./history";
@@ -114,7 +115,7 @@ export function shootingOptions(s: GameState, unitId: string): ShootingOptions {
           if (sg === "oculta") continue;
           const d = gap(disc(a), disc(b));
           t.distance = Math.min(t.distance, d);
-          if (d <= (weapon.range as number) + 1e-6) {
+          if (d <= reach(s, weapon) + 1e-6) {
             ok = true;
             if (sg === "visible") anyClear = true;
           }
@@ -127,7 +128,7 @@ export function shootingOptions(s: GameState, unitId: string): ShootingOptions {
       else if (selfEngaged && !engagedWithMe) t.blocked = "Trabada: solo puede disparar a quien la traba.";
       else if (!selfEngaged && engagedWithAny(s, e.id)) t.blocked = "Está trabada con tus tropas.";
       else if (t.distance === Infinity) t.blocked = "Sin visión.";
-      else if (!t.attackers.length) t.blocked = `Fuera de alcance (${fmt(t.distance)}; alcance ${weapon.range}").`;
+      else if (!t.attackers.length) t.blocked = `Fuera de alcance (${fmt(t.distance)}; alcance ${reach(s, weapon)}"${reach(s, weapon) < (weapon.range as number) ? ", de noche" : ""}).`;
       opt.targets.push(t);
     }
     return opt;
@@ -181,7 +182,8 @@ export function performAttack(s: GameState, kind: AttackLogEntry["kind"], unitId
     onlySixes: extra.overwatch,
     mortal: extra.mortal,
     woundMod: kind === "disparo" && !extra.overwatch && hasStrat(s, "punteria", unitId) ? 1 : 0,
-    hitMod: kind === "combate" && hasStrat(s, "furia", unitId) ? 1 : 0,
+    hitMod: (kind === "combate" && hasStrat(s, "furia", unitId) ? 1 : 0)
+      + (kind === "disparo" && !extra.overwatch && !extra.mortal ? conditionHitMod(s, extra.distance) : 0),
   }, dice);
   s.rng = dice.state;
 

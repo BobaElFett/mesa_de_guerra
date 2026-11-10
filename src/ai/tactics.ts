@@ -1,3 +1,4 @@
+import { reach } from "../rules/conditions";
 import { pieceWeaponIds } from "../rules/datasheets";
 import { arriveStep } from "./arrival";
 import { overwatchBlocked, overwatchWeapons } from "../rules/reactions";
@@ -183,7 +184,7 @@ function scorePosition(s: GameState, unitId: string, dx: number, dz: number, kin
       for (const e of enemies) {
         if (e.attachedTo && partnerOf(s, e.id)) continue;   // protegido por su escuadra
         const g = groupGap(models, s.pieces.filter((p) => p.unit === e.id));
-        if (g > (w.range as number)) continue;
+        if (g > reach(s, w)) continue;
         const v = attackValue(s, e.id, expectedAttack(s, w, n, e.id, { distance: g, stationary, rerollHitOnes: underCommand(s, unitId) }));
         wb = Math.max(wb, v);
       }
@@ -243,7 +244,7 @@ function scorePosition(s: GameState, unitId: string, dx: number, dz: number, kin
       let best = 0;
       for (const wid of eds.weapons) {
         const w = WEAPONS[wid];
-        if (w.range === "CC" || g > w.range + eds.profile.M) continue;
+        if (w.range === "CC" || g > reach(s, w) + eds.profile.M) continue;
         best = Math.max(best, expectedAttack(s, w, em.length, unitId, { cover: covered * 2 >= seen }).damage);
       }
       rd += best * (seen / sample.length);

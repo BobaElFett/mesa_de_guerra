@@ -62,6 +62,7 @@ export class ArmyDialog {
     $<HTMLSelectElement>("ai-side").value = settings.aiSide ?? "";
     $<HTMLSelectElement>("ai-level").value = settings.aiLevel;
     $<HTMLSelectElement>("map-pick").value = settings.map;
+    $<HTMLSelectElement>("cond-pick").value = settings.conditions;
     const desc = () => { $("mission-desc").textContent = MISSIONS[settings.mission].summary; };
     desc();
     $("armies-setup").addEventListener("change", (e) => {
@@ -70,6 +71,7 @@ export class ArmyDialog {
       settings.aiSide = ($<HTMLSelectElement>("ai-side").value || null) as Faction | null;
       settings.aiLevel = $<HTMLSelectElement>("ai-level").value as AiLevel;
       settings.map = $<HTMLSelectElement>("map-pick").value as typeof settings.map;
+      settings.conditions = $<HTMLSelectElement>("cond-pick").value as typeof settings.conditions;
       saveSettings();
       desc();
       this.onSettings();
@@ -125,7 +127,7 @@ export class ArmyDialog {
     const errs = SIDES.flatMap((f) => validateList(this.lists[f], f));
     if (errs.length) { this.notify("Corrige las listas antes de desplegar."); return; }
     applyMap(this.bus);
-    this.bus.dispatch({ type: "setArmies", legion: clone(this.lists.legion), swarm: clone(this.lists.swarm), mission: settings.mission });
+    this.bus.dispatch({ type: "setArmies", legion: clone(this.lists.legion), swarm: clone(this.lists.swarm), mission: settings.mission, ...(settings.conditions ? { conditions: settings.conditions } : {}) });
     if (!this.bus.state.rulesMode) this.bus.dispatch({ type: "setRulesMode", on: true });
     this.hide();
     this.notify(`Ejércitos desplegados: ${listPoints(this.lists.legion)} y ${listPoints(this.lists.swarm)} puntos`);

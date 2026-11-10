@@ -1,3 +1,4 @@
+import { reach } from "../rules/conditions";
 import type { CommandBus } from "../core/commands";
 import { BOARD, GameState, PLAYERS } from "../core/state";
 import { DATASHEETS, WEAPONS } from "../rules/datasheets";
@@ -30,7 +31,7 @@ function scorePoint(s: GameState, unitId: string, x: number, z: number, smart: b
     if (melee) sc += p2D6(Math.max(2, Math.ceil(g - 1))) * attackValue(s, e.id, meleeExpected(s, unitId, e.id)) * 0.8;
     else for (const wid of ds.weapons) {
       const w = WEAPONS[wid];
-      if (w.range === "CC" || g > w.range) continue;
+      if (w.range === "CC" || g > reach(s, w)) continue;
       sc = Math.max(sc, sc + 0.5 * attackValue(s, e.id, expectedAttack(s, w, n, e.id, { distance: g })));
     }
   }

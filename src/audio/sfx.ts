@@ -1,7 +1,7 @@
 // Sonidos sintetizados (#53): nada de archivos, todo con WebAudio (ruido filtrado y osciladores),
 // al estilo de Señorío. El contexto se crea con el primer gesto del jugador (lo exigen los navegadores).
 
-export type Sfx = "rifle" | "pesado" | "plasma" | "acido" | "golpe" | "garra" | "impacto" | "baja" | "dados" | "carga" | "turno" | "clic" | "pv" | "granada";
+export type Sfx = "rifle" | "pesado" | "plasma" | "acido" | "golpe" | "garra" | "impacto" | "baja" | "dados" | "carga" | "turno" | "clic" | "pv" | "granada" | "trueno";
 
 const KEY = "mesa-de-guerra.sonido";
 
@@ -97,6 +97,7 @@ class Audio {
         case "turno": this.tone(at, 0.25, 523, 523, 0.18, "triangle"); this.tone(at + 0.16, 0.35, 784, 784, 0.18, "triangle"); break;
         case "clic": this.tone(at, 0.04, 1200, 900, 0.08, "square"); break;
         case "pv": this.tone(at, 0.2, 659, 659, 0.16, "sine"); this.tone(at + 0.12, 0.3, 988, 988, 0.16, "sine"); break;
+        case "trueno": this.burst(at, 0.25, 1800, 0.6, 0.35, "lowpass", 400); this.burst(at + 0.15, 2.4, 260, 0.5, 0.7, "lowpass", 60); this.tone(at + 0.1, 2, 70, 28, 0.35); break;
         case "granada": this.burst(at, 0.45, 500, 0.5, 0.9, "lowpass", 80); this.tone(at, 0.4, 90, 30, 0.6); break;
       }
     }

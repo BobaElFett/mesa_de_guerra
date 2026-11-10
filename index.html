@@ -233,6 +233,7 @@
   #end table.stats td:not(:first-child), #end table.stats th:not(:first-child) { text-align: center; }
   #end tr.mvp td { color: #ffd36b; }
   #end .mvp-line { margin: 10px 0 2px; text-align: center; }
+  .m-cond { margin: 6px 0; font-size: 12px; color: #9fb2ff; }
   #reserves { font-size: 12px; text-align: center; padding: 4px 0 2px; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; align-items: center; }
   #reserves button { font-size: 12px; padding: 3px 8px; border-color: #7dff9a88; }
   #reserves .warn { color: #ffb36b; }
@@ -399,6 +400,7 @@
       <button id="armies-close" style="margin-left:auto">Cerrar</button></div>
     <div class="setup-row" id="armies-setup">
       <label>Misión <select id="mission-pick"></select></label>
+      <label>Condiciones <select id="cond-pick"><option value="">Normales</option><option value="noche">Noche (visión 24")</option><option value="tormenta">Tormenta (−1 a impactar a más de 12")</option></select></label>
       <label>Mapa <select id="map-pick"><option value="actual">La mesa actual</option><option value="ejemplo">Mapa de ejemplo</option><option value="aleatorio">Aleatorio (simétrico)</option></select></label>
       <label>Rival <select id="ai-side"><option value="">Dos jugadores (sin IA)</option><option value="swarm">IA lleva el Enjambre</option><option value="legion">IA lleva la Legión</option></select></label>
       <label>Dificultad <select id="ai-level"><option value="facil">Fácil</option><option value="normal" selected>Normal</option><option value="dificil">Difícil</option></select></label>
@@ -448,6 +450,7 @@
         <label>Tu ejército <select id="q-side"><option value="legion">Legión Astral</option><option value="swarm">El Enjambre</option><option value="mirar">Ninguno: mirar IA contra IA</option></select></label>
         <label>IA <select id="q-level"><option value="facil">Fácil</option><option value="normal">Normal</option><option value="dificil">Difícil</option></select></label>
         <label>Misión <select id="q-mission"></select></label>
+        <label>Condiciones <select id="q-cond"><option value="">Normales</option><option value="noche">Noche (visión 24")</option><option value="tormenta">Tormenta (−1 a impactar a más de 12")</option></select></label>
         <label>Mapa <select id="q-map"><option value="aleatorio">Aleatorio (simétrico)</option><option value="ejemplo">Mapa de ejemplo</option></select></label>
         <label>Listas <select id="q-lists"><option value="prueba">Las de prueba (unos 470 puntos)</option><option value="mias">Las mías (Ejércitos)</option></select></label>
         <div id="q-desc" class="dim"></div>

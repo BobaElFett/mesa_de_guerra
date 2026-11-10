@@ -97,6 +97,39 @@ const rim = new THREE.DirectionalLight("#9fb4ff", 0.5);
 rim.position.set(40, 30, -50);
 scene.add(hemi, key, key.target, rim);
 
+// Condiciones de batalla (#68): la sala se oscurece de noche; con tormenta, gris y relámpagos
+let atmo: string | undefined = "?";
+let flashIn = 6, flash = 0;
+const BASE_LIGHT = { hemi: hemi.intensity, key: key.intensity, rim: rim.intensity, keyColor: key.color.clone(), bg: (BG as THREE.Color).clone() };
+function applyAtmosphere(c: string | undefined) {
+  if (c === atmo) return;
+  atmo = c;
+  const night = c === "noche", storm = c === "tormenta";
+  hemi.intensity = BASE_LIGHT.hemi * (night ? 0.3 : storm ? 0.65 : 1);
+  key.intensity = BASE_LIGHT.key * (night ? 0.35 : storm ? 0.6 : 1);
+  rim.intensity = BASE_LIGHT.rim * (night ? 1.6 : 1);
+  key.color.copy(BASE_LIGHT.keyColor);
+  if (night) key.color.set("#9fb2ff");
+  if (storm) key.color.set("#d8dde6");
+  const bg = BASE_LIGHT.bg.clone();
+  if (night) bg.multiplyScalar(0.45);
+  if (storm) bg.lerp(new THREE.Color("#4a5058"), 0.5);
+  scene.background = bg;
+  (scene.fog as THREE.Fog).color.copy(bg);
+  (scene.fog as THREE.Fog).near = night ? 60 : storm ? 80 : 140;
+  (scene.fog as THREE.Fog).far = night ? 220 : storm ? 260 : 420;
+}
+function stormTick(dt: number) {
+  if (atmo !== "tormenta") return;
+  if (flash > 0) {
+    flash -= dt;
+    key.intensity = BASE_LIGHT.key * (flash > 0 ? 0.6 + 2.2 * Math.max(0, flash / 0.18) : 0.6);
+    return;
+  }
+  flashIn -= dt;
+  if (flashIn <= 0) { flash = 0.18; flashIn = 7 + Math.random() * 10; sfx.play("trueno", 1, 0.4 + Math.random() * 0.8); }
+}
+
 /** Firma de todo lo que proyecta sombra: si cambia, hay que repintar el mapa de sombras. */
 let shadowSig = NaN;
 function shadowSignature(): number {
@@ -605,6 +638,7 @@ function refresh(_s?: unknown, cmd?: Command | null) {
   pieces.sync(bus.state);
   objectives.sync(bus.state);
   solids.sync(bus.state.terrain);
+  applyAtmosphere(bus.state.rulesMode ? bus.state.conditions : undefined);
   if (arriving && arrivalBlocked(bus.state, arriving)) stopArrival();
   missionPanel.render(bus.state);
   if (bus.state.gameOver && !wasOver && bus.state.mission && !replay.active) setTimeout(() => endDialog.show(bus.state), shots.playing ? 2500 : 600);
@@ -698,6 +732,7 @@ renderer.setAnimationLoop(() => {
   solids.group.visible = (bus.state.rulesMode && pieces.dragging.size > 0) || !terrainPanel.hidden;
   ai.update(dt);
   replay.update(dt);
+  stormTick(dt);
   const targets = targetHover ? new Set(bus.state.pieces.filter((p) => p.unit === targetHover).map((p) => p.id)) : undefined;
   const shockedIds = bus.state.rulesMode ? new Set(bus.state.pieces.filter((p) => bus.state.units.find((u) => u.id === p.unit)?.shocked).map((p) => p.id)) : undefined;
   updateGuide();
@@ -821,7 +856,8 @@ menu.onQuick = (q) => {
     else lists = { legion: mine.legion, swarm: mine.swarm };
   }
   applyMap(bus);
-  bus.dispatch({ type: "setArmies", legion: lists.legion, swarm: lists.swarm, mission: q.mission });
+  settings.conditions = q.conditions ?? ""; saveSettings();
+  bus.dispatch({ type: "setArmies", legion: lists.legion, swarm: lists.swarm, mission: q.mission, ...(q.conditions ? { conditions: q.conditions } : {}) });
   if (!bus.state.rulesMode) bus.dispatch({ type: "setRulesMode", on: true });
   ai.paused = false;
   controls.selected.clear(); controls.onSelectionChange();

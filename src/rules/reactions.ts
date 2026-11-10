@@ -1,3 +1,4 @@
+import { reach } from "./conditions";
 import { pieceWeaponIds } from "./datasheets";
 import { note, unitName } from "./history";
 import { GameState, PLAYERS } from "../core/state";
@@ -28,7 +29,7 @@ export function overwatchWeapons(s: GameState, targetId: string, chargerId: stri
       const w = WEAPONS[wid];
       if (w.range === "CC") continue;
       const d = Math.min(...chargers.map((q) => gap(disc(p), disc(q))));
-      if (d > w.range) continue;
+      if (d > reach(s, w)) continue;
       byW.set(wid, [...(byW.get(wid) ?? []), p.id]);
     }
   }
