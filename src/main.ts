@@ -351,6 +351,15 @@ document.getElementById("bot-phase")!.addEventListener("click", () => {
 // Línea de visión al apuntar (#60)
 const los = new LosView();
 scene.add(los.group);
+// Hoja de atajos (#76): la tecla ? la abre y la cierra
+const keysBox = document.getElementById("keys-backdrop")!;
+const toggleKeys = (on = keysBox.hidden) => { keysBox.hidden = !on; modal.open = on; };
+keysBox.addEventListener("click", (e) => { if (e.target === keysBox || (e.target as HTMLElement).closest("button[data-k=close]")) toggleKeys(false); });
+window.addEventListener("keydown", (e) => {
+  if ((e.target as HTMLElement)?.tagName === "INPUT" || (e.target as HTMLElement)?.tagName === "TEXTAREA") return;
+  if (e.key === "?") { e.preventDefault(); toggleKeys(); }
+  else if (e.code === "Escape" && !keysBox.hidden) toggleKeys(false);
+});
 // Deshacer mi jugada (#75): contra la IA, un Ctrl+Z vuelve a antes de tu última acción
 // (con todo lo que hizo la IA después). Ctrl+Alt+Z deshace una sola orden.
 function undoMine() {

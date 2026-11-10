@@ -245,6 +245,14 @@
   #phase-hint .guide { color: #9fe0a6; font-weight: 600; }
   .sel-hint { font-size: 12px; margin-top: 6px; }
   #ai-status { font-size: 12px; color: var(--gold); margin-left: 6px; white-space: nowrap; }
+  #keys-backdrop { position: fixed; inset: 0; z-index: 14; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; }
+  #keys-backdrop[hidden] { display: none; }
+  #keys { position: static; width: min(860px, 94vw); max-height: 88vh; overflow-y: auto; padding: 14px 20px; }
+  #keys h2 { margin: 0; font-family: "Rajdhani", sans-serif; }
+  #keys h3 { margin: 10px 0 4px; font-size: 13px; color: var(--gold); text-transform: uppercase; letter-spacing: .06em; }
+  #keys .keys-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 4px 22px; }
+  #keys td { padding: 2px 8px 2px 0; font-size: 13px; vertical-align: top; }
+  #keys td:first-child { white-space: nowrap; }
   #campaign-backdrop { position: fixed; inset: 0; z-index: 13; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; }
   #campaign-backdrop[hidden] { display: none; }
   #campaign { position: static; width: 560px; max-height: 88vh; overflow-y: auto; padding: 16px 22px; }
@@ -283,7 +291,7 @@
 <div id="help" class="panel">
   <h1 class="title">Mesa de Guerra</h1>
   <button id="help-toggle">Ocultar</button>
-  <div class="sub">Campaña (v0.28)</div>
+  <div class="sub">Ayudas (v0.29)</div>
   <button id="tutorial-start" class="primary" style="width:100%;margin:4px 0 6px">Tutorial: aprende a jugar (5 min)</button>
   <h2>Cámara</h2>
   <ul>
@@ -315,6 +323,7 @@
     <li><b>Repetición</b>: al acabar, <i>Ver repetición</i> vuelve a jugar la batalla desde el despliegue (pausa con <kbd>Espacio</kbd>, a 4× sin animaciones, <kbd>Esc</kbd> sale)</li>
     <li><b>Mirar IA contra IA</b>: en la partida rápida, «Tu ejército: Ninguno». <i>Pausar IA</i> para y <i>Dejar de mirar</i> te da la mesa</li>
     <li><kbd>H</kbd> o <b>Sugerir</b>: lo que haría la IA Difícil ahora (en dorado: quién, adónde y contra quién). No hace nada: tú decides</li>
+    <li><kbd>?</kbd> todos los atajos de teclado</li>
     <li><b>Campaña</b>: tres batallas seguidas contra la IA desde el menú; las unidades que sobreviven y hacen daño pasan a Veteranas (repiten los 1 al herir)</li>
     <li><b>Táctil</b>: dos dedos para acercar, girar y desplazar la vista</li>
     <li><b>Equipo</b>: en Ejércitos, casillas debajo de cada unidad para cambiar armas (con su coste)</li>
@@ -389,6 +398,7 @@
   <button id="terrain-delete">Borrar selección</button>
 </div>
 <div id="mission" class="panel" hidden></div>
+<div id="keys-backdrop" hidden><div id="keys" class="panel" role="dialog" aria-label="Atajos de teclado"><div style="display:flex;align-items:center"><h2>Atajos de teclado</h2><button data-k="close" style="margin-left:auto">Cerrar</button></div><div class="keys-grid"><div><h3>Cámara</h3><table><tr><td><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></td><td>desplazar (o botón central / dos dedos)</td></tr><tr><td><kbd>Q</kbd> <kbd>E</kbd></td><td>girar (o botón derecho)</td></tr><tr><td>Rueda</td><td>acercar y alejar (o pellizcar)</td></tr><tr><td><kbd>V</kbd></td><td>vista cenital</td></tr><tr><td><kbd>Inicio</kbd></td><td>vista inicial</td></tr></table></div><div><h3>Mesa</h3><table><tr><td>Clic</td><td>elegir (en modo reglas, la unidad entera; otro clic, solo esa miniatura)</td></tr><tr><td><kbd>Mayús</kbd>+clic</td><td>añadir o quitar de la selección</td></tr><tr><td><kbd>Alt</kbd>+clic</td><td>elegir solo esa miniatura</td></tr><tr><td><kbd>Ctrl</kbd>+<kbd>A</kbd></td><td>todo tu bando</td></tr><tr><td><kbd>R</kbd> / <kbd>Mayús</kbd>+<kbd>R</kbd></td><td>girar la selección</td></tr><tr><td><kbd>Supr</kbd></td><td>retirar (mesa libre)</td></tr><tr><td><kbd>Esc</kbd></td><td>cancelar o deseleccionar</td></tr><tr><td><kbd>Tab</kbd></td><td>siguiente unidad que aún puede actuar</td></tr></table></div><div><h3>Herramientas</h3><table><tr><td><kbd>M</kbd></td><td>cinta métrica</td></tr><tr><td><kbd>C</kbd></td><td>círculos de alcance</td></tr><tr><td><kbd>T</kbd></td><td>editar escenografía</td></tr><tr><td><kbd>G</kbd></td><td>rejilla</td></tr><tr><td><kbd>L</kbd></td><td>registro de la batalla</td></tr></table></div><div><h3>Partida</h3><table><tr><td><kbd>Intro</kbd></td><td>siguiente fase / pasar turno</td></tr><tr><td><kbd>H</kbd></td><td>sugerir jugada</td></tr><tr><td><kbd>Ctrl</kbd>+<kbd>Z</kbd></td><td>deshacer (contra la IA, tu última jugada)</td></tr><tr><td><kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>Z</kbd></td><td>deshacer una sola orden</td></tr><tr><td><kbd>Ctrl</kbd>+<kbd>Y</kbd></td><td>rehacer</td></tr><tr><td><kbd>Ctrl</kbd>+<kbd>S</kbd></td><td>guardar mesa (en Mesas)</td></tr></table></div><div><h3>Dados</h3><table><tr><td><kbd>Espacio</kbd></td><td>tirar</td></tr><tr><td><kbd>+</kbd> <kbd>−</kbd></td><td>cuántos dados</td></tr><tr><td><kbd>B</kbd></td><td>ver la bandeja</td></tr></table></div></div><div class="dim" style="margin-top:8px">Pulsa <kbd>?</kbd> para abrir o cerrar esta hoja.</div></div></div>
 <div id="campaign-backdrop" hidden><div id="campaign" class="panel" role="dialog" aria-label="Campaña"></div></div>
 <div id="end-backdrop" hidden><div id="end" class="panel" role="dialog" aria-label="Fin de la partida"></div></div>
 <div id="report" class="panel" hidden></div>

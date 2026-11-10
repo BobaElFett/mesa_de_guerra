@@ -9,6 +9,12 @@ Plan completo (visión, facciones, roadmap y backlog): documento *Mesa de Guerra
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor.
 
+## Novedades 0.29 · fase 11, ayudas y accesibilidad (#73–#76)
+- **Lección 2 del tutorial (#73):** al abrir el tutorial se elige lección. La 2 empieza en la ronda 2 con Exterminadores en reserva y enseña a traer reservas, pedir consejo (*Sugerir*), mirar la línea de visión y usar una estratagema (*Puntería*).
+- **Colores para daltónicos (#74):** Ajustes > *Colores de bando: azul y naranja*. Cambia paneles, anillos, objetivos y las miniaturas del Enjambre (al cambiarlo la página se recarga; la partida se guarda sola).
+- **Deshacer mi jugada (#75):** contra la IA, **Ctrl+Z** (o *Deshacer*) vuelve a antes de tu última acción, con todo lo que hizo la IA después. **Ctrl+Alt+Z** deshace una sola orden. Si al volver atrás sigue siendo el turno de la IA, se pausa.
+- **Hoja de atajos (#76):** la tecla **?** enseña todos los atajos de teclado.
+
 ## Novedades 0.28 · fase 10, campaña (#70–#72)
 - **Campaña de tres batallas (#70):** botón *Campaña* en el menú. Eliges bando, dificultad y listas, y juegas seguidas:
   1. *Cabeza de playa* (Toma y mantén);
