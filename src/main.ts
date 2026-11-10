@@ -32,6 +32,7 @@ import { LosView } from "./view/losView";
 import { Replay } from "./ui/replay";
 import { CampaignDialog, loadCampaign, saveCampaign } from "./ui/campaign";
 import { recordGame, RecordDialog } from "./ui/record";
+import { Codex } from "./ui/codex";
 import { CAMPAIGN, recordBattle } from "./rules/campaign";
 import { randomMap } from "./rules/maps";
 import { randomList } from "./rules/randomList";
@@ -974,6 +975,10 @@ campaign.onPlay = (c, n) => {
 menu.onCampaign = () => campaign.show();
 // Historial (#79): cada partida acabada contra la IA (sin red, sin mirar), una sola vez
 const records = new RecordDialog();
+// Códice (#91)
+const codex = new Codex();
+menu.onCodex = () => codex.show();
+hud.onCodex = (d) => codex.show(d as never);
 menu.onRecord = () => records.show();
 let recordedSig = "";
 function recordHistory() {

@@ -63,7 +63,8 @@ function singleCard(s: GameState, uid: string, inFormation = false): string {
   const F = FACTIONS[unit.faction];
   const pts = unitCost(unit);
   let html = `<div class="unit-card"><div class="uc-head"><b style="color:${F.color}">${ds.name}</b> <span class="dim">· ${alive}/${unit.startingModels} miniaturas${pts !== null ? ` · ${pts} pts` : ""}</span>`
-    + ` <button class="sheet-toggle" data-toggle="sheet" title="Mostrar u ocultar la hoja de datos">${sheetOpen ? "Ocultar hoja" : "Hoja de datos"}</button></div>`
+    + ` <button class="sheet-toggle" data-toggle="sheet" title="Mostrar u ocultar la hoja de datos">${sheetOpen ? "Ocultar hoja" : "Hoja de datos"}</button>`
+    + ` <button class="sheet-toggle" data-codex="${unit.datasheet}" title="Ver la unidad en el Códice">Códice</button></div>`
     + (badges ? `<div class="badges">${badges}</div>` : "")
     + statGrid(P);
   const actions = s.rulesMode ? phaseActions(s, uid, inFormation) : "";
@@ -252,6 +253,8 @@ export class Hud {
       const b = (e.target as HTMLElement).closest("button[data-move]") as HTMLButtonElement | null;
       if (b && !b.disabled) this.onDeclareMove(b.dataset.unit!, b.dataset.move as MoveKind);
       if ((e.target as HTMLElement).closest("button[data-toggle=sheet]")) { toggleSheet(); this.onSheetToggle(); return; }
+      const cx = (e.target as HTMLElement).closest("button[data-codex]") as HTMLButtonElement | null;
+      if (cx) { this.onCodex(cx.dataset.codex!); return; }
       const sh = (e.target as HTMLElement).closest("button[data-shoot]") as HTMLButtonElement | null;
       if (sh && !sh.disabled) { const [u, w, t] = sh.dataset.shoot!.split("|"); this.onShoot(u, w, t); }
       const ch = (e.target as HTMLElement).closest("button[data-charge]") as HTMLButtonElement | null;
@@ -376,6 +379,9 @@ export class Hud {
     if (el.innerHTML !== html) el.innerHTML = html;
     el.hidden = false;
   }
+
+  /** Abrir el Códice en una unidad (#91). */
+  onCodex: (datasheet: string) => void = () => {};
 
   /** Deshacer (main decide si es una orden o «mi jugada» contra la IA). */
   onUndo: () => void = () => this.bus.undo();
