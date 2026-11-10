@@ -1,3 +1,4 @@
+import { recordDamage } from "./stats";
 import { note } from "./history";
 import { hasStrat } from "./stratagems";
 import { recordCasualties } from "./missions";
@@ -183,8 +184,11 @@ export function performAttack(s: GameState, kind: AttackLogEntry["kind"], unitId
   }, dice);
   s.rng = dice.state;
 
+  const before = targetModels.reduce((a, m) => a + m.woundsLeft, 0);
   for (const p of s.pieces) if (p.unit === targetId && res.woundsLeft[p.id] !== undefined) p.damage = tds.profile.W - res.woundsLeft[p.id];
   const slain = new Set(res.slain);
+  const after = targetModels.reduce((a, m) => a + (slain.has(m.id) ? 0 : (res.woundsLeft[m.id] ?? m.woundsLeft)), 0);
+  recordDamage(s, unitId, targetId, before - after, slain.size);
   s.pieces = s.pieces.filter((p) => !slain.has(p.id));
   if (slain.size) recordCasualties(s, PLAYERS.indexOf(attacker.faction) as 0 | 1, targetId, slain.size);
 

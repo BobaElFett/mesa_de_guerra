@@ -2,6 +2,7 @@ import { FACTIONS, GameState } from "../core/state";
 import { DATASHEETS } from "../rules/datasheets";
 import { MISSIONS, outcome, pointsLost } from "../rules/missions";
 import { MAX_ROUNDS } from "../rules/turn";
+import { statsOf, unitOfTheMatch } from "../rules/stats";
 import { modal } from "./modal";
 
 // Resumen al acabar la partida (#35): quién gana, PV por ronda, bajas y puntos destruidos.
@@ -35,22 +36,29 @@ export class EndDialog {
       const v = [0, 1].map((p) => (s.vpLog ?? []).filter((e) => e.turn === r && e.player === p).reduce((n, e) => n + e.vp, 0));
       return `<tr><td>Ronda ${r}</td><td>${v[0] || "—"}</td><td>${v[1] || "—"}</td></tr>`;
     }).join("");
-    const kills = (p: 0 | 1) => {
-      const list = (s.kills ?? []).filter((k) => k.by === p).map((k) => {
-        const u = s.units.find((x) => x.id === k.unit);
-        return u ? `<li>${DATASHEETS[u.datasheet].name} <span class="dim">(ronda ${k.turn})</span></li>` : "";
+    // Estadísticas por unidad (#65)
+    const mvp = unitOfTheMatch(s);
+    const table = (f: "legion" | "swarm") => {
+      const rows = s.units.filter((u) => u.faction === f).map((u) => {
+        const st = statsOf(s, u.id);
+        const alive = s.pieces.filter((p) => p.unit === u.id).length + (s.reserves ?? []).filter((p) => p.unit === u.id).length;
+        const k = (s.kills ?? []).find((x) => x.unit === u.id);
+        const state = k ? `<span class="dim">destruida (r. ${k.turn})</span>` : alive < u.startingModels ? `${alive}/${u.startingModels}` : "entera";
+        return `<tr${u.id === mvp ? ' class="mvp"' : ""}><td>${DATASHEETS[u.datasheet].name}${u.id === mvp ? " ★" : ""}</td><td>${st.dmg}</td><td>${st.kills}</td><td>${Math.round(st.pts)}</td><td>${state}</td></tr>`;
       }).join("");
-      return list || `<li class="dim">Ninguna</li>`;
+      return `<h3>${name(f)}</h3><table class="stats"><tr><th>Unidad</th><th title="Heridas causadas">Daño</th><th title="Miniaturas enemigas eliminadas">Bajas</th><th title="Puntos de ejército enemigos destruidos">Pts</th><th>Estado</th></tr>${rows}</table>`;
     };
+    const mvpUnit = mvp ? s.units.find((u) => u.id === mvp) : null;
+    const mvpLine = mvpUnit ? `<div class="mvp-line">★ Unidad de la partida: <b style="color:${FACTIONS[mvpUnit.faction].color}">${DATASHEETS[mvpUnit.datasheet].name}</b> — ${Math.round(statsOf(s, mvp!).pts)} pts destruidos, ${statsOf(s, mvp!).dmg} heridas</div>` : "";
     $("end").innerHTML = `<div class="dim" style="text-align:center">Fin de la partida${m ? ` · ${m.name}` : ""}</div>`
       + `<div class="winner">${head}</div>`
       + `<div class="score">${name("legion")} <b>${o.vp[0]}</b> — <b>${o.vp[1]}</b> ${name("swarm")} <span class="dim">PV</span></div>`
       + `<table><tr><th></th><th>Legión</th><th>Enjambre</th></tr>${perRound}`
       + `<tr><td><b>Total</b></td><td><b>${o.vp[0]}</b></td><td><b>${o.vp[1]}</b></td></tr>`
       + `<tr><td>Puntos de ejército perdidos</td><td>${pointsLost(s, "legion")}</td><td>${pointsLost(s, "swarm")}</td></tr></table>`
-      + `<h3>Unidades destruidas por la ${FACTIONS.legion.name}</h3><ul>${kills(0)}</ul>`
-      + `<h3>Unidades destruidas por ${FACTIONS.swarm.name}</h3><ul>${kills(1)}</ul>`
-      + `<div class="row" style="justify-content:flex-end;gap:6px;margin-top:10px"><span class="dim" style="font-size:12px;margin-right:auto">La repetición vuelve a jugar la batalla desde el despliegue.</span>`
+      + mvpLine
+      + `<div class="stats-wrap">${table("legion")}${table("swarm")}</div>`
+      + `<div class="row" style="justify-content:flex-end;gap:6px;margin-top:10px">`
       + `<button data-act="close">Cerrar</button><button data-act="replay">Ver repetición</button><button data-act="new" class="primary">Nueva partida</button></div>`;
     $("end-backdrop").hidden = false;
     modal.open = true;

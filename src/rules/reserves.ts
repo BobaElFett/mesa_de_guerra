@@ -1,3 +1,4 @@
+import { recordDamage } from "./stats";
 import type { PieceMove } from "../core/commands";
 import { BASE_RADIUS, GameState, Piece, PLAYERS } from "../core/state";
 import { DATASHEETS, Datasheet, unitPoints } from "./datasheets";
@@ -117,5 +118,6 @@ export function loseLateReserves(s: GameState) {
     const opp = (1 - PLAYERS.indexOf(u.faction)) as 0 | 1;
     note(s, "baja", `${unitName(s, u.id)} no llegó a tiempo desde la reserva: se pierde`, PLAYERS.indexOf(u.faction) as 0 | 1);
     recordCasualties(s, opp, u.id, n);
+    recordDamage(s, null, u.id, 0, n);
   }
 }

@@ -228,6 +228,11 @@
   #replay { position: fixed; top: 64px; left: 50%; transform: translateX(-50%); z-index: 30; display: flex; gap: 8px; align-items: center; padding: 8px 12px; }
   #replay input[type=range] { width: 220px; }
   body.replaying #turn, body.replaying #reserves, body.replaying #action-menu, body.replaying #board-tip { pointer-events: none; opacity: 0.55; }
+  #end .stats-wrap { max-height: 300px; overflow-y: auto; margin-top: 6px; }
+  #end table.stats { width: 100%; font-size: 12px; }
+  #end table.stats td:not(:first-child), #end table.stats th:not(:first-child) { text-align: center; }
+  #end tr.mvp td { color: #ffd36b; }
+  #end .mvp-line { margin: 10px 0 2px; text-align: center; }
   #reserves { font-size: 12px; text-align: center; padding: 4px 0 2px; display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; align-items: center; }
   #reserves button { font-size: 12px; padding: 3px 8px; border-color: #7dff9a88; }
   #reserves .warn { color: #ffb36b; }

@@ -96,6 +96,7 @@ export function setupMission(s: GameState, id: MissionId) {
   s.vp = [0, 0];
   s.vpLog = [];
   s.kills = [];
+  s.stats = {};
   s.killPts = [0, 0];
 }
 
