@@ -31,6 +31,7 @@ import { SuggestView } from "./view/suggestView";
 import { LosView } from "./view/losView";
 import { Replay } from "./ui/replay";
 import { CampaignDialog, loadCampaign, saveCampaign } from "./ui/campaign";
+import { recordGame, RecordDialog } from "./ui/record";
 import { CAMPAIGN, recordBattle } from "./rules/campaign";
 import { randomMap } from "./rules/maps";
 import { suggest } from "./ai/suggest";
@@ -682,7 +683,7 @@ function refresh(_s?: unknown, cmd?: Command | null) {
   applyAtmosphere(bus.state.rulesMode ? bus.state.conditions : undefined);
   if (arriving && arrivalBlocked(bus.state, arriving)) stopArrival();
   missionPanel.render(bus.state);
-  if (bus.state.gameOver && !wasOver) recordCampaign();
+  if (bus.state.gameOver && !wasOver) { recordCampaign(); recordHistory(); }
   if (bus.state.gameOver && !wasOver && bus.state.mission && !replay.active) setTimeout(() => endDialog.show(bus.state), shots.playing ? 2500 : 600);
   wasOver = bus.state.gameOver;
   if (newAttacks.length) { playAttackFx(newAttacks); shots.playAll(newAttacks, bus.state); }
@@ -934,6 +935,18 @@ campaign.onPlay = (c, n) => {
   toast(`${b.name}: ${b.intro} Coloca tu ejército y pulsa Empezar partida.`);
 };
 menu.onCampaign = () => campaign.show();
+// Historial (#79): cada partida acabada contra la IA (sin red, sin mirar), una sola vez
+const records = new RecordDialog();
+menu.onRecord = () => records.show();
+let recordedSig = "";
+function recordHistory() {
+  const s = bus.state;
+  if (!settings.aiSide || runtime.online || runtime.spectate || replay.active || !s.mission) return;
+  const sig = `${bus.seed}:${bus.total}:${s.vp?.join("-")}`;
+  if (sig === recordedSig) return;
+  recordedSig = sig;
+  recordGame(s, settings.aiSide === "legion" ? "swarm" : "legion", settings.aiLevel);
+}
 function campaignInfo() {
   const c = loadCampaign(), el = document.getElementById("menu-campaign-info")!;
   el.textContent = !c ? "tres batallas seguidas contra la IA" : c.results.length >= CAMPAIGN.length ? "campaña terminada: ver el resultado" : `en curso: batalla ${c.results.length + 1} de ${CAMPAIGN.length}`;

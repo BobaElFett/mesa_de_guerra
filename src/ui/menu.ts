@@ -19,6 +19,7 @@ export class StartMenu {
   onOnline: () => void = () => {};
   onSettings: () => void = () => {};
   onCampaign: () => void = () => {};
+  onRecord: () => void = () => {};
   /** Hay partida que continuar (texto) o null. */
   continueInfo: () => string | null = () => null;
 
@@ -39,6 +40,7 @@ export class StartMenu {
       if (m === "online") this.onOnline();
       if (m === "settings") this.onSettings();
       if (m === "campaign") this.onCampaign();
+      if (m === "record") this.onRecord();
       if (m === "quick") {
         const q: QuickGame = {
           side: $<HTMLSelectElement>("q-side").value as QuickGame["side"],

@@ -9,6 +9,14 @@ Plan completo (visión, facciones, roadmap y backlog): documento *Mesa de Guerra
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor.
 
+## Novedades 0.30 · fase 12, personalización y poderes (#77–#79)
+- **Pinta tu ejército (#77):** en Ajustes, cuatro esquemas por bando. Legión: azul y oro, rojo y negro, verde y hueso o gris y blanco. Enjambre: morado, rojo carmesí, verde pantano u ocre. Cambian las miniaturas, las peanas y el color del bando en la interfaz (la página se recarga). Los colores para daltónicos mandan sobre los esquemas.
+- **Poderes psíquicos (#78):** dos personajes nuevos.
+  - **Psíquico de la Legión** (75 pts): M6 R4 Sv3+ Inv5+ H4; pistola bólter y báculo psíquico. Puede liderar una Escuadra de Asalto o los Exterminadores.
+  - **Mente del Enjambre** (80 pts): M6 R5 Sv4+ Inv5+ H5; garras afiladas. Es sináptica.
+  - Una vez por turno, en el disparo, usan su poder (*Rayo mental* / *Grito psíquico*) contra un enemigo visible a 18": **2D6 a 7 o más, D3 heridas mortales**. Con **doble 1 o doble 6**, el psíquico sufre 1 herida mortal. Sale en el menú de acciones al hacer clic en el enemigo, con su probabilidad; la IA lo usa.
+- **Historial (#79):** botón *Historial* en el menú. Cada partida acabada contra la IA queda apuntada en el navegador: victorias, empates y derrotas por dificultad y por bando, y las diez últimas (con misión, condición y si era de campaña).
+
 ## Novedades 0.29 · fase 11, ayudas y accesibilidad (#73–#76)
 - **Lección 2 del tutorial (#73):** al abrir el tutorial se elige lección. La 2 empieza en la ronda 2 con Exterminadores en reserva y enseña a traer reservas, pedir consejo (*Sugerir*), mirar la línea de visión y usar una estratagema (*Puntería*).
 - **Colores para daltónicos (#74):** Ajustes > *Colores de bando: azul y naranja*. Cambia paneles, anillos, objetivos y las miniaturas del Enjambre (al cambiarlo la página se recarga; la partida se guarda sola).
