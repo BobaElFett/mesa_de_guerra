@@ -355,6 +355,7 @@ function showSuggestion() {
   suggestView.show(s, sg.unit, sg.cmds);
   suggestAt = bus.length;
   toast(`Sugerencia: ${sg.text}`);
+  tutorial.flag("suggest"); tutorialTick();
   if (sg.unit) {
     const ps = s.pieces.filter((p) => p.unit === sg.unit);
     if (ps.length) cam.panTo(ps.reduce((a, p) => a + p.x, 0) / ps.length, ps.reduce((a, p) => a + p.z, 0) / ps.length, 40);
@@ -743,6 +744,7 @@ renderer.setAnimationLoop(() => {
   const shockedIds = bus.state.rulesMode ? new Set(bus.state.pieces.filter((p) => bus.state.units.find((u) => u.id === p.unit)?.shocked).map((p) => p.id)) : undefined;
   updateGuide();
   los.update(bus.state, targetHover ? actor() : null, targetHover);
+  if (tutorial.active && los.group.children.length) { tutorial.flag("los"); tutorialTick(); }
   pieces.matPending.opacity = 0.35 + 0.3 * Math.sin(performance.now() / 260);
   pieces.highlight(controls.selected, controls.hovered, controls.selected.size ? coherencyWarnings() : undefined, targets, shockedIds, canTargetIds, pendingIds);
   shots.update(dt);

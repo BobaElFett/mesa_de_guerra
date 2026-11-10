@@ -17,7 +17,7 @@ export const TUTORIAL_SWARM: ArmyList = { name: "Tutorial", units: [
   { datasheet: "nodo", models: 3 }, { datasheet: "garras", models: 10 }, { datasheet: "garras", models: 10 }, { datasheet: "escupidores", models: 10 },
 ] };
 
-export interface TutorialContext { s: GameState; selected: Set<string> }
+export interface TutorialContext { s: GameState; selected: Set<string>; /** Cosas que ha hecho el jugador fuera del estado (Sugerir, línea de visión). */ flags?: Set<string> }
 
 interface Step {
   title: string;
@@ -63,8 +63,42 @@ const STEPS: Step[] = [
     text: "Desde la ronda 2, al empezar tu turno ganas PV por cada objetivo que controles (más CO a 3\" que el rival). Los ves arriba a la derecha. Gana quien tenga más PV tras la ronda 5. <b>Ya sabes lo básico: ¡a por ellos!</b>" },
 ];
 
+// --- Lección 2 (#73): reservas, Sugerir, línea de visión y estratagemas -------------------
+export const LESSON2_LEGION: ArmyList = { name: "Lección 2", units: [
+  { datasheet: "capitan", models: 1, leads: 1 }, { datasheet: "asalto", models: 10 },
+  { datasheet: "exterminadores", models: 5, reserve: true },
+] };
+export const LESSON2_SWARM: ArmyList = { name: "Lección 2", units: [
+  { datasheet: "tirano", models: 1 }, { datasheet: "garras", models: 20 }, { datasheet: "escupidores", models: 10 },
+] };
+const extOf = (s: GameState) => s.units.find((u) => u.datasheet === "exterminadores")?.id;
+
+const STEPS2: Step[] = [
+  { title: "Lección 2: herramientas del general",
+    text: "Empezamos en la <b>ronda 2</b>. Tus <b>Exterminadores</b> esperan en órbita (reserva) y el Enjambre avanza. Verás cómo traerlos, cómo pedir consejo, la línea de visión y las estratagemas. Pulsa <b>Siguiente fase</b> para pasar al movimiento." ,
+    done: ({ s }) => s.phase === "movimiento" },
+  { title: "Reservas",
+    text: "En el panel de turno aparece <b>Llegar: Exterminadores</b>. Púlsalo y haz clic en la mesa: lo rojo es la zona prohibida (a 9\" o menos de un enemigo) y lo verde, dónde caerían. Llegar cuenta como su movimiento.",
+    done: ({ s }) => { const e = extOf(s); return !!e && s.pieces.some((p) => p.unit === e); } },
+  { title: "Pide consejo",
+    text: "¿No sabes qué hacer? Pulsa <b>Sugerir</b> (o <kbd>H</kbd>): en dorado verás lo que haría la IA Difícil (quién, adónde y contra quién). No hace nada; tú decides.",
+    done: ({ flags }) => !!flags?.has("suggest") },
+  { title: "Al disparo",
+    text: "Mueve lo que quieras y pulsa <b>Siguiente fase</b> hasta el <b>disparo</b>.",
+    done: ({ s }) => s.phase === "disparo" },
+  { title: "Línea de visión",
+    text: "Elige tu Escuadra de Asalto y pasa el ratón por un enemigo: cada miniatura traza su línea. <span style=\"color:#6dff8a\">Verde</span> lo ve, <span style=\"color:#ffb34a\">naranja</span> con cobertura (salva mejor), <span style=\"color:#ff4a3a\">roja</span> no lo ve y gris discontinua, fuera de alcance.",
+    done: ({ flags }) => !!flags?.has("los") },
+  { title: "Estratagemas",
+    text: "Con tu unidad elegida, en su ficha (abajo a la izquierda) están las <b>estratagemas</b>. Usa <b>Puntería</b> (1 PM: +1 para herir esta fase) y luego dispara.",
+    done: ({ s }) => (s.turnLog.strats ?? []).some((x) => x.id === "punteria") || s.phase !== "disparo" },
+  { title: "Ya eres un general",
+    text: "Eso es todo. Más ayudas: <kbd>?</kbd> enseña los atajos, el <b>Registro</b> (<kbd>L</kbd>) apunta cada tirada y, al acabar, <b>Ver repetición</b> vuelve a jugar la batalla. Prueba la <b>Campaña</b> desde el menú." },
+];
+
 export class Tutorial {
   private i = -1;
+  private steps: Step[] = STEPS;
   onStart: () => void = () => {};
 
   constructor(private bus: CommandBus) {
@@ -72,21 +106,47 @@ export class Tutorial {
       const b = (e.target as HTMLElement).closest("button");
       if (!b) return;
       if (b.dataset.act === "next") this.go(this.i + 1);
+      if (b.dataset.act === "l1") this.start(1);
+      if (b.dataset.act === "l2") this.start(2);
       if (b.dataset.act === "close") this.stop();
     });
     $("tutorial-start").addEventListener("click", () => this.start());
   }
 
   get active() { return this.i >= 0; }
+  /** Algo que no se ve en el estado (Sugerir, línea de visión): puede completar un paso. */
+  flag(f: string) { this.flags.add(f); }
+  private flags = new Set<string>();
 
-  start() {
+  /** Sin lección: deja elegir. */
+  start(lesson?: 1 | 2) {
+    if (!lesson) {
+      this.i = -2;
+      $("tutorial").hidden = false;
+      $("tutorial").innerHTML = `<div class="row"><span class="dim">Tutorial</span><button data-act="close" style="margin-left:auto">Cerrar</button></div>
+        <h3>Elige una lección</h3>
+        <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:6px"><button data-act="l1" class="primary">1 · Lo básico (5 min)</button><button data-act="l2">2 · Reservas, consejos y estratagemas</button></div>`;
+      return;
+    }
     settings.aiSide = "swarm";
     settings.aiLevel = "facil";
     settings.mission = "tomar";
     saveSettings();
+    this.steps = lesson === 1 ? STEPS : STEPS2;
     this.bus.dispatch({ type: "setTerrain", pieces: exampleMap() });
-    this.bus.dispatch({ type: "setArmies", legion: TUTORIAL_LEGION, swarm: TUTORIAL_SWARM, mission: "tomar" });
+    this.bus.dispatch({ type: "setArmies", legion: lesson === 1 ? TUTORIAL_LEGION : LESSON2_LEGION, swarm: lesson === 1 ? TUTORIAL_SWARM : LESSON2_SWARM, mission: "tomar" });
     if (!this.bus.state.rulesMode) this.bus.dispatch({ type: "setRulesMode", on: true });
+    if (lesson === 2) {
+      // A la ronda 2: el Enjambre avanza un poco hacia el centro y vuelve a ser el turno de la Legión
+      for (let g = 0; g < 12 && this.bus.state.phase !== "movimiento"; g++) this.bus.dispatch({ type: "nextPhase" });
+      while (this.bus.state.active === 0 && this.bus.state.turn === 1) this.bus.dispatch({ type: "nextPhase" });
+      for (let g = 0; g < 12 && this.bus.state.phase !== "movimiento"; g++) this.bus.dispatch({ type: "nextPhase" });
+      const s = this.bus.state, dir = s.pieces.find((p) => p.faction === "swarm")!.z > 0 ? -1 : 1;
+      this.bus.dispatch({ type: "setRulesMode", on: false });
+      this.bus.dispatch({ type: "moveMany", moves: s.pieces.filter((p) => p.faction === "swarm").map((p) => ({ id: p.id, x: p.x, z: p.z + dir * 6 })) });
+      this.bus.dispatch({ type: "setRulesMode", on: true });
+      for (let g = 0; g < 12 && !(this.bus.state.turn === 2 && this.bus.state.active === 0); g++) this.bus.dispatch({ type: "nextPhase" });
+    }
     this.onStart();
     this.go(0);
   }
@@ -97,7 +157,9 @@ export class Tutorial {
   }
 
   private go(i: number) {
+    const STEPS = this.steps;
     if (i >= STEPS.length) { this.stop(); return; }
+    if (i === 0) this.flags.clear();
     this.i = i;
     const st = STEPS[i];
     $("tutorial").hidden = false;
@@ -109,6 +171,8 @@ export class Tutorial {
   /** Llamar cuando cambie el estado o la selección: avanza si el paso está hecho. */
   check(c: TutorialContext) {
     if (this.i < 0) return;
+    const STEPS = this.steps;
+    c = { ...c, flags: this.flags };
     let moved = false;
     while (this.i >= 0 && this.i < STEPS.length && STEPS[this.i].done?.(c)) { this.i++; moved = true; }
     if (moved) this.go(this.i);
