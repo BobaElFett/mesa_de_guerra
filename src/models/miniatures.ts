@@ -17,6 +17,13 @@ const SW = {
   flesh: "#c99a7e", fleshD: "#a87b62", shell: "#5d2a73", shellD: "#45205a", bone: "#ece0c8",
   eye: "#ff6a3d", glow: "#d56bff", rim: "#a24fc4",
 };
+/**
+ * Colores para daltónicos (#74): el Enjambre pasa de morado a naranja (azul contra naranja se
+ * distingue con cualquier tipo de daltonismo común). Llamar antes de crear ninguna miniatura.
+ */
+export function useColorblindPalette() {
+  Object.assign(SW, { shell: "#9a4f16", shellD: "#733a10", glow: "#ffb347", rim: "#f08a24" });
+}
 const BASE_TOP = "#5a5648", BASE_SIDE = "#2b2d31", PEBBLE = "#6f6a5a";
 const Y0 = 0.12;   // altura de la cara superior de la peana
 

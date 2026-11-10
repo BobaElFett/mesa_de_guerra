@@ -15,11 +15,13 @@ export interface GameSettings {
   conditions: "" | "noche" | "tormenta";
   /** Tamaño de la interfaz (#69): 0,85 a 1,3. */
   uiScale: number;
+  /** Colores de bando (#74): normales o para daltónicos (azul y naranja). */
+  palette: "normal" | "daltonico";
 }
 
 const KEY = "mesa-de-guerra.ajustes";
 const DEFAULTS: GameSettings = { aiSide: "swarm", aiLevel: "normal", mission: "tomar", map: "actual", diceSpeed: "normal",
-  volume: 0.55, followAi: true, guideRings: true, confirmAdvance: true, hoverTips: true, showMenu: true, graphics: "alta", conditions: "", uiScale: 1 };
+  volume: 0.55, followAi: true, guideRings: true, confirmAdvance: true, hoverTips: true, showMenu: true, graphics: "alta", conditions: "", uiScale: 1, palette: "normal" };
 
 export const AI_LEVEL_NAME: Record<AiLevel, string> = { facil: "Fácil", normal: "Normal", dificil: "Difícil" };
 

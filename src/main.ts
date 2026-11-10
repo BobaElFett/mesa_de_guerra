@@ -66,6 +66,7 @@ import { EndDialog } from "./ui/endDialog";
 import { MISSIONS } from "./rules/missions";
 import { AI_LEVEL_NAME, settings } from "./ai/settings";
 import { FACTIONS } from "./core/state";
+import { useColorblindPalette } from "./models/miniatures";
 
 // --- Renderer y escena ---------------------------------------------------
 const app = document.getElementById("app")!;
@@ -80,6 +81,13 @@ renderer.toneMapping = THREE.ACESFilmicToneMapping;
 app.appendChild(renderer.domElement);
 
 const scene = new THREE.Scene();
+// Colores para daltónicos (#74): antes de crear ninguna miniatura ni panel
+const PALETTE_AT_START = settings.palette;
+if (settings.palette === "daltonico") {
+  FACTIONS.swarm.color = "#f08a24";
+  useColorblindPalette();
+  document.documentElement.style.setProperty("--swarm", "#f08a24");
+}
 const BG = new THREE.Color("#17191e");
 scene.background = BG;
 scene.fog = new THREE.Fog(BG, 140, 420);
@@ -839,7 +847,8 @@ const menu = new StartMenu();
 const settingsDlg = new SettingsDialog();
 sfx.setVolume(settings.volume);
 settingsDlg.sound = { get: () => sfx.on, set: (v) => { if (v !== sfx.on) { sfx.setOn(v); paintSound(); } }, volume: (v) => sfx.setVolume(v) };
-settingsDlg.onChange = () => { speedSel.value = settings.diceSpeed; applySpeed(); applyGraphics(); guideKey = ""; refresh(); };
+settingsDlg.onChange = () => {
+  if (settings.palette !== PALETTE_AT_START) { toast("Cambiando los colores…"); setTimeout(() => location.reload(), 300); } speedSel.value = settings.diceSpeed; applySpeed(); applyGraphics(); guideKey = ""; refresh(); };
 menu.continueInfo = () => {
   const s = bus.state;
   if (!s.pieces.length && !bus.length) return null;
