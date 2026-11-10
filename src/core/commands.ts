@@ -1,4 +1,5 @@
 import { applyArrival } from "../rules/reserves";
+import { syncRelic } from "../rules/relic";
 import { DATASHEETS } from "../rules/datasheets";
 import { note, unitName } from "../rules/history";
 import { declareCharge, resolveReaction } from "../rules/reactions";
@@ -196,6 +197,7 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
       break;
     }
   }
+  syncRelic(s);
   return s;
 }
 

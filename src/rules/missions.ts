@@ -9,7 +9,7 @@ import { gap } from "./geometry";
 //  - Se puntúa al final del turno de cada jugador desde la ronda 2, según la misión.
 //  - Tras la ronda 5 gana quien tenga más PV.
 
-export type MissionId = "tomar" | "corazon" | "caza";
+export type MissionId = "tomar" | "corazon" | "caza" | "reliquia";
 
 export const OBJECTIVE_RADIUS = 0.79;   // marcador de 40 mm
 export const OBJECTIVE_RANGE = 3;
@@ -22,6 +22,10 @@ export interface Objective {
   vp: number;
   /** Nombre corto (A, B…; «Corazón»). */
   name: string;
+  /** Misión Reliquia (#64): se puede recoger y llevar. */
+  relic?: boolean;
+  /** Unidad que la lleva. */
+  carrier?: string | null;
 }
 
 export interface VpEntry {
@@ -43,7 +47,7 @@ export interface Mission {
   name: string;
   summary: string;
   /** Objetivos (la mitad; el resto es su simétrico respecto al centro, salvo los del centro). */
-  objectives: { x: number; z: number; vp: number; name: string }[];
+  objectives: { x: number; z: number; vp: number; name: string; relic?: boolean }[];
   /** Tope de PV por objetivos en cada turno. */
   capPerTurn: number;
   /** PV por bajas: 1 por cada `per` puntos de miniaturas enemigas eliminadas (cada una vale lo que cuesta su unidad entre sus miniaturas). */
@@ -84,6 +88,15 @@ export const MISSIONS: Record<MissionId, Mission> = {
     capPerTurn: 4, scoreAt: "final",
     killVp: { per: 20 },
   },
+  reliquia: {
+    id: "reliquia", name: "Reliquia",
+    summary: "Una reliquia en el centro. La recoge la unidad que acabe con una miniatura a 1\" de ella (sin enemigos tan cerca); las bestias y vehículos grandes no pueden. Si su portador muere, cae donde estaba. Al acabar tu turno (desde la ronda 2): 6 PV si la llevas, y 2 PV por cada uno de los dos objetivos de los flancos.",
+    objectives: [
+      { x: 0, z: 0, vp: 6, name: "Reliquia", relic: true },
+      { x: -18, z: 0, vp: 2, name: "Flanco oeste" }, { x: 18, z: 0, vp: 2, name: "Flanco este" },
+    ],
+    capPerTurn: 10, scoreAt: "final",
+  },
 };
 
 export const DEFAULT_MISSION: MissionId = "tomar";
@@ -92,7 +105,7 @@ export const DEFAULT_MISSION: MissionId = "tomar";
 export function setupMission(s: GameState, id: MissionId) {
   const m = MISSIONS[id] ?? MISSIONS[DEFAULT_MISSION];
   s.mission = m.id;
-  s.objectives = m.objectives.map((o, i) => ({ id: `O${i + 1}`, ...o }));
+  s.objectives = m.objectives.map((o, i) => ({ id: `O${i + 1}`, ...o, ...(o.relic ? { carrier: null } : {}) }));
   s.vp = [0, 0];
   s.vpLog = [];
   s.kills = [];
@@ -103,6 +116,11 @@ export function setupMission(s: GameState, id: MissionId) {
 /** CO de cada bando sobre un objetivo y quién lo controla. */
 export function objectiveStatus(s: GameState, o: Objective): { oc: [number, number]; holder: 0 | 1 | null } {
   const oc: [number, number] = [0, 0];
+  if (o.relic) {
+    // La reliquia es de quien la lleva; tirada en el suelo, de nadie
+    const u = o.carrier ? s.units.find((x) => x.id === o.carrier) : null;
+    return { oc, holder: u ? (PLAYERS.indexOf(u.faction) as 0 | 1) : null };
+  }
   const marker = { x: o.x, z: o.z, r: OBJECTIVE_RADIUS };
   for (const p of s.pieces) {
     if (!p.unit) continue;

@@ -8,6 +8,7 @@ import { shootingOptions } from "../rules/shooting";
 import { chargeOptions, fightOptions } from "../rules/melee";
 import { formation, formationModels, partnerOf, underCommand } from "../rules/leaders";
 import { OBJECTIVE_RADIUS, OBJECTIVE_RANGE, objectiveStatus } from "../rules/missions";
+import { canCarry, PICK_RANGE, RELIC_R } from "../rules/relic";
 import { grenadeTargets, hasStrat, stratBlocked } from "../rules/stratagems";
 import { crossesSolid, disc, gap, sight } from "../rules/geometry";
 import {
@@ -123,7 +124,27 @@ function scorePosition(s: GameState, unitId: string, dx: number, dz: number, kin
   const objs = s.objectives ?? [];
   const exclude = new Set(group);
   const me = PLAYERS.indexOf(f) as 0 | 1;
+  // Reliquia (#64): recogerla (a 1"), ir a por quien la lleve o, si la llevamos, no arriesgarla
+  const relic = objs.find((o) => o.relic);
+  if (relic) {
+    const marker = { x: relic.x, z: relic.z, r: RELIC_R };
+    const dmin = Math.min(...models.map((p) => gap(disc(p), marker)));
+    const carrier = relic.carrier ? s.units.find((x) => x.id === relic.carrier) : null;
+    if (!carrier) {
+      if (canCarry(s, unitId)) {
+        if (dmin <= PICK_RANGE - 0.05) { score += relic.vp * W.obj * 1.6; why = "recoge la reliquia"; }
+        else score += relic.vp * W.obj * W.approach * 1.5 * Math.max(0, 1 - dmin / 30);
+      } else score += relic.vp * W.obj * W.approach * 0.5 * Math.max(0, 1 - dmin / 30);
+    } else if (carrier.faction !== f) {
+      score += relic.vp * W.obj * W.approach * 1.2 * Math.max(0, 1 - dmin / 24);
+    } else if (group.includes(carrier.id)) {
+      const foes = s.pieces.filter((p) => p.faction !== f && p.unit);
+      const away = foes.length ? Math.min(...models.map((p) => Math.min(...foes.map((q) => gap(disc(p), disc(q)))))) : 30;
+      score += relic.vp * W.obj * 0.6 * Math.min(1, away / 18);
+    }
+  }
   for (const o of objs) {
+    if (o.relic) continue;
     const marker = { x: o.x, z: o.z, r: OBJECTIVE_RADIUS };
     const near = models.filter((p) => gap(disc(p), marker) <= OBJECTIVE_RANGE - 0.2);
     const st = objectiveStatus({ ...s, pieces: s.pieces.filter((p) => !p.unit || !exclude.has(p.unit)) }, o);
@@ -141,7 +162,7 @@ function scorePosition(s: GameState, unitId: string, dx: number, dz: number, kin
   }
 
   // El objetivo que tiene asignado: llegar y quedarse
-  if (assigned) {
+  if (assigned && !objs.find((x) => x.id === assigned)?.relic) {
     const o = objs.find((x) => x.id === assigned)!;
     const marker = { x: o.x, z: o.z, r: OBJECTIVE_RADIUS };
     const dNow = Math.min(...formationModels(s, unitId).map((p) => gap(disc(p), marker)));

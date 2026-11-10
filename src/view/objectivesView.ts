@@ -19,7 +19,8 @@ function marker(): THREE.Group {
   ]);
 }
 
-interface Entry { group: THREE.Group; crystal: THREE.Mesh; ring: THREE.Mesh; disc: THREE.Mesh; key: string }
+interface Entry { group: THREE.Group; crystal: THREE.Mesh; ring: THREE.Mesh; disc: THREE.Mesh; key: string; relic: boolean; carried: boolean }
+const RELIC = "#ffd36b";
 
 export class ObjectivesView {
   readonly group = new THREE.Group();
@@ -45,19 +46,27 @@ export class ObjectivesView {
         const disc = new THREE.Mesh(this.discGeo, new THREE.MeshBasicMaterial({ color: NEUTRAL, transparent: true, opacity: 0.08, depthWrite: false }));
         ring.position.y = 0.035; disc.position.y = 0.03;
         ring.renderOrder = 1; disc.renderOrder = 1;
-        e = { group, crystal, ring, disc, key: "" };
+        if (o.relic) crystal.scale.setScalar(1.35);
+        e = { group, crystal, ring, disc, key: "", relic: !!o.relic, carried: false };
         this.group.add(group, ring, disc);
         this.entries.set(o.id, e);
       }
+      const carried = !!(o.relic && o.carrier);
+      if (carried !== e.carried) {
+        e.carried = carried;
+        e.group.children[0].visible = !carried;          // la peana con el faro se queda sin poste
+        e.ring.visible = e.disc.visible = !carried;
+        e.key = "";
+      }
       if (e.key !== key) {
         const t = s.terrain.find((x) => TOP[x.kind] && insideTerrain(x, o.x, o.z));
-        e.group.position.set(o.x, t ? TOP[t.kind] : 0, o.z);
+        e.group.position.set(o.x, carried ? 1.2 : t ? TOP[t.kind] : 0, o.z);
         e.ring.position.x = e.disc.position.x = o.x;
         e.ring.position.z = e.disc.position.z = o.z;
         e.key = key;
       }
       const { holder } = objectiveStatus(s, o);
-      const color = holder === null ? NEUTRAL : FACTIONS[PLAYERS[holder]].color;
+      const color = holder === null ? (e.relic ? RELIC : NEUTRAL) : FACTIONS[PLAYERS[holder]].color;
       const cm = e.crystal.material as THREE.MeshStandardMaterial;
       cm.color.set(color); cm.emissive.set(color);
       (e.ring.material as THREE.MeshBasicMaterial).color.set(color);
