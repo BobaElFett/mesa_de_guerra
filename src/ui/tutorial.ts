@@ -1,5 +1,5 @@
 import type { CommandBus } from "../core/commands";
-import { exampleMap, GameState } from "../core/state";
+import { BOARD, DEPLOY_DEPTH, exampleMap, GameState } from "../core/state";
 import type { ArmyList } from "../rules/armies";
 import { formation } from "../rules/leaders";
 import { movedSoFar } from "../rules/movement";
@@ -96,6 +96,40 @@ const STEPS2: Step[] = [
     text: "Eso es todo. Más ayudas: <kbd>?</kbd> enseña los atajos, el <b>Registro</b> (<kbd>L</kbd>) apunta cada tirada y, al acabar, <b>Ver repetición</b> vuelve a jugar la batalla. Prueba la <b>Campaña</b> desde el menú." },
 ];
 
+// --- Lección 3 (#109): órdenes secundarias, infiltración, precisión y vuelo -------------------
+export const LESSON3_LEGION: ArmyList = { name: "Lección 3", units: [
+  { datasheet: "capitan", models: 1, leads: 1 }, { datasheet: "asalto", models: 10 },
+  { datasheet: "francotiradores", models: 5 },
+] };
+export const LESSON3_SWARM: ArmyList = { name: "Lección 3", units: [
+  { datasheet: "mente", models: 1, leads: 1 }, { datasheet: "garras", models: 20 }, { datasheet: "gargolas", models: 10 },
+] };
+const sniperOf = (s: GameState) => s.units.find((u) => u.datasheet === "francotiradores")?.id;
+
+const STEPS3: Step[] = [
+  { title: "Lección 3: tropas especiales y órdenes",
+    text: "Llevas <b>Francotiradores</b>, que se <b>infiltran</b>: pueden desplegar en toda tu mitad a más de 6\" del centro (la franja azul más tenue). Arrastra a los Francotiradores hacia delante por tu <b>flanco izquierdo</b>: desde ahí verán a la Mente por el lado del búnker.",
+    done: ({ s }) => { const u = sniperOf(s); return !!u && s.pieces.some((p) => p.unit === u && p.z < BOARD.d / 2 - DEPLOY_DEPTH - 1); } },
+  { title: "Empieza",
+    text: "Coloca el resto como quieras y pulsa <b>Empezar partida</b>.",
+    done: ({ s }) => s.phase !== "despliegue" },
+  { title: "Órdenes secundarias",
+    text: "En el panel de la misión (arriba a la derecha) tienes 2 <b>órdenes</b>: objetivos extra que dan PV si los cumples al acabar tu turno. Una <span style=\"color:#7be08a\">✓</span> dice que se cumpliría ya. Si una no te conviene, el botón <b>+1 PM</b> la descarta y te da un punto de mando (una vez por turno). Al empezar cada mando robas hasta tener 2." },
+  { title: "La Mente y su escolta",
+    text: "La <b>Mente del Enjambre</b> va unida a sus Garras: sus escoltas la protegen y el resto de tu ejército no puede dispararle. Pero el <b>Rifle de precisión</b> sí: ignora la cobertura y hiere mejor a los personajes. Pasa a la fase de <b>disparo</b>.",
+    done: ({ s }) => s.phase === "disparo" || s.turn > 1 },
+  { title: "Dispara a la cabeza",
+    text: "Elige a los Francotiradores y haz clic en la <b>Mente</b> (la figura de cabeza enorme entre las Garras). Al pasar el ratón verás las bajas esperadas. Si no la ven, dispara a otra cosa y sigue.",
+    done: ({ s }) => s.combatLog.some((e) => e.player === 0 && e.turn === s.turn && e.attacker === sniperOf(s)) || s.phase !== "disparo" },
+  { title: "Gárgolas",
+    text: "Termina tu turno. Las <b>Gárgolas</b> del Enjambre <b>vuelan</b>: pasan por encima de contenedores, búnker y barricadas. Ojo con tus flancos.",
+    done: ({ s }) => s.turn >= 2 && s.active === 0 },
+  { title: "Qué ha pasado",
+    text: "La tarjeta de abajo resume el turno del rival: tus bajas, sus PV, sus cargas y órdenes. Los <b>iconos</b> sobre cada unidad dicen qué ha hecho este turno (mover, disparar, cargar…). Los dos se pueden apagar en Ajustes." },
+  { title: "¡Listo!",
+    text: "Ya conoces todo lo nuevo. Las órdenes secundarias vienen marcadas en la <b>partida rápida</b>; el <b>Códice</b> del menú explica cada unidad." },
+];
+
 export class Tutorial {
   private i = -1;
   private steps: Step[] = STEPS;
@@ -108,6 +142,7 @@ export class Tutorial {
       if (b.dataset.act === "next") this.go(this.i + 1);
       if (b.dataset.act === "l1") this.start(1);
       if (b.dataset.act === "l2") this.start(2);
+      if (b.dataset.act === "l3") this.start(3);
       if (b.dataset.act === "close") this.stop();
     });
     $("tutorial-start").addEventListener("click", () => this.start());
@@ -119,22 +154,23 @@ export class Tutorial {
   private flags = new Set<string>();
 
   /** Sin lección: deja elegir. */
-  start(lesson?: 1 | 2) {
+  start(lesson?: 1 | 2 | 3) {
     if (!lesson) {
       this.i = -2;
       $("tutorial").hidden = false;
       $("tutorial").innerHTML = `<div class="row"><span class="dim">Tutorial</span><button data-act="close" style="margin-left:auto">Cerrar</button></div>
         <h3>Elige una lección</h3>
-        <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:6px"><button data-act="l1" class="primary">1 · Lo básico (5 min)</button><button data-act="l2">2 · Reservas, consejos y estratagemas</button></div>`;
+        <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:6px"><button data-act="l1" class="primary">1 · Lo básico (5 min)</button><button data-act="l2">2 · Reservas, consejos y estratagemas</button><button data-act="l3">3 · Órdenes y tropas especiales</button></div>`;
       return;
     }
     settings.aiSide = "swarm";
     settings.aiLevel = "facil";
     settings.mission = "tomar";
     saveSettings();
-    this.steps = lesson === 1 ? STEPS : STEPS2;
+    this.steps = lesson === 1 ? STEPS : lesson === 2 ? STEPS2 : STEPS3;
     this.bus.dispatch({ type: "setTerrain", pieces: exampleMap() });
-    this.bus.dispatch({ type: "setArmies", legion: lesson === 1 ? TUTORIAL_LEGION : LESSON2_LEGION, swarm: lesson === 1 ? TUTORIAL_SWARM : LESSON2_SWARM, mission: "tomar" });
+    const [L, S] = lesson === 1 ? [TUTORIAL_LEGION, TUTORIAL_SWARM] : lesson === 2 ? [LESSON2_LEGION, LESSON2_SWARM] : [LESSON3_LEGION, LESSON3_SWARM];
+    this.bus.dispatch({ type: "setArmies", legion: L, swarm: S, mission: "tomar", secondaries: lesson === 3 });
     if (!this.bus.state.rulesMode) this.bus.dispatch({ type: "setRulesMode", on: true });
     if (lesson === 2) {
       // A la ronda 2: el Enjambre avanza un poco hacia el centro y vuelve a ser el turno de la Legión

@@ -5,7 +5,7 @@ la **Legión Astral** (super soldados con servoarmadura) contra **El Enjambre** 
 Se juega como en una mesa de verdad (mover, medir y tirar dados) o con el **modo reglas**, que guía las fases y resuelve las tiradas.
 Three.js + TypeScript, compilado con esbuild a un único `dist/index.html`.
 
-Versión **0.41**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
+Versión **0.42**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
 
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor ni conexión.
@@ -13,7 +13,7 @@ Al abrirlo sale el menú:
 
 - **Jugar contra la IA:** bando, dificultad (Fácil, Normal, Difícil), misión, condiciones, mapa y listas (de prueba, las tuyas o al azar). También se puede **mirar IA contra IA**.
 - **Campaña:** tres batallas seguidas; las unidades que sobreviven y hacen daño pasan a Veteranas.
-- **Tutorial:** dos lecciones guiadas (lo básico; reservas, consejos y estratagemas).
+- **Tutorial:** tres lecciones guiadas (lo básico; reservas, consejos y estratagemas; órdenes secundarias y tropas especiales).
 - **Desafíos:** cinco escenarios cortos con estrellas.
 - **Códice:** todas las unidades con su miniatura, perfil y trasfondo.
 - **Mesa libre:** sin reglas automáticas, como en Tabletop Simulator.

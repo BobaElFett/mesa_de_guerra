@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { FACTIONS, Faction } from "../core/state";
-import { DATASHEETS, Datasheet, DatasheetId, UNIT_ABILITY_TEXT, WEAPONS } from "../rules/datasheets";
+import { DATASHEETS, Datasheet, DatasheetId, UNIT_ABILITY_TEXT, WEAPON_ABILITY_TEXT, WEAPONS } from "../rules/datasheets";
 import { FACTION_LORE, UNIT_LORE } from "../rules/lore";
 import { makeMiniature } from "../models/miniatures";
 import { weaponLine } from "./hud";
@@ -110,6 +110,7 @@ export class Codex {
       <div class="cx-stats">${stats.map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join("")}</div>
       <table class="cx-weapons">${weapons.map((w) => row(w, ds.leaderWeapons?.includes(w.id) && !ds.weapons.includes(w.id) ? ' <span class="dim">(líder)</span>' : "")).join("")}
         ${optW.map((w) => row(w, ' <span class="dim">(equipo)</span>')).join("")}</table>
+      ${(() => { const kinds = [...new Set([...weapons, ...optW].flatMap((w) => w.abilities.map((a) => a.kind)))]; return kinds.length ? `<div class="cx-abil dim">${kinds.map((k) => `<div><b>${WEAPON_ABILITY_TEXT[k].name}:</b> ${WEAPON_ABILITY_TEXT[k].text}</div>`).join("")}</div>` : ""; })()}
       ${ds.abilities.length ? `<div class="cx-abil">${ds.abilities.map((a) => `<div><b>${UNIT_ABILITY_TEXT[a].name}:</b> ${UNIT_ABILITY_TEXT[a].text}</div>`).join("")}</div>` : ""}
       ${ds.options?.length ? `<div class="cx-abil"><b>Equipo opcional:</b> ${ds.options.map((o) => `${o.name}${o.points ? ` (+${o.points}${o.perModel ? " por miniatura" : ""})` : ""}`).join("; ")}</div>` : ""}
       <p class="cx-lore">${UNIT_LORE[ds.id as DatasheetId]}</p>`;

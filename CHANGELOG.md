@@ -2,6 +2,10 @@
 
 Lo nuevo de cada versión de *Mesa de Guerra*, de la más reciente a la primera.
 
+## 0.42 · fase 23, aprender lo nuevo (#109–#110)
+- **Lección 3 del tutorial (#109), «Órdenes y tropas especiales»:** infiltra a los Francotiradores por el flanco izquierdo y empieza. Te explica las órdenes secundarias (la ✓ y el descarte por +1 PM) y por qué la Mente del Enjambre, unida a sus Garras, solo puede recibir disparos de Precisión. Dispara a la Mente, mira cómo vuelan las Gárgolas sobre los contenedores y, al volver tu turno, cómo se leen el resumen del turno rival y los iconos de las unidades. Una prueba comprueba que desde el flanco los Francotiradores ven a la Mente; desde el centro, el búnker la tapa.
+- **Habilidades de arma en el Códice (#110):** bajo las armas de cada unidad se explica qué hace cada habilidad que llevan (Asalto, Pesada, Pistola, Ráfaga, Sostenida, Letal, Devastadora, Explosiva, Torrente, Precisión).
+
 ## 0.41 · fase 22, equilibrio de tropas (#107–#108)
 - **Costes nuevos (#107):** medidos con 1.120 partidas de IA Difícil contra Difícil, con listas, mapas y misiones al azar, órdenes secundarias y el despliegue de la IA. Para cada unidad se comparó cuánto gana su bando cuando está en la lista y cuando no; después se repitió con 800 partidas tras cada ajuste.
   - Legión: Fuego Pesado 120 → 140, Andador 150 → 170, Francotiradores 85 → 100 (eran los que más ganaban); Exterminadores 200 → 175, Motoristas 110/220 → 90/180, Psíquico 75 → 70.

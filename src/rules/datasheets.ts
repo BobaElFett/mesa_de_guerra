@@ -85,6 +85,20 @@ export type DatasheetId =
   | "tirano" | "garras" | "escupidores" | "nodo" | "acechadores"
   | "motoristas" | "carnifice" | "psiquico" | "mente" | "francotiradores" | "gargolas";
 
+/** Qué hace cada habilidad de arma (#110), para el Códice y las fichas. */
+export const WEAPON_ABILITY_TEXT: Record<WeaponAbility["kind"], { name: string; text: string }> = {
+  asalto: { name: "Asalto", text: "Puede disparar aunque la unidad haya avanzado." },
+  pesada: { name: "Pesada", text: "+1 para impactar si la unidad no se ha movido este turno." },
+  pistola: { name: "Pistola", text: "Puede disparar estando trabada en combate, contra la unidad con la que combate." },
+  rafaga: { name: "Ráfaga X", text: "+X ataques si el objetivo está a la mitad del alcance o menos." },
+  sostenida: { name: "Sostenida X", text: "Cada 6 para impactar genera X impactos más." },
+  letal: { name: "Letal", text: "Cada 6 para impactar hiere sin tirar para herir." },
+  devastadora: { name: "Devastadora", text: "Cada 6 para herir no permite salvación." },
+  explosiva: { name: "Explosiva", text: "+1 ataque por cada 5 miniaturas de la unidad objetivo." },
+  torrente: { name: "Torrente", text: "Impacta siempre, sin tirar para impactar." },
+  precision: { name: "Precisión", text: "Ignora la cobertura, +1 para herir a personajes y puede apuntar a un personaje protegido por su escuadra." },
+};
+
 const w = (id: string, name: string, range: number | "CC", attacks: Dice, skill: number | null,
   strength: number, ap: number, damage: Dice, abilities: WeaponAbility[] = []): Weapon =>
   ({ id, name, range, attacks, skill, strength, ap, damage, abilities });
