@@ -165,7 +165,15 @@
   #mission li .oc { margin-left: auto; color: var(--dim); }
   #mission .m-sum { font-size: 12px; color: var(--dim); margin-top: 4px; }
   #mission .m-proj { font-size: 12px; margin-top: 2px; }
-  #mission.folded ul, #mission.folded .m-sum, #mission.folded .m-proj { display: none; }
+  #mission.folded ul, #mission.folded .m-sum, #mission.folded .m-proj, #mission.folded .m-sec { display: none; }
+  #mission .m-sec { margin-top: 6px; border-top: 1px solid rgba(255,255,255,.12); padding-top: 4px; }
+  #mission .m-sec-title { font-size: 12px; font-weight: 600; }
+  #mission .m-sec-title .dim { font-weight: 400; font-size: 11px; }
+  #mission .sec-head { font-size: 12px; font-weight: 600; margin-top: 3px; display: flex; justify-content: space-between; }
+  #mission .m-sec li { flex-wrap: wrap; }
+  #mission .sec-ok { width: 12px; color: #7be08a; font-weight: 700; flex: none; }
+  #mission .sec-drop { margin-left: auto; font-size: 11px; padding: 0 6px; }
+  #mission .sec-text { flex-basis: 100%; padding-left: 18px; color: var(--dim); font-size: 11px; }
   #mission .m-fold { margin-left: auto; font-size: 11px; padding: 0 6px; }
   .strats { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
   .strats button { font-size: 12px; border-color: #8a6d2a; }
@@ -343,7 +351,7 @@
 <div id="help" class="panel">
   <h1 class="title">Mesa de Guerra</h1>
   <button id="help-toggle">Ocultar</button>
-  <div class="sub">Vida en la mesa (v0.36)</div>
+  <div class="sub">Órdenes secundarias (v0.37)</div>
   <input id="help-search" type="search" placeholder="Buscar en la ayuda (p. ej. reserva, deshacer)…" autocomplete="off">
   <div id="help-none" class="dim" hidden>Nada con esas palabras.</div>
   <button id="tutorial-start" class="primary" style="width:100%;margin:4px 0 6px">Tutorial: dos lecciones guiadas</button>
@@ -373,6 +381,7 @@
     <li><b>Ejércitos</b>: listas, misión, rival (IA o dos jugadores) y dificultad</li>
     <li>Objetivos: los controla quien sume más CO a 3"; los PV, arriba a la derecha</li>
     <li>Estratagemas (1 PM): botones en la ficha de la unidad, en tu turno</li>
+    <li><b>Órdenes secundarias</b> (opción de la partida): cada bando roba 2 órdenes al empezar su mando (<i>Decapitar</i>, <i>Dominar el centro</i>, <i>Tras las líneas</i>…). Al acabar tu turno, las cumplidas dan sus PV (hasta 20 en la partida). Una vez por turno puedes descartar una por +1 PM. Están en el panel de la misión; ✓ = se cumpliría ahora</li>
     <li><b>Iconos sobre las unidades</b> (lo hecho este turno): flecha ha movido, doble flecha ha avanzado, flecha atrás se ha retirado, flecha abajo acaba de llegar, diana ha disparado, espadas ha cargado o combatido, estrella de 4 puntas poder psíquico, estrella dorada estratagema, <span style="color:#e0675a">!</span> desmoralizada. Se apagan en Ajustes</li>
     <li><b>Línea de visión</b>: en el disparo, con tu unidad elegida y el ratón sobre un enemigo, cada miniatura traza su línea: <span style="color:#6dff8a">verde</span> lo ve, <span style="color:#ffb34a">naranja</span> con cobertura, <span style="color:#ff4a3a">roja</span> no ve, gris discontinua fuera de alcance</li>
     <li><b>Repetición</b>: al acabar, <i>Ver repetición</i> vuelve a jugar la batalla desde el despliegue (pausa con <kbd>Espacio</kbd>, a 4× sin animaciones, <kbd>Esc</kbd> sale)</li>
@@ -493,6 +502,7 @@
     <div class="setup-row" id="armies-setup">
       <label>Tamaño <select id="size-pick"><option value="500">Escaramuza (500)</option><option value="1000">Batalla (1.000)</option></select></label>
       <label>Misión <select id="mission-pick"></select></label>
+      <label title="Cada bando roba 2 órdenes por turno que dan PV extra"><input type="checkbox" id="sec-pick"> Órdenes secundarias</label>
       <label>Condiciones <select id="cond-pick"><option value="">Normales</option><option value="noche">Noche (visión 24")</option><option value="tormenta">Tormenta (−1 a impactar a más de 12")</option></select></label>
       <label>Mapa <select id="map-pick"><option value="actual">La mesa actual</option><option value="ejemplo">Mapa de ejemplo</option><option value="aleatorio">Aleatorio (simétrico)</option><option value="urbano">Ruinas urbanas (densa)</option><option value="llanura">Llanura (abierta)</option><option value="bosque">Bosque</option></select></label>
       <label>Rival <select id="ai-side"><option value="">Dos jugadores (sin IA)</option><option value="swarm">IA lleva el Enjambre</option><option value="legion">IA lleva la Legión</option></select></label>
@@ -548,6 +558,7 @@
         <label>IA <select id="q-level"><option value="facil">Fácil</option><option value="normal">Normal</option><option value="dificil">Difícil</option></select></label>
         <label>Tamaño <select id="q-size"><option value="500">Escaramuza (500)</option><option value="1000">Batalla (1.000)</option></select></label>
         <label>Misión <select id="q-mission"></select></label>
+        <label title="Cada bando roba 2 órdenes por turno (matar un personaje, dominar el centro…) que dan PV extra"><input type="checkbox" id="q-sec" checked> Órdenes secundarias</label>
         <label>Condiciones <select id="q-cond"><option value="">Normales</option><option value="noche">Noche (visión 24")</option><option value="tormenta">Tormenta (−1 a impactar a más de 12")</option></select></label>
         <label>Mapa <select id="q-map"><option value="aleatorio">Aleatorio (simétrico)</option><option value="ejemplo">Mapa de ejemplo</option><option value="urbano">Ruinas urbanas (densa)</option><option value="llanura">Llanura (abierta)</option><option value="bosque">Bosque</option></select></label>
         <label>Listas <select id="q-lists"><option value="prueba">Las de prueba (unos 470 puntos)</option><option value="mias">Las mías (Ejércitos)</option><option value="azar">Al azar (500 puntos)</option></select></label>

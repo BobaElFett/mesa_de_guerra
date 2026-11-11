@@ -1,3 +1,4 @@
+import { discardSecondary, SecondaryId, setupSecondaries } from "../rules/secondaries";
 import { applyArrival } from "../rules/reserves";
 import { syncRelic } from "../rules/relic";
 import { applyPsychic } from "../rules/psychic";
@@ -31,7 +32,9 @@ export type Command =
   /** Sustituye la escenografía por un mapa entero (#51). */
   | { type: "setTerrain"; pieces: TerrainPiece[] }
   /** Sustituye los ejércitos por dos listas desplegadas en sus zonas. */
-  | { type: "setArmies"; legion: ArmyList; swarm: ArmyList; mission?: MissionId; conditions?: "noche" | "tormenta"; campaign?: number }
+  | { type: "setArmies"; legion: ArmyList; swarm: ArmyList; mission?: MissionId; conditions?: "noche" | "tormenta"; campaign?: number; secondaries?: boolean }
+  /** Objetivos secundarios (#97): descartar una orden de la mano por 1 PM. */
+  | { type: "discardSecondary"; id: SecondaryId }
   /** Mesa libre: retirar miniaturas a mano (bajas, recolocar…). */
   | { type: "removePieces"; ids: string[] }
   /** Volver a tirar algunos dados de la última tirada (por índice). */
@@ -118,8 +121,10 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
       deployArmies(s, cmd.legion, cmd.swarm, cmd.mission);
       if (cmd.conditions) s.conditions = cmd.conditions; else delete s.conditions;
       if (cmd.campaign) s.campaignBattle = cmd.campaign; else delete s.campaignBattle;
+      setupSecondaries(s, !!cmd.secondaries);
       break;
     }
+    case "discardSecondary": discardSecondary(s, cmd.id); break;
     case "removePieces": {
       const gone = new Set(cmd.ids);
       s.pieces = s.pieces.filter((p) => !gone.has(p.id));

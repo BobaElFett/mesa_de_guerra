@@ -607,6 +607,8 @@ document.getElementById("test-armies")!.addEventListener("click", () => {
   toast(`Ejércitos de prueba desplegados (${listPoints(TEST_LEGION)} y ${listPoints(TEST_SWARM)} puntos) · ${MISSIONS[settings.mission].name}`);
 });
 missionPanel.onShowSummary = () => endDialog.show(bus.state);
+missionPanel.onDiscard = (id) => bus.dispatch({ type: "discardSecondary", id });
+missionPanel.canAct = (p) => !runtime.spectate && !replay.active && controllable(PLAYERS[p]);
 // Repetición (#61)
 endDialog.onReplay = () => { stopArrival(); controls.selected.clear(); replay.begin(); };
 replay.busy = () => shots.playing;
@@ -841,7 +843,7 @@ menu.onQuick = (q) => {
   }
   applyMap(bus);
   settings.conditions = q.conditions ?? ""; saveSettings();
-  bus.dispatch({ type: "setArmies", legion: lists.legion, swarm: lists.swarm, mission: q.mission, ...(q.conditions ? { conditions: q.conditions } : {}) });
+  bus.dispatch({ type: "setArmies", legion: lists.legion, swarm: lists.swarm, mission: q.mission, secondaries: q.secondaries ?? true, ...(q.conditions ? { conditions: q.conditions } : {}) });
   if (!bus.state.rulesMode) bus.dispatch({ type: "setRulesMode", on: true });
   ai.paused = false;
   controls.selected.clear(); controls.onSelectionChange();

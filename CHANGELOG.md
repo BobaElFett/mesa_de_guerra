@@ -2,6 +2,13 @@
 
 Lo nuevo de cada versión de *Mesa de Guerra*, de la más reciente a la primera.
 
+## 0.37 · fase 18, órdenes secundarias (#97–#99)
+- **Órdenes secundarias (#97):** cada bando tiene un mazo de nueve órdenes, barajado con la semilla de la partida, y roba hasta tener 2 al empezar su mando. Al acabar su turno, cada orden cumplida da sus PV y se descarta; las demás se quedan. Tope de 20 PV en la partida. Una vez por turno puede descartar una orden para ganar 1 PM. Las que ya no se pueden cumplir (no quedan personajes ni unidades grandes, o no hay objetivos en la mitad enemiga) se descartan solas al robarlas.
+  - *Decapitar* (4): destruye un personaje. *Golpe certero* (3): destruye una unidad. *Masacre* (5): destruye dos. *Abatir al coloso* (4): destruye una unidad grande. Todas en tu turno.
+  - *Todos los frentes* (3): tres cuartos de la mesa ocupados, lejos del centro. *Tras las líneas* (4): una miniatura en la zona de despliegue enemiga. *Dominar el centro* (3): una miniatura a 6" del centro y ninguna enemiga. *Asaltar su objetivo* (4): controla un objetivo de la mitad enemiga. *Choque* (3): dos cargas con éxito.
+- **La IA y las órdenes (#98):** mueve unidades hacia las órdenes de posición que tiene en la mano, sin que dos unidades persigan la misma, y descarta por 1 PM las que no puede cumplir. IA Difícil contra IA Difícil, 150 partidas: Legión 73, Enjambre 75, 2 empates; unos 5 PV de órdenes por bando y partida.
+- **Panel (#99):** el panel de la misión muestra las órdenes de cada bando con sus PV, una ✓ en las que se cumplirían si el turno acabara ahora, los PV de órdenes conseguidos y el botón *+1 PM* para descartar. Se activan con *Órdenes secundarias* en la partida rápida (marcada por defecto) y en Ejércitos. La campaña y los desafíos siguen sin ellas.
+
 ## 0.36 · fase 17, vida en la mesa (#94–#96)
 - **Animaciones (#94):** las miniaturas dan pasitos y se balancean al moverse (también al deshacer y en la repetición). En combate, cada atacante embiste hacia su objetivo; quien recibe un impacto, de un disparo o cuerpo a cuerpo, retrocede con una sacudida en el momento en que le llega. Se apagan en Ajustes > *Animar las miniaturas*.
 - **Iconos sobre las unidades (#95):** encima de cada unidad, lo que ha hecho este turno: ha movido, avanzado o se ha retirado, acaba de llegar de la reserva, ha disparado, cargado o combatido, ha usado su poder psíquico o tiene una estratagema. También si está desmoralizada. Crecen al alejar la cámara y no salen en la repetición. Leyenda en la ayuda (busca «iconos»); se apagan en Ajustes.

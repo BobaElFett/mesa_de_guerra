@@ -64,6 +64,7 @@ export class ArmyDialog {
     $<HTMLSelectElement>("ai-level").value = settings.aiLevel;
     $<HTMLSelectElement>("map-pick").value = settings.map;
     $<HTMLSelectElement>("cond-pick").value = settings.conditions;
+    $<HTMLInputElement>("sec-pick").checked = settings.secondaries;
     $<HTMLSelectElement>("size-pick").value = String(settings.gameSize);
     const desc = () => { $("mission-desc").textContent = MISSIONS[settings.mission].summary; };
     desc();
@@ -74,6 +75,7 @@ export class ArmyDialog {
       settings.aiLevel = $<HTMLSelectElement>("ai-level").value as AiLevel;
       settings.map = $<HTMLSelectElement>("map-pick").value as typeof settings.map;
       settings.conditions = $<HTMLSelectElement>("cond-pick").value as typeof settings.conditions;
+      settings.secondaries = $<HTMLInputElement>("sec-pick").checked;
       settings.gameSize = Number($<HTMLSelectElement>("size-pick").value) === 1000 ? 1000 : 500;
       this.render();
       saveSettings();
@@ -131,7 +133,7 @@ export class ArmyDialog {
     const errs = SIDES.flatMap((f) => validateList(this.lists[f], f, settings.gameSize));
     if (errs.length) { this.notify("Corrige las listas antes de desplegar."); return; }
     applyMap(this.bus);
-    this.bus.dispatch({ type: "setArmies", legion: clone(this.lists.legion), swarm: clone(this.lists.swarm), mission: settings.mission, ...(settings.conditions ? { conditions: settings.conditions } : {}) });
+    this.bus.dispatch({ type: "setArmies", legion: clone(this.lists.legion), swarm: clone(this.lists.swarm), mission: settings.mission, secondaries: settings.secondaries, ...(settings.conditions ? { conditions: settings.conditions } : {}) });
     if (!this.bus.state.rulesMode) this.bus.dispatch({ type: "setRulesMode", on: true });
     this.hide();
     this.notify(`Ejércitos desplegados: ${listPoints(this.lists.legion)} y ${listPoints(this.lists.swarm)} puntos`);

@@ -41,6 +41,8 @@ export interface KillEntry {
   /** Jugador que la destruyó. */
   by: 0 | 1;
   unit: string;
+  /** Jugador activo cuando cayó (para saber si fue en el turno de quien la destruyó). */
+  during?: 0 | 1;
 }
 
 export interface Mission {
@@ -158,7 +160,7 @@ export function controlledBy(s: GameState, player: 0 | 1): Objective[] {
   return (s.objectives ?? []).filter((o) => objectiveStatus(s, o).holder === player);
 }
 
-function addVp(s: GameState, player: 0 | 1, vp: number, why: string) {
+export function addVp(s: GameState, player: 0 | 1, vp: number, why: string) {
   if (vp <= 0) return;
   s.vp = [s.vp?.[0] ?? 0, s.vp?.[1] ?? 0];
   s.vp[player] += vp;
@@ -190,7 +192,7 @@ export function recordCasualties(s: GameState, by: 0 | 1, unitId: string, slain:
   if (!u || slain <= 0) return;
   const ds = DATASHEETS[u.datasheet];
   if (!s.pieces.some((p) => p.unit === unitId) && !(s.kills ?? []).some((k) => k.unit === unitId)) {
-    s.kills = [...(s.kills ?? []), { turn: s.turn, by, unit: unitId }];
+    s.kills = [...(s.kills ?? []), { turn: s.turn, by, unit: unitId, during: s.active }];
   }
   const m = s.mission ? MISSIONS[s.mission] : null;
   if (!m?.killVp || !s.rulesMode) return;

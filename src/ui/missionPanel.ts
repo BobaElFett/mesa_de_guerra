@@ -2,6 +2,7 @@ import { CONDITIONS } from "../rules/conditions";
 import { FACTIONS, GameState, PLAYERS } from "../core/state";
 import { FIRST_SCORING_ROUND, MISSIONS, objectiveStatus } from "../rules/missions";
 import { MAX_ROUNDS } from "../rules/turn";
+import { discardBlocked, SECONDARIES, SECONDARY_CAP, SecondaryId, secondaryVp } from "../rules/secondaries";
 
 // Panel de la misión (arriba a la derecha): PV de cada bando, objetivos con quién los controla
 // y lo que puntuaría el jugador activo si el turno acabara ahora.
@@ -11,6 +12,10 @@ const $ = (id: string) => document.getElementById(id)!;
 export class MissionPanel {
   private folded = false;
   onShowSummary: () => void = () => {};
+  /** Descartar una orden secundaria (#97). */
+  onDiscard: (id: SecondaryId) => void = () => {};
+  /** ¿Puede este jugador actuar desde aquí? (no la IA ni el rival en línea) */
+  canAct: (p: 0 | 1) => boolean = () => true;
   hiddenByTerrain = false;
   hiddenByLog = false;
 
@@ -20,6 +25,7 @@ export class MissionPanel {
       if (!b) return;
       if (b.dataset.act === "fold") { this.folded = !this.folded; $("mission").classList.toggle("folded", this.folded); b.textContent = this.folded ? "Ver" : "Plegar"; }
       if (b.dataset.act === "summary") this.onShowSummary();
+      if (b.dataset.act === "discard") this.onDiscard(b.dataset.id as SecondaryId);
     });
   }
 
@@ -48,10 +54,25 @@ export class MissionPanel {
         ? `<div class="m-proj dim">Se puntúa desde la ronda ${FIRST_SCORING_ROUND}, ${when}.</div>`
         : `<div class="m-proj">Valen ahora: <b style="color:${C(0)}">+${worth(0)}</b> · <b style="color:${C(1)}">+${worth(1)}</b> PV <span class="dim">(${when})</span></div>`;
     }
+    let orders = "";
+    const sec = s.secondaries;
+    if (sec && s.rulesMode) {
+      const side = (pl: 0 | 1) => {
+        const cards = sec.hand[pl].map((id) => {
+          const c = SECONDARIES[id];
+          const now = s.phase !== "despliegue" && !s.gameOver && c.done(s, pl);
+          const can = pl === s.active && this.canAct(pl) && !discardBlocked(s, id);
+          return `<li title="${c.text}"><span class="sec-ok">${now ? "✓" : ""}</span><b>${c.name}</b> <span class="dim">${c.vp} PV</span>`
+            + `${can ? `<button class="sec-drop" data-act="discard" data-id="${id}" title="Descartar esta orden y ganar 1 PM (una vez por turno)">+1 PM</button>` : ""}${pl === s.active ? `<div class="sec-text">${c.text}</div>` : ""}</li>`;
+        }).join("") || `<li class="dim">Sin órdenes${s.phase === "despliegue" ? " (se roban al empezar el mando)" : ""}</li>`;
+        return `<div class="sec-side"><div class="sec-head" style="color:${C(pl)}">${FACTIONS[PLAYERS[pl]].name} <span class="dim">${secondaryVp(s, pl)}/${SECONDARY_CAP} PV</span></div><ul>${cards}</ul></div>`;
+      };
+      orders = `<div class="m-sec"><div class="m-sec-title">Órdenes secundarias <span class="dim">(se cumplen al acabar tu turno; ✓ = se cumpliría ahora)</span></div>${side(0)}${side(1)}</div>`;
+    }
     const end = s.gameOver ? `<div style="margin-top:6px"><button data-act="summary" class="primary">Ver resumen</button></div>` : "";
     el.innerHTML = `<div class="m-head"><span class="m-name">${m.name}</span><span class="dim">ronda ${Math.min(s.turn, MAX_ROUNDS)}/${MAX_ROUNDS}</span>`
       + `<button class="m-fold" data-act="fold">${this.folded ? "Ver" : "Plegar"}</button></div>`
       + `<div class="vp"><span style="color:${C(0)}">Legión <b>${vp[0]}</b></span><span class="dim">PV</span><span style="color:${C(1)}"><b>${vp[1]}</b> Enjambre</span></div>`
-      + `<ul>${rows}</ul>${proj}${s.defender !== undefined ? `<div class="m-cond"><b>Ataca:</b> <span style="color:${FACTIONS[PLAYERS[1 - s.defender]].color}">${FACTIONS[PLAYERS[1 - s.defender]].name}</span> · <b>Defiende:</b> <span style="color:${FACTIONS[PLAYERS[s.defender]].color}">${FACTIONS[PLAYERS[s.defender]].name}</span></div>` : ""}${s.conditions ? `<div class="m-cond"><b>${CONDITIONS[s.conditions].name}:</b> ${CONDITIONS[s.conditions].text}</div>` : ""}<div class="m-sum">${m.summary}</div>${end}`;
+      + `<ul>${rows}</ul>${proj}${s.defender !== undefined ? `<div class="m-cond"><b>Ataca:</b> <span style="color:${FACTIONS[PLAYERS[1 - s.defender]].color}">${FACTIONS[PLAYERS[1 - s.defender]].name}</span> · <b>Defiende:</b> <span style="color:${FACTIONS[PLAYERS[s.defender]].color}">${FACTIONS[PLAYERS[s.defender]].name}</span></div>` : ""}${s.conditions ? `<div class="m-cond"><b>${CONDITIONS[s.conditions].name}:</b> ${CONDITIONS[s.conditions].text}</div>` : ""}${orders}<div class="m-sum">${m.summary}</div>${end}`;
   }
 }

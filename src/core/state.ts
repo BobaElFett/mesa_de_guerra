@@ -131,6 +131,8 @@ export interface GameState {
   /** Estadísticas por unidad (#65). */
   stats?: Record<string, { dmg: number; kills: number; pts: number; taken: number; lost: number }>;
   killPts?: [number, number];
+  /** Objetivos secundarios (#97). */
+  secondaries?: import("../rules/secondaries").SecondaryState;
   /** Miniaturas de las unidades en reserva, fuera de la mesa (#56). */
   reserves?: Piece[];
   /** Registro de la batalla (#53). */

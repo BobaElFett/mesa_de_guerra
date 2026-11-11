@@ -3,6 +3,7 @@ import { note } from "./history";
 import type { GameState } from "../core/state";
 import { runMoraleTests } from "./morale";
 import { scoreObjectives } from "./missions";
+import { drawSecondaries, scoreSecondaries } from "./secondaries";
 
 // El turno del reglamento (antes de la ronda 1, la fase de despliegue): cinco fases por jugador, dos jugadores por ronda, cinco rondas.
 
@@ -28,6 +29,7 @@ function enterCommand(s: GameState) {
   if (s.rulesMode) note(s, "turno", `Ronda ${s.turn}: turno ${s.active === 0 ? "de la Legión Astral" : "del Enjambre"} (PM ${s.cp[s.active]})`);
   if (s.rulesMode) runMoraleTests(s);
   scoreObjectives(s, "inicio");
+  drawSecondaries(s);
 }
 
 /** Al empezar la fase de movimiento se apunta dónde está cada miniatura del jugador activo. */
@@ -47,8 +49,9 @@ export function advancePhase(s: GameState) {
     if (s.phase === "combate") s.turnLog.fought = [];
     return;
   }
-  // Fin del turno del jugador activo: puntúa la misión
+  // Fin del turno del jugador activo: puntúa la misión y las órdenes cumplidas
   scoreObjectives(s, "final");
+  scoreSecondaries(s);
   if (s.active === 1 && s.turn === LAST_ARRIVAL_ROUND) loseLateReserves(s);
   if (s.active === 1 && s.turn >= MAX_ROUNDS) { s.gameOver = true; return; }
   endTurn(s);
@@ -61,6 +64,7 @@ function startBattle(s: GameState) {
   s.active = 0;
   s.phase = "mando";
   s.turnLog = { moves: {}, origins: {} };
+  drawSecondaries(s);
 }
 
 /** Salta al turno del otro jugador, a su fase de mando. En mesa libre no hay límite de rondas. */

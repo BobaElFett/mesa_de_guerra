@@ -1,6 +1,8 @@
 import { reach } from "../rules/conditions";
 import { pieceWeaponIds } from "../rules/datasheets";
 import { arriveStep } from "./arrival";
+import { pickDiscard, secondaryPositionScore } from "./secondaryAi";
+import { discardBlocked, SECONDARIES } from "../rules/secondaries";
 import { overwatchBlocked, overwatchWeapons } from "../rules/reactions";
 import { CommandBus, PieceMove } from "../core/commands";
 import { BASE_RADIUS, Faction, GameState, Piece, PLAYERS, TERRAIN, TerrainPiece } from "../core/state";
@@ -222,6 +224,12 @@ function scorePosition(s: GameState, unitId: string, dx: number, dz: number, kin
     const inRange = models.filter((p) => gap(disc(p), marker) <= OBJECTIVE_RANGE - 0.2).length / Math.max(1, models.length);
     score += o.vp * W.obj * (W.assignIn * inRange + W.assignProg * Math.max(0, dNow - dNew));
     if (inRange > 0) why = `va a ${o.name}`;
+  }
+
+  // Objetivos secundarios de posición (#98)
+  if (s.secondaries) {
+    const sec = secondaryPositionScore(s, f, group, models, W.obj);
+    if (sec.score) { score += sec.score; if (sec.why && !why) why = sec.why; }
   }
 
   // Ataque que tendrá a su alcance
@@ -628,6 +636,9 @@ export function canFight(s: GameState, f: Faction): boolean {
 
 function commandStep(bus: CommandBus, W: Weights): boolean {
   const s = bus.state;
+  // Objetivos secundarios (#98): descarta una orden imposible y gana 1 PM
+  const drop = pickDiscard(s);
+  if (drop && !discardBlocked(s, drop)) { bus.dispatch({ type: "discardSecondary", id: drop }); lastAction = `Descarta la orden ${SECONDARIES[drop].name} (+1 PM)`; return true; }
   // Oleada sin fin (#52): Garras que hayan perdido al menos 3
   if (W.strats && s.cp[s.active] > W.cpReserve && !(s.turnLog.strats ?? []).some((x) => x.id === "oleada")) {
     const g = s.units.find((u) => u.faction === mine(s) && !stratBlocked(s, "oleada", u.id)
