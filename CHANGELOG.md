@@ -2,6 +2,11 @@
 
 Lo nuevo de cada versión de *Mesa de Guerra*, de la más reciente a la primera.
 
+## 0.40 · fase 21, cabeza de la serpiente (#105–#106)
+- **La Mente del Enjambre lidera (#105):** puede unirse a unas Garras Menores, unos Escupidores o unos Guerreros Nodo, como el Capitán y el Psíquico en la Legión. Mueve y carga con ellos, y la escuadra la protege de los disparos, salvo de las armas de *Precisión* de los Francotiradores, que ahora tienen a quién apuntar. Se elige en Ejércitos y las listas al azar la unen sola.
+- **Misión Cabeza de la serpiente (#106):** cada personaje enemigo destruido da 4 PV a quien lo destruya. Además hay cinco objetivos repartidos por el centro, de 2 PV cada uno al acabar tu turno (desde la ronda 2, hasta 8). La IA valora más rematar personajes en esta misión. Logro nuevo, *Cazador de cabezas*: gánala sin dejar vivo ningún personaje enemigo.
+- **Equilibrio** (IA Difícil contra Difícil, 90 partidas): con 6 PV por personaje y tres objetivos en línea, la Legión ganaba 56-31. Con 4 PV, no cambiaba. Lo que pesaba eran los objetivos: con cinco repartidos, queda 41-45 con 4 empates. Con la Mente unida a sus Garras o sin unir, una lista del Enjambre sin Tirano pierde casi siempre (78-11 y 75-14): unirla no la desequilibra.
+
 ## 0.39 · fase 20, tropas nuevas (#103–#104)
 - **Francotiradores (#103, Legión):** cinco legionarios con capa de camuflaje (85 pts). *Infiltrador*: despliegan en cualquier punto de su mitad a más de 6" de la línea central; durante el despliegue se ve esa franja, más tenue que la zona normal. *Rifle de precisión* (36", A1, 3+, F6, FP−2, D3, Pesada): con la habilidad nueva *Precisión* ignora la cobertura, suma 1 para herir a los personajes y puede apuntar a un personaje protegido por su escuadra. La IA los coloca en ruinas o bosques adelantados.
 - **Gárgolas (#104, Enjambre):** garras aladas (10: 85, 20: 170), M12", con *Escupe-púas* (18", A2, Asalto) y *Garras aladas*. *Vuelo*: pasan por encima de contenedores, búnker y barricadas, aunque no pueden acabar encima. La IA vuela en línea recta sin rodear nada.

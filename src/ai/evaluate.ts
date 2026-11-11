@@ -129,14 +129,16 @@ export function objectivePresence(s: GameState, unitId: string): number {
 export function secondaryKillBonus(s: GameState, targetId: string): number {
   const sec = s.secondaries;
   const t = s.units.find((u) => u.id === targetId);
-  if (!sec || !t || t.faction === PLAYERS[s.active]) return 0;
+  if (!t || t.faction === PLAYERS[s.active]) return 0;
+  const mission = s.mission === "serpiente" && DATASHEETS[t.datasheet].character ? 4 * 6 : 0;
+  if (!sec) return mission;
   const ds = DATASHEETS[t.datasheet];
   let vp = 0;
   for (const id of sec.hand[s.active]) {
     const c = SECONDARIES[id];
     if ((id === "decapitar" && ds.character) || (id === "coloso" && ds.big)) vp += c.vp;
   }
-  return vp * 6;
+  return vp * 6 + mission;
 }
 
 export function attackValue(s: GameState, targetId: string, exp: { damage: number }, killBonus = 0): number {

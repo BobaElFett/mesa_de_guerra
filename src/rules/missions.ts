@@ -10,7 +10,7 @@ import { gap } from "./geometry";
 //  - Se puntúa al final del turno de cada jugador desde la ronda 2, según la misión.
 //  - Tras la ronda 5 gana quien tenga más PV.
 
-export type MissionId = "tomar" | "corazon" | "caza" | "reliquia" | "asalto";
+export type MissionId = "tomar" | "corazon" | "caza" | "reliquia" | "asalto" | "serpiente";
 
 export const OBJECTIVE_RADIUS = 0.79;   // marcador de 40 mm
 export const OBJECTIVE_RANGE = 3;
@@ -63,6 +63,8 @@ export interface Mission {
    * defiende la Legión. Cada objetivo da `attacker` PV al atacante y `defender` al defensor.
    */
   asym?: { attacker: number; defender: number; defenderCap: number };
+  /** PV por destruir cada personaje enemigo (#106). */
+  characterVp?: number;
 }
 
 export const FIRST_SCORING_ROUND = 2;
@@ -114,6 +116,17 @@ export const MISSIONS: Record<MissionId, Mission> = {
     ],
     capPerTurn: 15, scoreAt: "final",
     asym: { attacker: 4, defender: 1, defenderCap: 3 },
+  },
+  serpiente: {
+    id: "serpiente", name: "Cabeza de la serpiente",
+    summary: "Caza a sus líderes. Cada personaje enemigo destruido da 4 PV a quien lo destruya. Además, cinco objetivos repartidos por el centro de la mesa dan 2 PV cada uno al final de tu turno (desde la ronda 2, hasta 8).",
+    objectives: [
+      { x: 0, z: 0, vp: 2, name: "Centro" },
+      { x: -18, z: 4, vp: 2, name: "A" }, { x: 18, z: -4, vp: 2, name: "B" },
+      { x: -8, z: -8, vp: 2, name: "C" }, { x: 8, z: 8, vp: 2, name: "D" },
+    ],
+    capPerTurn: 8, scoreAt: "final",
+    characterVp: 4,
   },
 };
 
@@ -195,6 +208,10 @@ export function recordCasualties(s: GameState, by: 0 | 1, unitId: string, slain:
     s.kills = [...(s.kills ?? []), { turn: s.turn, by, unit: unitId, during: s.active }];
   }
   const m = s.mission ? MISSIONS[s.mission] : null;
+  // Cabeza de la serpiente (#106): PV por cada personaje destruido
+  if (m?.characterVp && s.rulesMode && ds.character && !s.pieces.some((p) => p.unit === unitId) && !(s.reserves ?? []).some((p) => p.unit === unitId)) {
+    addVp(s, by, m.characterVp, `Personaje destruido: ${ds.name}`);
+  }
   if (!m?.killVp || !s.rulesMode) return;
   const pts = (unitCost(u) / u.startingModels) * slain;
   const bank = [s.killPts?.[0] ?? 0, s.killPts?.[1] ?? 0] as [number, number];

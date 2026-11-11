@@ -195,7 +195,7 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
     id: "mente", name: "Mente del Enjambre", faction: "swarm",
     profile: { M: 6, T: 5, Sv: 4, Inv: 5, W: 5, Ld: 7, OC: 1 },
     sizes: [{ models: 1, points: 80 }], weapons: ["garrasAfiladas"],
-    abilities: ["psiquico", "sinaptico"], model: "mente", character: true,
+    abilities: ["psiquico", "sinaptico"], model: "mente", character: true, leads: ["garras", "escupidores", "nodo"],
   },
   motoristas: {
     id: "motoristas", name: "Motoristas de Asalto", faction: "legion",

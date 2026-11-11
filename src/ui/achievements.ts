@@ -1,5 +1,6 @@
 import { GameState, PLAYERS } from "../core/state";
 import type { GameRecord } from "./record";
+import { DATASHEETS } from "../rules/datasheets";
 
 // Logros (#93): se miran al acabar una partida contra la IA, un desafío o una campaña, y se
 // guardan en el navegador con la fecha en que se consiguieron.
@@ -27,6 +28,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   { id: "noche", name: "Ojos en la oscuridad", text: "Gana de noche o con tormenta.", check: (c) => c.records.some((r) => won(r) && !!r.conditions) },
   { id: "reliquia", name: "Arqueólogo", text: "Gana la misión Reliquia.", check: (c) => c.records.some((r) => won(r) && r.mission === "reliquia") },
   { id: "asalto", name: "Tomar la posición", text: "Gana la misión Asalto atacando.", check: (c) => !!c.last && won(c.last.rec) && c.last.rec.mission === "asalto" && c.last.s.defender !== PLAYERS.indexOf(c.last.rec.side) },
+  { id: "serpiente", name: "Cazador de cabezas", text: "Gana Cabeza de la serpiente destruyendo todos los personajes enemigos.", check: (c) => !!c.last && won(c.last.rec) && c.last.rec.mission === "serpiente" && c.last.s.units.filter((u) => u.faction !== c.last!.rec.side && DATASHEETS[u.datasheet].character).every((u) => !c.last!.s.pieces.some((p) => p.unit === u.id)) },
   { id: "batalla", name: "Gran batalla", text: "Gana una partida de 1.000 puntos.", check: (c) => !!c.last && won(c.last.rec) && c.last.points > 600 },
   { id: "campana", name: "Veterano", text: "Gana una campaña.", check: (c) => c.campaignWon },
   { id: "estrella", name: "Estratega", text: "Consigue 3 estrellas en un desafío.", check: (c) => Object.values(c.stars).some((n) => n >= 3) },

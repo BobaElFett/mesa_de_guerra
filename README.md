@@ -5,7 +5,7 @@ la **Legión Astral** (super soldados con servoarmadura) contra **El Enjambre** 
 Se juega como en una mesa de verdad (mover, medir y tirar dados) o con el **modo reglas**, que guía las fases y resuelve las tiradas.
 Three.js + TypeScript, compilado con esbuild a un único `dist/index.html`.
 
-Versión **0.39**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
+Versión **0.40**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
 
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor ni conexión.
@@ -28,7 +28,7 @@ Cada bando tiene un ejército de **500 puntos** (*Escaramuza*) o **1.000** (*Bat
 4. **Carga:** a 12" o menos, 2D6 para llegar; el cargado puede hacer fuego defensivo (impacta a 6).
 5. **Combate:** quien cargó golpea primero; luego se alternan.
 
-**Misiones:** *Toma y mantén*, *Corazón del frente*, *Caza de presas* (PV por puntos destruidos), *Reliquia* (se recoge y se lleva) y *Asalto* (asimétrica: uno ataca y otro defiende). Gana quien tenga más PV tras la ronda 5.
+**Misiones:** *Toma y mantén*, *Corazón del frente*, *Caza de presas* (PV por puntos destruidos), *Reliquia* (se recoge y se lleva), *Asalto* (asimétrica: uno ataca y otro defiende) y *Cabeza de la serpiente* (PV por cada personaje enemigo destruido). Gana quien tenga más PV tras la ronda 5.
 **Mapas:** de ejemplo, aleatorio, *Ruinas urbanas*, *Llanura* y *Bosque* (los bosques se atraviesan, dan cobertura y tapan la visión si se cruzan más de 3"), todos simétricos.
 **Condiciones:** *Noche* (nada dispara a más de 24") y *Tormenta* (−1 a impactar a más de 12").
 
@@ -49,7 +49,7 @@ Máximo 3 unidades iguales y 1 Andador o Tirano (el doble a 1.000 puntos); al me
 | El Enjambre | M | R | Sv | H | Puntos | Armas | Habilidades |
 |---|---|---|---|---|---|---|---|
 | **Acechadores** | 8" | 5 | 4+ | 3 | 3: 75 · 6: 150 | Cuchillas dobles | Túneles, Rapidez |
-| **Mente del Enjambre** (personaje) | 6" | 5 | 4+/5++ | 5 | 1: 80 | Garras afiladas | Psíquico, Sináptico |
+| **Mente del Enjambre** (personaje) | 6" | 5 | 4+/5++ | 5 | 1: 80 | Garras afiladas | Psíquico, Sináptico; lidera Garras, Escupidores o Nodo |
 | **Carnífice** | 8" | 9 | 2+ | 10 | 1: 190 | Lanzapinchos, Guadañas monstruosas | Aterrador |
 | **Tirano Sináptico** (personaje) | 8" | 9 | 2+/5++ | 11 | 1: 180 | Garras monstruosas, Escupe-bilis | Sináptico |
 | **Garras Menores** | 8" | 4 | 5+ | 1 | 10: 55 · 20: 110 | Garras | Rapidez |
