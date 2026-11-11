@@ -69,7 +69,7 @@ test("lo que no ha llegado al acabar la ronda 3 se pierde (y en Caza de presas d
   assert.equal((s.reserves ?? []).length, 0);
   const ext = s.units.find((u) => u.datasheet === "exterminadores")!.id;
   assert.ok(s.kills!.some((k) => k.unit === ext && k.by === 1));
-  assert.ok(s.vp![1] >= 10);                                           // 200 pts / 20
+  assert.ok(s.vp![1] >= 8);                                            // 175 pts / 20
 });
 
 test("partidas IA contra IA con reservas: llegan, sin romper nada", () => {

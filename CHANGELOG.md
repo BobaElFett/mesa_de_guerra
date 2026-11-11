@@ -2,6 +2,14 @@
 
 Lo nuevo de cada versión de *Mesa de Guerra*, de la más reciente a la primera.
 
+## 0.41 · fase 22, equilibrio de tropas (#107–#108)
+- **Costes nuevos (#107):** medidos con 1.120 partidas de IA Difícil contra Difícil, con listas, mapas y misiones al azar, órdenes secundarias y el despliegue de la IA. Para cada unidad se comparó cuánto gana su bando cuando está en la lista y cuando no; después se repitió con 800 partidas tras cada ajuste.
+  - Legión: Fuego Pesado 120 → 140, Andador 150 → 170, Francotiradores 85 → 100 (eran los que más ganaban); Exterminadores 200 → 175, Motoristas 110/220 → 90/180, Psíquico 75 → 70.
+  - Enjambre: Tirano 180 → 195; Mente 80 → 60, Gárgolas 85/170 → 70/140, Escupidores 60/120 → 55/110.
+  - Diferencia de victorias con y sin la unidad: antes, de −17 a +17 puntos; ahora, de −8 a +14. Victorias generales con listas al azar: Legión 56 % → 51 %. Las listas de prueba quedan en 480 y 495 puntos y siguen parejas (60-58, 2 empates).
+  - Si tenías listas guardadas que ahora pasan de 500, Ejércitos te avisa.
+- **Caza de presas (#108):** sus cuatro objetivos valen 3 PV cada uno (hasta 9 por turno) en vez de 2 (hasta 4), para que no lo decidan solo las bajas.
+
 ## 0.40 · fase 21, cabeza de la serpiente (#105–#106)
 - **La Mente del Enjambre lidera (#105):** puede unirse a unas Garras Menores, unos Escupidores o unos Guerreros Nodo, como el Capitán y el Psíquico en la Legión. Mueve y carga con ellos, y la escuadra la protege de los disparos, salvo de las armas de *Precisión* de los Francotiradores, que ahora tienen a quién apuntar. Se elige en Ejércitos y las listas al azar la unen sola.
 - **Misión Cabeza de la serpiente (#106):** cada personaje enemigo destruido da 4 PV a quien lo destruya. Además hay cinco objetivos repartidos por el centro, de 2 PV cada uno al acabar tu turno (desde la ronda 2, hasta 8). La IA valora más rematar personajes en esta misión. Logro nuevo, *Cazador de cabezas*: gánala sin dejar vivo ningún personaje enemigo.

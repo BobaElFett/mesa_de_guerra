@@ -91,12 +91,12 @@ export const MISSIONS: Record<MissionId, Mission> = {
   },
   caza: {
     id: "caza", name: "Caza de presas",
-    summary: "Lo que cuenta son las bajas: 1 PV por cada 20 puntos de miniaturas enemigas eliminadas (cada miniatura vale lo que cuesta su unidad entre sus miniaturas). Además, cuatro objetivos en tierra de nadie dan 2 PV cada uno al final de tu turno (desde la ronda 2, hasta 4).",
+    summary: "Lo que cuenta son las bajas: 1 PV por cada 20 puntos de miniaturas enemigas eliminadas (cada miniatura vale lo que cuesta su unidad entre sus miniaturas). Además, cuatro objetivos en tierra de nadie dan 3 PV cada uno al final de tu turno (desde la ronda 2, hasta 9).",
     objectives: [
-      { x: -12, z: 4, vp: 2, name: "A" }, { x: 12, z: -4, vp: 2, name: "B" },
-      { x: -4, z: -6, vp: 2, name: "C" }, { x: 4, z: 6, vp: 2, name: "D" },
+      { x: -12, z: 4, vp: 3, name: "A" }, { x: 12, z: -4, vp: 3, name: "B" },
+      { x: -4, z: -6, vp: 3, name: "C" }, { x: 4, z: 6, vp: 3, name: "D" },
     ],
-    capPerTurn: 4, scoreAt: "final",
+    capPerTurn: 9, scoreAt: "final",
     killVp: { per: 20 },
   },
   reliquia: {

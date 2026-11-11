@@ -5,7 +5,7 @@ la **Legión Astral** (super soldados con servoarmadura) contra **El Enjambre** 
 Se juega como en una mesa de verdad (mover, medir y tirar dados) o con el **modo reglas**, que guía las fases y resuelve las tiradas.
 Three.js + TypeScript, compilado con esbuild a un único `dist/index.html`.
 
-Versión **0.40**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
+Versión **0.41**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
 
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor ni conexión.
@@ -39,22 +39,22 @@ Máximo 3 unidades iguales y 1 Andador o Tirano (el doble a 1.000 puntos); al me
 |---|---|---|---|---|---|---|---|
 | **Capitán** (personaje) | 6" | 4 | 3+/4++ | 5 | 1: 80 | Pistola de plasma, Espada de energía | Al mando |
 | **Escuadra de Asalto Táctico** | 6" | 4 | 3+ | 2 | 5: 90 · 10: 170 | Rifle bólter, Cuchillo de combate, Pistola bólter, Espada sierra | Sargento |
-| **Escuadra de Fuego Pesado** | 5" | 4 | 3+ | 2 | 5: 120 | Cañón pesado, Cuchillo de combate | — |
-| **Andador de Combate** | 8" | 9 | 2+ | 12 | 1: 150 | Cañón de asalto, Puño de combate | Blindado |
-| **Exterminadores** | 5" | 5 | 2+/4++ | 3 | 5: 200 | Bólter de asalto, Puño de energía | Despliegue profundo |
-| **Psíquico de la Legión** (personaje) | 6" | 4 | 3+/5++ | 4 | 1: 75 | Pistola bólter, Báculo psíquico | Psíquico |
-| **Motoristas de Asalto** | 12" | 5 | 3+ | 2 | 3: 110 · 6: 220 | Bólter gemelo, Cuchillo de combate | Turbo |
-| **Francotiradores** | 6" | 4 | 3+ | 2 | 5: 85 | Rifle de precisión, Cuchillo de combate | Infiltrador |
+| **Escuadra de Fuego Pesado** | 5" | 4 | 3+ | 2 | 5: 140 | Cañón pesado, Cuchillo de combate | — |
+| **Andador de Combate** | 8" | 9 | 2+ | 12 | 1: 170 | Cañón de asalto, Puño de combate | Blindado |
+| **Exterminadores** | 5" | 5 | 2+/4++ | 3 | 5: 175 | Bólter de asalto, Puño de energía | Despliegue profundo |
+| **Psíquico de la Legión** (personaje) | 6" | 4 | 3+/5++ | 4 | 1: 70 | Pistola bólter, Báculo psíquico | Psíquico |
+| **Motoristas de Asalto** | 12" | 5 | 3+ | 2 | 3: 90 · 6: 180 | Bólter gemelo, Cuchillo de combate | Turbo |
+| **Francotiradores** | 6" | 4 | 3+ | 2 | 5: 100 | Rifle de precisión, Cuchillo de combate | Infiltrador |
 
 | El Enjambre | M | R | Sv | H | Puntos | Armas | Habilidades |
 |---|---|---|---|---|---|---|---|
 | **Acechadores** | 8" | 5 | 4+ | 3 | 3: 75 · 6: 150 | Cuchillas dobles | Túneles, Rapidez |
-| **Mente del Enjambre** (personaje) | 6" | 5 | 4+/5++ | 5 | 1: 80 | Garras afiladas | Psíquico, Sináptico; lidera Garras, Escupidores o Nodo |
+| **Mente del Enjambre** (personaje) | 6" | 5 | 4+/5++ | 5 | 1: 60 | Garras afiladas | Psíquico, Sináptico; lidera Garras, Escupidores o Nodo |
 | **Carnífice** | 8" | 9 | 2+ | 10 | 1: 190 | Lanzapinchos, Guadañas monstruosas | Aterrador |
-| **Tirano Sináptico** (personaje) | 8" | 9 | 2+/5++ | 11 | 1: 180 | Garras monstruosas, Escupe-bilis | Sináptico |
+| **Tirano Sináptico** (personaje) | 8" | 9 | 2+/5++ | 11 | 1: 195 | Garras monstruosas, Escupe-bilis | Sináptico |
 | **Garras Menores** | 8" | 4 | 5+ | 1 | 10: 55 · 20: 110 | Garras | Rapidez |
-| **Escupidores** | 6" | 3 | 4+ | 1 | 10: 60 · 20: 120 | Escupidor, Mordiscos | — |
-| **Gárgolas** | 12" | 3 | 6+ | 1 | 10: 85 · 20: 170 | Escupe-púas, Garras aladas | Vuelo |
+| **Escupidores** | 6" | 3 | 4+ | 1 | 10: 55 · 20: 110 | Escupidor, Mordiscos | — |
+| **Gárgolas** | 12" | 3 | 6+ | 1 | 10: 70 · 20: 140 | Escupe-púas, Garras aladas | Vuelo |
 | **Guerreros Nodo** | 6" | 5 | 4+ | 3 | 3: 80 · 6: 160 | Cañón bio, Garras afiladas | Sináptico |
 
 ## Ayudas

@@ -141,7 +141,7 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
   francotiradores: {
     id: "francotiradores", name: "Francotiradores", faction: "legion",
     profile: { M: 6, T: 4, Sv: 3, W: 2, Ld: 6, OC: 1 },
-    sizes: [{ models: 5, points: 85 }], weapons: ["rifleFrancotirador", "cuchillo"],
+    sizes: [{ models: 5, points: 100 }], weapons: ["rifleFrancotirador", "cuchillo"],
     abilities: ["infiltrador"], model: "francotirador",
   },
   asalto: {
@@ -160,7 +160,7 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
   fuegoPesado: {
     id: "fuegoPesado", name: "Escuadra de Fuego Pesado", faction: "legion",
     profile: { M: 5, T: 4, Sv: 3, W: 2, Ld: 6, OC: 1 },
-    sizes: [{ models: 5, points: 120 }], weapons: ["canonPesado", "cuchillo"],
+    sizes: [{ models: 5, points: 140 }], weapons: ["canonPesado", "cuchillo"],
     abilities: [], model: "pesado",
     options: [
       { id: "misiles", name: "Todos: lanzamisiles (en vez de cañón pesado)", who: "todos", replace: "canonPesado", with: "lanzamisiles", points: 0 },
@@ -170,13 +170,13 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
   andador: {
     id: "andador", name: "Andador de Combate", faction: "legion", big: true,
     profile: { M: 8, T: 9, Sv: 2, W: 12, Ld: 6, OC: 4 },
-    sizes: [{ models: 1, points: 150 }], weapons: ["canonAsalto", "punoCombate"],
+    sizes: [{ models: 1, points: 170 }], weapons: ["canonAsalto", "punoCombate"],
     abilities: ["blindado"], model: "andador",
   },
   exterminadores: {
     id: "exterminadores", name: "Exterminadores", faction: "legion",
     profile: { M: 5, T: 5, Sv: 2, Inv: 4, W: 3, Ld: 6, OC: 1 },
-    sizes: [{ models: 5, points: 200 }], weapons: ["bolterAsalto", "punoEnergia"],
+    sizes: [{ models: 5, points: 175 }], weapons: ["bolterAsalto", "punoEnergia"],
     abilities: ["despliegueProfundo"], model: "exterminador",
   },
   acechadores: {
@@ -188,19 +188,19 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
   psiquico: {
     id: "psiquico", name: "Psíquico de la Legión", faction: "legion",
     profile: { M: 6, T: 4, Sv: 3, Inv: 5, W: 4, Ld: 6, OC: 1 },
-    sizes: [{ models: 1, points: 75 }], weapons: ["pistolaBolter", "bastonPsi"],
+    sizes: [{ models: 1, points: 70 }], weapons: ["pistolaBolter", "bastonPsi"],
     abilities: ["psiquico"], model: "psiquico", character: true, leads: ["asalto", "exterminadores"],
   },
   mente: {
     id: "mente", name: "Mente del Enjambre", faction: "swarm",
     profile: { M: 6, T: 5, Sv: 4, Inv: 5, W: 5, Ld: 7, OC: 1 },
-    sizes: [{ models: 1, points: 80 }], weapons: ["garrasAfiladas"],
+    sizes: [{ models: 1, points: 60 }], weapons: ["garrasAfiladas"],
     abilities: ["psiquico", "sinaptico"], model: "mente", character: true, leads: ["garras", "escupidores", "nodo"],
   },
   motoristas: {
     id: "motoristas", name: "Motoristas de Asalto", faction: "legion",
     profile: { M: 12, T: 5, Sv: 3, W: 2, Ld: 6, OC: 1 },
-    sizes: [{ models: 3, points: 110 }, { models: 6, points: 220 }], weapons: ["bolterGemelo", "cuchillo"],
+    sizes: [{ models: 3, points: 90 }, { models: 6, points: 180 }], weapons: ["bolterGemelo", "cuchillo"],
     abilities: ["turbo"], model: "moto",
   },
   carnifice: {
@@ -212,7 +212,7 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
   tirano: {
     id: "tirano", name: "Tirano Sináptico", faction: "swarm", character: true, big: true,
     profile: { M: 8, T: 9, Sv: 2, Inv: 5, W: 11, Ld: 7, OC: 3 },
-    sizes: [{ models: 1, points: 180 }], weapons: ["garrasMonstruosas", "escupeBilis"],
+    sizes: [{ models: 1, points: 195 }], weapons: ["garrasMonstruosas", "escupeBilis"],
     abilities: ["sinaptico"], model: "tirano",
   },
   garras: {
@@ -227,7 +227,7 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
   escupidores: {
     id: "escupidores", name: "Escupidores", faction: "swarm",
     profile: { M: 6, T: 3, Sv: 4, W: 1, Ld: 8, OC: 1 },
-    sizes: [{ models: 10, points: 60 }, { models: 20, points: 120 }], weapons: ["escupidor", "mordiscos"],
+    sizes: [{ models: 10, points: 55 }, { models: 20, points: 110 }], weapons: ["escupidor", "mordiscos"],
     abilities: [], model: "escupidor",
     options: [
       { id: "acido", name: "Todos: ácido corrosivo (12\", 2 ataques, FP−1, en vez de escupidor)", who: "todos", replace: "escupidor", with: "acidoCorrosivo", points: 0 },
@@ -236,7 +236,7 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
   gargolas: {
     id: "gargolas", name: "Gárgolas", faction: "swarm",
     profile: { M: 12, T: 3, Sv: 6, W: 1, Ld: 8, OC: 1 },
-    sizes: [{ models: 10, points: 85 }, { models: 20, points: 170 }], weapons: ["escupePuas", "garrasAladas"],
+    sizes: [{ models: 10, points: 70 }, { models: 20, points: 140 }], weapons: ["escupePuas", "garrasAladas"],
     abilities: ["vuelo"], model: "gargola",
   },
   nodo: {
