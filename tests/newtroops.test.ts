@@ -9,7 +9,7 @@ import { aiPlayPhase } from "../src/ai/tactics";
 import { aiDeploy } from "../src/ai/deploy";
 import { invariants } from "./fullgame.test";
 
-const LEG: ArmyList = { units: [{ datasheet: "capitan", models: 1, leads: 1 }, { datasheet: "asalto", models: 10 }, { datasheet: "francotiradores", models: 5 }, { datasheet: "fuegoPesado", models: 5 }] };
+const LEG: ArmyList = { units: [{ datasheet: "capitan", models: 1, leads: 1 }, { datasheet: "asalto", models: 5 }, { datasheet: "francotiradores", models: 5 }, { datasheet: "fuegoPesado", models: 5 }] };
 const SWA: ArmyList = { units: [{ datasheet: "tirano", models: 1 }, { datasheet: "garras", models: 20 }, { datasheet: "gargolas", models: 10 }, { datasheet: "escupidores", models: 10 }] };
 
 function game(seed = 4, clear = true) {

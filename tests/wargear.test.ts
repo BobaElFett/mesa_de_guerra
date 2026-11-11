@@ -18,7 +18,7 @@ const SWA: ArmyList = { units: [
 ] };
 
 test("equipo: coste y validación", () => {
-  assert.equal(listPoints(LEG), 80 + 170 + 10 + 5 + 10 + 140 + 10);
+  assert.equal(listPoints(LEG), 80 + 170 + 10 + 5 + 10 + 150 + 10);
   assert.equal(listPoints(SWA), 195 + 110 + 20 + 55);
   assert.deepEqual(validateList(LEG, "legion"), []);
   const clash: ArmyList = { units: [{ datasheet: "fuegoPesado", models: 5, options: ["misiles", "laser"] }] };
@@ -68,7 +68,7 @@ test("el equipo cuenta en lo que vale la unidad al destruirla (#66)", async () =
   bus.dispatch({ type: "setArmies", legion: LEG, swarm: SWA, mission: "caza" });
   const s0 = bus.state;
   const fp = s0.units.find((u) => u.datasheet === "fuegoPesado")!;
-  assert.equal(unitCost(fp), 150);
+  assert.equal(unitCost(fp), 160);
   assert.equal(unitCost(s0.units.find((u) => u.datasheet === "capitan")!), 80);
   bus.dispatch({ type: "setRulesMode", on: true });
   const { recordCasualties } = await import("../src/rules/missions");
@@ -76,6 +76,6 @@ test("el equipo cuenta en lo que vale la unidad al destruirla (#66)", async () =
   const s = cloneState(bus.state);
   s.pieces = s.pieces.filter((p) => p.unit !== fp.id);
   recordCasualties(s, 1, fp.id, 5);
-  assert.equal(s.killPts![1], 150);
+  assert.equal(s.killPts![1], 160);
   void statsOf;
 });

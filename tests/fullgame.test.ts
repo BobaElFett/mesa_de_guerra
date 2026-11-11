@@ -40,10 +40,10 @@ export function playGame(seed: number, check = false) {
   return bus;
 }
 
-test("las listas de prueba son válidas: 480 y 495 puntos", () => {
+test("las listas de prueba son válidas: 490 y 495 puntos", () => {
   assert.deepEqual(validateList(LEGION, "legion"), []);
   assert.deepEqual(validateList(SWARM, "swarm"), []);
-  assert.equal(listPoints(LEGION), 480);
+  assert.equal(listPoints(LEGION), 490);
   assert.equal(listPoints(SWARM), 495);
 });
 

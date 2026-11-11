@@ -22,6 +22,8 @@ export interface TargetOption {
   /** Miniaturas que pueden disparar a este objetivo con esta arma. */
   attackers: string[];
   cover: boolean;
+  /** Solo sin línea de visión (Indirecto, #113): −1 para impactar. */
+  indirect?: boolean;
   /** Por qué no se puede, si no se puede. */
   blocked?: string;
 }
@@ -106,13 +108,15 @@ export function shootingOptions(s: GameState, unitId: string): ShootingOptions {
       const targetModels = unitModels(s, e.id);
       const t: TargetOption = { unit: e.id, name: DATASHEETS[e.datasheet].name, distance: Infinity, attackers: [], cover: false };
       const engagedWithMe = engaged(models, targetModels);
-      let anyClear = false;
+      let anyClear = false, anySeen = false;
+      const indirect = hasAbility(weapon, "indirecto");
       for (const id of ids) {
         const a = models.find((p) => p.id === id)!;
         let ok = false;
         for (const b of targetModels) {
           const sg: Sight = sight(disc(a), disc(b), s.terrain);
-          if (sg === "oculta") continue;
+          if (sg === "oculta" && !indirect) continue;
+          if (sg !== "oculta") anySeen = true;
           const d = gap(disc(a), disc(b));
           t.distance = Math.min(t.distance, d);
           if (d <= reach(s, weapon) + 1e-6) {
@@ -123,6 +127,7 @@ export function shootingOptions(s: GameState, unitId: string): ShootingOptions {
         if (ok) t.attackers.push(id);
       }
       t.cover = t.attackers.length > 0 && !anyClear && !hasAbility(weapon, "precision");
+      if (indirect && t.attackers.length && !anySeen) { t.indirect = true; t.cover = true; }
       if (opt.blocked) t.blocked = opt.blocked;
       else if (isGuarded(s, e.id) && !hasAbility(weapon, "precision")) t.blocked = "Protegido por su escuadra: primero hay que acabar con ella.";
       else if (selfEngaged && !engagedWithMe) t.blocked = "Trabada: solo puede disparar a quien la traba.";
@@ -150,6 +155,7 @@ export function applyShoot(s: GameState, unitId: string, weaponId: string, targe
     distance: t.distance,
     stationary: !s.turnLog.moves[unitId] || movedSoFar(s, unitId) < 0.01,
     cover: t.cover,
+    indirect: t.indirect,
   });
   s.turnLog.shot = s.turnLog.shot ?? {};
   s.turnLog.shot[unitId] = [...(s.turnLog.shot[unitId] ?? []), weaponId];
@@ -161,7 +167,7 @@ export function applyShoot(s: GameState, unitId: string, weaponId: string, targe
  * (daño, bajas, RNG y registro). Lo usan el disparo y el combate.
  */
 export function performAttack(s: GameState, kind: AttackLogEntry["kind"], unitId: string, attackers: Piece[],
-  weapon: Weapon, targetId: string, extra: { distance?: number; stationary?: boolean; cover?: boolean; overwatch?: boolean; mortal?: boolean } = {}): AttackLogEntry {
+  weapon: Weapon, targetId: string, extra: { distance?: number; stationary?: boolean; cover?: boolean; overwatch?: boolean; mortal?: boolean; indirect?: boolean } = {}): AttackLogEntry {
   const attacker = s.units.find((u) => u.id === unitId)!;
   const target = s.units.find((u) => u.id === targetId)!;
   const tds = DATASHEETS[target.datasheet];
@@ -185,7 +191,8 @@ export function performAttack(s: GameState, kind: AttackLogEntry["kind"], unitId
     woundMod: (kind === "disparo" && !extra.overwatch && hasStrat(s, "punteria", unitId) ? 1 : 0)
       + (hasAbility(weapon, "precision") && tds.character && !extra.mortal ? 1 : 0),
     hitMod: (kind === "combate" && hasStrat(s, "furia", unitId) ? 1 : 0)
-      + (kind === "disparo" && !extra.overwatch && !extra.mortal ? conditionHitMod(s, extra.distance) : 0),
+      + (kind === "disparo" && !extra.overwatch && !extra.mortal ? conditionHitMod(s, extra.distance) : 0)
+      + (extra.indirect ? -1 : 0),
   }, dice);
   s.rng = dice.state;
 
@@ -212,7 +219,7 @@ export function performAttack(s: GameState, kind: AttackLogEntry["kind"], unitId
   s.combatLog = [...(s.combatLog ?? []), entry];
   {
     const tn = DATASHEETS[target.datasheet].name, an = DATASHEETS[attacker.datasheet].name;
-    const what = extra.mortal ? `lanza granadas a ${tn}` : kind === "combate" ? `golpea a ${tn} con ${weapon.name}` : `${extra.overwatch ? "hace fuego defensivo contra" : "dispara a"} ${tn} con ${weapon.name}`;
+    const what = extra.mortal ? (weapon.id === "granadas" ? `lanza granadas a ${tn}` : `${weapon.name}: heridas mortales a ${tn}`) : kind === "combate" ? `golpea a ${tn} con ${weapon.name}` : `${extra.overwatch ? "hace fuego defensivo contra" : "dispara a"} ${tn} con ${weapon.name}`;
     const gone = !s.pieces.some((p) => p.unit === targetId);
     note(s, kind === "combate" ? "combate" : "disparo",
       `${an} ${what}: ${res.hits} impacto${res.hits === 1 ? "" : "s"}, ${res.failedSaves} sin salvar, ${res.slain.length} baja${res.slain.length === 1 ? "" : "s"}${gone && res.slain.length ? " — unidad destruida" : ""}`,

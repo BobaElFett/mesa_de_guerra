@@ -2,6 +2,15 @@
 
 Lo nuevo de cada versión de *Mesa de Guerra*, de la más reciente a la primera.
 
+## 0.43 · fase 24, cuatro tropas más (#111–#114)
+Cuatro tropas nuevas, cada una con una regla que no existía. Todas tienen miniatura propia, Códice con su trasfondo, entran en las listas al azar y la IA las usa.
+- **Saltadores de Asalto (#111, Legión):** legionarios con retrorreactor (M12", 5: 100, 10: 200), con pistola bólter y espada sierra. Tienen *Vuelo* e *Impacto*: al llegar con una carga, tiran un dado por miniatura y cada 5+ es una herida mortal a la unidad cargada.
+- **Médico de Campaña (#112, Legión):** personaje (55 pts) con ribetes blancos y cruz roja. Lidera Asalto, Fuego Pesado, Exterminadores, Francotiradores o Saltadores. *Sanador*: al empezar tu mando, si su escuadra ha perdido miniaturas, vuelve una sin heridas junto a ella.
+- **Biomorteros (#113, Enjambre):** bestias con un saco de gas y un tubo (2: 75, 4: 150). Su arma, Biomortero (48", A3, 4+, F6, FP−1, D2, Explosiva), es *Indirecta*: puede disparar a quien no ve, con −1 para impactar, y el objetivo cuenta como en cobertura.
+- **Reventadores (#114, Enjambre):** garras hinchadas de bilis (10: 45, 20: 90). *Estallido*: cada una que cae en combate tira un dado y, con 4+, hiere (herida mortal) a la unidad que la ha matado. Si esa unidad muere por los reventones, deja de golpear.
+- Habilidades nuevas en el Códice y en la ayuda; las heridas mortales que no son granadas se anuncian con el nombre de su regla.
+- **Equilibrio** (IA Difícil contra Difícil, 800 partidas por ronda con listas, mapas y misiones al azar): con los costes de partida, la Legión ganaba el 60 %. Se abarataron Reventadores (60 → 45), Biomorteros (90 → 75, y su arma pasó de A2 a A3) y la Mente (60 → 50); se encarecieron Francotiradores (100 → 110) y Fuego Pesado (140 → 150). Queda Legión 47 % – Enjambre 53 %. La lista de prueba de la Legión sube a 490.
+
 ## 0.42 · fase 23, aprender lo nuevo (#109–#110)
 - **Lección 3 del tutorial (#109), «Órdenes y tropas especiales»:** infiltra a los Francotiradores por el flanco izquierdo y empieza. Te explica las órdenes secundarias (la ✓ y el descarte por +1 PM) y por qué la Mente del Enjambre, unida a sus Garras, solo puede recibir disparos de Precisión. Dispara a la Mente, mira cómo vuelan las Gárgolas sobre los contenedores y, al volver tu turno, cómo se leen el resumen del turno rival y los iconos de las unidades. Una prueba comprueba que desde el flanco los Francotiradores ven a la Mente; desde el centro, el búnker la tapa.
 - **Habilidades de arma en el Códice (#110):** bajo las armas de cada unidad se explica qué hace cada habilidad que llevan (Asalto, Pesada, Pistola, Ráfaga, Sostenida, Letal, Devastadora, Explosiva, Torrente, Precisión).

@@ -226,7 +226,7 @@ const fmtIn = (v: number) => `${v.toFixed(1).replace(".", ",")}"`;
 /** Perfil corto de un arma: 24" A2 3+ F4 FP−1 D1 (Asalto). */
 export function weaponLine(w: Weapon): string {
   const ab = w.abilities.map((a) => ({ asalto: "Asalto", pesada: "Pesada", pistola: "Pistola", rafaga: `Ráfaga ${"x" in a ? a.x : ""}`,
-    sostenida: `Sostenida ${"x" in a ? a.x : ""}`, letal: "Letal", devastadora: "Devastadora", explosiva: "Explosiva", torrente: "Torrente", precision: "Precisión" })[a.kind]);
+    sostenida: `Sostenida ${"x" in a ? a.x : ""}`, letal: "Letal", devastadora: "Devastadora", explosiva: "Explosiva", torrente: "Torrente", precision: "Precisión", indirecto: "Indirecto" })[a.kind]);
   return `${w.range === "CC" ? "CC" : `${w.range}"`} A${w.attacks} ${w.skill ? `${w.skill}+` : "—"} F${w.strength} FP${w.ap === 0 ? "0" : `−${-w.ap}`} D${w.damage}${ab.length ? ` (${ab.join(", ")})` : ""}`;
 }
 

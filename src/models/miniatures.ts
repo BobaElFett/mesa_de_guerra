@@ -502,6 +502,53 @@ function psiquico(pose: number): Part[] {
   return p;
 }
 
+/** Saltador de asalto (#111): legionario con retrorreactor a la espalda y toberas encendidas. */
+function saltador(pose: number): Part[] {
+  const p = legionario(pose, false, "tactico");
+  const A = LEG;
+  p.push(box(0.46, 0.42, 0.2, A.armorD, 0, y(1.0), -0.3));                       // mochila
+  p.push(box(0.5, 0.08, 0.24, A.trim, 0, y(1.22), -0.3));
+  for (const s of [-1, 1]) {
+    p.push(segment([s * 0.14, y(0.92), -0.36], [s * 0.16, y(0.62), -0.42], 0.08, 0.1, A.metal));   // toberas
+    p.push(place(new THREE.ConeGeometry(0.07, 0.22, 6), "#ffb347", s * 0.16, y(0.5), -0.43, Math.PI, 0, 0, true));
+    p.push(box(0.06, 0.34, 0.16, A.armor, s * 0.3, y(1.1), -0.34, 0, 0, s * 0.35));               // aletas
+  }
+  return p;
+}
+
+/** Médico de campaña (#112): legionario con hombreras blancas, cruz roja y brazal de herramientas. */
+function medico(pose: number): Part[] {
+  const A = LEG, white = "#e6e6e2";
+  const p = legionario(pose, false, "tactico").map((q) => (q.color === A.trim ? { ...q, color: white } : q));   // ribetes blancos
+  p.push(box(0.18, 0.05, 0.02, A.red, 0, y(1.02), 0.2));                          // cruz en el pecho
+  p.push(box(0.05, 0.18, 0.02, A.red, 0, y(1.02), 0.2));
+  p.push(box(0.14, 0.12, 0.2, white, -0.3, y(0.78), 0.1));                       // brazal (herramientas)
+  p.push(segment([-0.3, y(0.78), 0.2], [-0.3, y(0.74), 0.42], 0.025, 0.012, A.blade));
+  p.push(box(0.36, 0.3, 0.16, white, 0, y(0.98), -0.28));                        // mochila de campaña
+  p.push(box(0.12, 0.04, 0.02, A.red, 0, y(1.02), -0.365));
+  p.push(box(0.04, 0.12, 0.02, A.red, 0, y(1.02), -0.365));
+  return p;
+}
+
+/** Biomortero (#113): bestia acorazada con un saco de gas en el lomo y un tubo hacia el cielo. */
+function biomortero(pose: number): Part[] {
+  const p = garra(pose, true, { monster: true, scythes: false });
+  const C = SW;
+  p.push(place(new THREE.IcosahedronGeometry(0.2, 0), C.glow, 0, y(0.98), -0.3, 0.3, pose, 0, true));    // saco de gas
+  p.push(place(new THREE.IcosahedronGeometry(0.22, 0), C.shellD, 0, y(0.92), -0.4, 0, pose, 0));
+  p.push(segment([0, y(1.0), -0.12], [0, y(1.38), 0.16], 0.08, 0.06, C.shell));      // tubo
+  p.push(segment([0, y(1.38), 0.16], [0, y(1.45), 0.2], 0.07, 0.08, C.bone));
+  return p;
+}
+
+/** Reventador (#114): garra hinchada de bilis, con el vientre a punto de estallar. */
+function reventador(pose: number, leader: boolean): Part[] {
+  const p = garra(pose, leader, { scythes: false });
+  p.push(place(new THREE.IcosahedronGeometry(0.2, 1), "#a6d64a", 0, y(0.52), 0.1, 0, pose, 0, true));    // vientre
+  for (const a of [0.6, 2.2, 4.0]) p.push(place(new THREE.IcosahedronGeometry(0.06, 0), "#d8f07a", Math.cos(a) * 0.17, y(0.6 + (a % 1) * 0.08), 0.1 + Math.sin(a) * 0.17, a, 0, 0, true));
+  return p;
+}
+
 /** Francotirador (#103): legionario con capa de camuflaje, capucha y un rifle largo. */
 function francotirador(pose: number): Part[] {
   const p = legionario(pose, false, "tactico");
@@ -564,7 +611,7 @@ export function makeMiniature(kind: ModelKind, pose = 0, leader = false): THREE.
   if (!proto) {
     proto = new THREE.Group();
     const r = BASE_RADIUS[kind];
-    const legion = ["legionario", "capitan", "pesado", "andador", "exterminador", "moto", "psiquico", "francotirador"].includes(kind);
+    const legion = ["legionario", "capitan", "pesado", "andador", "exterminador", "moto", "psiquico", "francotirador", "saltador", "medico"].includes(kind);
     const rim = leader || kind === "capitan" || kind === "tirano" || kind === "psiquico" || kind === "mente" ? (legion ? LEG.trim : SW.glow) : legion ? LEG.rim : SW.rim;
     const [parts, scale] = bodyOf(kind, pose, leader);
     // El cuerpo escalado se hornea en la geometría: peana y cuerpo en una sola malla (#58)
@@ -597,6 +644,10 @@ function bodyOf(kind: ModelKind, pose: number, leader: boolean): [Part[], number
     case "carnifice": return [carnifice(pose), 2.9];
     case "francotirador": return [francotirador(pose), 1];
     case "gargola": return [gargola(pose, leader), 1];
+    case "saltador": return [saltador(pose), 1];
+    case "medico": return [medico(pose), 1.12];
+    case "biomortero": return [biomortero(pose), 1.5];
+    case "reventador": return [reventador(pose, leader), 0.95];
   }
 }
 

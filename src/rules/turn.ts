@@ -4,6 +4,7 @@ import type { GameState } from "../core/state";
 import { runMoraleTests } from "./morale";
 import { scoreObjectives } from "./missions";
 import { drawSecondaries, scoreSecondaries } from "./secondaries";
+import { healLedSquads } from "./special";
 
 // El turno del reglamento (antes de la ronda 1, la fase de despliegue): cinco fases por jugador, dos jugadores por ronda, cinco rondas.
 
@@ -27,6 +28,7 @@ function enterCommand(s: GameState) {
   s.cp = [s.cp[0] + 1, s.cp[1] + 1];
   s.turnLog = { moves: {}, origins: {} };
   if (s.rulesMode) note(s, "turno", `Ronda ${s.turn}: turno ${s.active === 0 ? "de la Legión Astral" : "del Enjambre"} (PM ${s.cp[s.active]})`);
+  if (s.rulesMode) healLedSquads(s);
   if (s.rulesMode) runMoraleTests(s);
   scoreObjectives(s, "inicio");
   drawSecondaries(s);

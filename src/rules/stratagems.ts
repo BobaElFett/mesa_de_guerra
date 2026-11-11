@@ -8,6 +8,7 @@ import { performAttack } from "./shooting";
 import { inSynapse } from "./morale";
 import { resolveOverlaps } from "../core/placement";
 import { rollDice } from "../core/rng";
+import { respawn } from "./special";
 
 // Estratagemas (#36): el jugador activo gasta puntos de mando (PM) en su propio turno.
 // Cada estratagema se usa como mucho una vez por turno (cada una va con una sola fase) y
@@ -115,21 +116,5 @@ function endlessWave(s: GameState, unitId: string) {
   s.rolls.push({ player: s.active, turn: s.turn, sides: 3, results: d });
   const roll = d[0] + 1;
   const n = Math.min(roll, u.startingModels - models.length);
-  const proto = models[0];
-  const cx = models.reduce((a, p) => a + p.x, 0) / models.length, cz = models.reduce((a, p) => a + p.z, 0) / models.length;
-  const enemies = enemyModels(s, unitId).map((e) => ({ x: e.x, z: e.z, r: BASE_RADIUS[e.model] + ENGAGEMENT }));
-  // Ids nuevos: por encima de todos, también de los que esperan en reserva (si no, se repetirían)
-  let next = [...s.pieces, ...(s.reserves ?? [])].reduce((m, p) => Math.max(m, Number(p.id.replace(/\D/g, "")) || 0), 0);
-  const fresh: Piece[] = [];
-  for (let i = 0; i < n; i++) fresh.push({ ...proto, id: `E${++next}`, x: cx, z: cz, damage: 0, leader: false, pose: (i + next) % 3 });
-  const placed = resolveOverlaps([...s.pieces, ...fresh], fresh.map((p) => ({ id: p.id, x: p.x, z: p.z })), {
-    avoid: () => enemies,
-    blocked: (x, z, rr) => onForbiddenTerrain(s.terrain, x, z, rr + 0.05) !== null,
-    limit: () => ({ x: cx, z: cz, max: 6 }),
-  });
-  for (const m of placed) {
-    const p = fresh.find((q) => q.id === m.id)!;
-    if (Math.hypot(m.x - cx, m.z - cz) > 6 + 1e-6) continue;
-    s.pieces.push({ ...p, x: m.x, z: m.z });
-  }
+  respawn(s, unitId, n, models[0]);
 }
