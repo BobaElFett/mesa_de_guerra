@@ -75,3 +75,16 @@ export function healLedSquads(s: GameState) {
     if (respawn(s, squad.id, 1)) note(s, "turno", `${unitName(s, u.id)} devuelve una miniatura a ${unitName(s, squad.id)}`);
   }
 }
+
+/** Devorar (#118): cada miniatura enemiga que mata en combate le cura 1 herida. */
+export function devour(s: GameState, unitId: string, kills: number) {
+  if (kills <= 0 || !has(s, unitId, "devorar")) return;
+  let left = kills, healed = 0;
+  for (const p of s.pieces) {
+    if (p.unit !== unitId || !p.damage) continue;
+    const h = Math.min(p.damage, left);
+    p.damage -= h; left -= h; healed += h;
+    if (!left) break;
+  }
+  if (healed) note(s, "combate", `${unitName(s, unitId)} devora a sus víctimas y recupera ${healed} herida${healed === 1 ? "" : "s"}`);
+}

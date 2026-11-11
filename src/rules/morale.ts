@@ -1,3 +1,4 @@
+import { nearAura } from "./auras";
 import { note, unitName } from "./history";
 import { GameState, PLAYERS } from "../core/state";
 import { rollDice } from "../core/rng";
@@ -76,8 +77,14 @@ export function runMoraleTests(s: GameState): MoraleEntry[] {
       out.push({ turn: s.turn, player: s.active, unit: u.id, dice: null, need, passed: true });
       continue;
     }
-    const [d, rng] = rollDice(s.rng, 2, 6);
+    let [d, rng] = rollDice(s.rng, 2, 6);
     s.rng = rng;
+    // Estandarte (#116): repite el chequeo fallado
+    if (d[0] + d[1] < need && nearAura(s, u.id, "estandarte")) {
+      [d, rng] = rollDice(s.rng, 2, 6);
+      s.rng = rng;
+      note(s, "moral", `${unitName(s, u.id)} repite la moral junto al estandarte`, s.active);
+    }
     const passed = d[0] + d[1] >= need;
     if (!passed) u.shocked = true;
     out.push({ turn: s.turn, player: s.active, unit: u.id, dice: [d[0], d[1]], need, passed });
@@ -91,5 +98,5 @@ export function runMoraleTests(s: GameState): MoraleEntry[] {
 export function objectiveControl(s: GameState, unitId: string): number {
   const u = s.units.find((x) => x.id === unitId);
   if (!u || u.shocked) return 0;
-  return DATASHEETS[u.datasheet].profile.OC * unitModels(s, unitId).length;
+  return (DATASHEETS[u.datasheet].profile.OC + (nearAura(s, unitId, "estandarte") ? 1 : 0)) * unitModels(s, unitId).length;
 }

@@ -1,3 +1,4 @@
+import { nearAura } from "./auras";
 import { conditionHitMod, reach } from "./conditions";
 import { pieceWeaponIds } from "./datasheets";
 import { recordDamage } from "./stats";
@@ -182,7 +183,11 @@ export function performAttack(s: GameState, kind: AttackLogEntry["kind"], unitId
   const dice = new SeededDice(s.rng);
   const res = resolveAttack({
     weapon, attackers: attackers.length,
-    target: { profile: tds.profile, models: targetModels, armored: tds.abilities.includes("blindado") },
+    target: {
+      // Escudo vivo (#117): invulnerable 5+ contra disparos cerca de una Bestia Guardiana
+      profile: kind === "disparo" && !extra.mortal && nearAura(s, targetId, "escudoVivo") ? { ...tds.profile, Inv: Math.min(tds.profile.Inv ?? 7, 5) } : tds.profile,
+      models: targetModels, armored: tds.abilities.includes("blindado"),
+    },
     distance: extra.distance, stationary: extra.stationary, cover: extra.cover,
     rerollHitOnes: underCommand(s, unitId) && !extra.overwatch,
     rerollWoundOnes: !!attacker.veteran && !extra.mortal,

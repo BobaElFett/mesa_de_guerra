@@ -220,7 +220,7 @@ export class ArmyDialog {
   }
 
   private render() {
-    { const k = settings.gameSize / 500; $("armies-rules").textContent = `${settings.gameSize} puntos por bando · máx. ${3 * k} unidades iguales · ${k > 1 ? `${k} Andadores o Tiranos` : "1 Andador o Tirano"} · al menos un personaje`; }
+    { const k = settings.gameSize / 500; $("armies-rules").textContent = `${settings.gameSize} puntos por bando · máx. ${3 * k} unidades iguales · máx. ${2 * k} unidades grandes · al menos un personaje`; }
     const saved = readSaved();
     let allOk = true;
     $("armies-cols").innerHTML = SIDES.map((f) => {

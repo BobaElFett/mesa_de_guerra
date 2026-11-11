@@ -2,6 +2,15 @@
 
 Lo nuevo de cada versión de *Mesa de Guerra*, de la más reciente a la primera.
 
+## 0.44 · fase 25, cuatro tropas más II (#115–#118)
+- **Tanque Martillo (#115, Legión, 175 pts):** carro con orugas, torreta y bólter en el casco (M10", R10, Sv2+, 12 H). Lleva *Cañón de batalla* (48", D6 ataques, F9, FP−2, D3, Explosiva), Bólter gemelo y Orugas para el cuerpo a cuerpo. *Blindado*: cada ataque que recibe hace 1 daño menos (mínimo 1).
+- **Portaestandarte (#116, Legión, 45 pts):** personaje con un estandarte alto. Lidera las mismas escuadras que el Médico. *Estandarte* (aura): tus unidades con alguna miniatura a 6" o menos suman +1 al control de objetivos de cada miniatura y repiten los chequeos de moral fallados.
+- **Bestia Guardiana (#117, Enjambre, 135 pts):** monstruo de caparazón ancho con una cresta luminosa (R8, 8 H). *Escudo vivo* (aura): tus unidades a 6" o menos tienen salvación invulnerable 5+ contra los disparos.
+- **Devorador (#118, Enjambre, 130 pts):** monstruo de combate (R8, 9 H) con *Fauces devoradoras* (A5, 3+, F7, FP−2, D2) y Escupidor. *Devorar*: cada miniatura enemiga que mata en combate le cura 1 herida.
+- **Unidades grandes:** ahora caben 2 por cada 500 puntos (antes 1). Son grandes el Andador, el Tanque, el Tirano, la Bestia Guardiana y el Devorador.
+- Las cuatro tienen miniatura, Códice con trasfondo, ayuda, listas al azar e IA.
+- **Equilibrio** (3 rondas de 800 partidas con listas, mapas y misiones al azar): el Tanque bajó de 230 a 175, el Devorador de 150 a 130 y el Portaestandarte de 60 a 45; la Bestia Guardiana subió de 120 a 135 y el Andador de 170 a 190 (con dos unidades grandes rendía demasiado). Queda Legión 49 % – Enjambre 51 %; las cuatro nuevas se mueven entre −5 y +5 puntos.
+
 ## 0.43 · fase 24, cuatro tropas más (#111–#114)
 Cuatro tropas nuevas, cada una con una regla que no existía. Todas tienen miniatura propia, Códice con su trasfondo, entran en las listas al azar y la IA las usa.
 - **Saltadores de Asalto (#111, Legión):** legionarios con retrorreactor (M12", 5: 100, 10: 200), con pistola bólter y espada sierra. Tienen *Vuelo* e *Impacto*: al llegar con una carga, tiran un dado por miniatura y cada 5+ es una herida mortal a la unidad cargada.

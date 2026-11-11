@@ -502,6 +502,43 @@ function psiquico(pose: number): Part[] {
   return p;
 }
 
+/** Tanque Martillo (#115): casco, orugas, torreta con cañón largo y bólter en el casco. */
+function tanque(pose: number): Part[] {
+  const A = LEG, p: Part[] = [];
+  const turn = [0, 0.25, -0.25][pose % 3];
+  p.push(box(2.3, 0.75, 3.6, A.armor, 0, 0.35, 0));                              // casco
+  p.push(box(2.0, 0.25, 3.0, A.armorD, 0, 1.1, -0.1));                           // cubierta
+  p.push(box(2.0, 0.12, 0.5, A.trim, 0, 1.0, 1.6, -0.5));                        // morro inclinado
+  for (const s of [-1, 1]) {
+    p.push(box(0.6, 0.85, 4.0, "#3a3a3e", s * 1.4, 0.05, 0));                    // orugas
+    p.push(box(0.64, 0.1, 4.04, A.metal, s * 1.4, 0.55, 0));
+    for (let i = 0; i < 5; i++) p.push(place(new THREE.CylinderGeometry(0.28, 0.28, 0.66, 8), A.dark, s * 1.4, 0.38, -1.5 + i * 0.75, 0, 0, Math.PI / 2));
+  }
+  // Torreta y cañón (gira un poco según la pose)
+  const tx = Math.sin(turn), tz = Math.cos(turn);
+  p.push(place(new THREE.CylinderGeometry(0.75, 0.85, 0.55, 8), A.armor, 0, 1.6, -0.3, 0, turn, 0));
+  p.push(box(0.9, 0.3, 0.9, A.trim, 0, 1.85, -0.35, 0, turn));
+  p.push(segment([tx * 0.6, 1.6, -0.3 + tz * 0.6], [tx * 3.0, 1.66, -0.3 + tz * 3.0], 0.13, 0.11, A.dark));
+  p.push(segment([tx * 2.85, 1.66, -0.3 + tz * 2.85], [tx * 3.15, 1.66, -0.3 + tz * 3.15], 0.17, 0.17, A.metal));
+  // Bólter gemelo en el casco y visor
+  for (const s of [-1, 1]) p.push(segment([s * 0.35, 0.95, 1.6], [s * 0.35, 0.95, 2.1], 0.05, 0.05, A.dark));
+  p.push(place(new THREE.BoxGeometry(0.5, 0.08, 0.04), A.visor, 0, 1.3, 1.45, 0, 0, 0, true));
+  return p;
+}
+
+/** Portaestandarte (#116): legionario con un estandarte alto a la espalda. */
+function portaestandarte(pose: number): Part[] {
+  const p = legionario(pose, false, "tactico");
+  const A = LEG;
+  p.push(segment([0.12, y(0.7), -0.3], [0.12, y(2.6), -0.3], 0.035, 0.03, A.metal));   // asta
+  p.push(segment([-0.5, y(2.5), -0.3], [0.5, y(2.5), -0.3], 0.03, 0.03, A.metal));    // travesaño
+  p.push(box(0.9, 0.85, 0.03, A.red, 0.12, y(1.62), -0.3));                       // paño
+  p.push(box(0.9, 0.1, 0.035, A.trim, 0.12, y(1.6), -0.3));
+  p.push(box(0.3, 0.3, 0.04, A.trim, 0.12, y(2.05), -0.3));                       // emblema
+  p.push(place(new THREE.OctahedronGeometry(0.12, 0), A.trim, 0.12, y(2.72), -0.3));
+  return p;
+}
+
 /** Saltador de asalto (#111): legionario con retrorreactor a la espalda y toberas encendidas. */
 function saltador(pose: number): Part[] {
   const p = legionario(pose, false, "tactico");
@@ -527,6 +564,30 @@ function medico(pose: number): Part[] {
   p.push(box(0.36, 0.3, 0.16, white, 0, y(0.98), -0.28));                        // mochila de campaña
   p.push(box(0.12, 0.04, 0.02, A.red, 0, y(1.02), -0.365));
   p.push(box(0.04, 0.12, 0.02, A.red, 0, y(1.02), -0.365));
+  return p;
+}
+
+/** Bestia Guardiana (#117): monstruo de caparazón ancho con una cresta que brilla (el escudo vivo). */
+function guardiana(pose: number): Part[] {
+  const p = garra(pose, true, { monster: true, scythes: false });
+  const C = SW;
+  p.push(box(0.8, 0.12, 0.6, C.shellD, 0, y(0.95), -0.1, -0.2));                 // caparazón ancho
+  for (const s of [-1, 1]) p.push(box(0.12, 0.5, 0.5, C.shell, s * 0.42, y(0.65), -0.05, 0, 0, s * 0.3));
+  for (let i = 0; i < 5; i++) {                                                   // cresta luminosa
+    const a = -0.8 + i * 0.4;
+    p.push(place(new THREE.OctahedronGeometry(0.07, 0), C.glow, Math.sin(a) * 0.35, y(1.08 + Math.cos(a) * 0.18), -0.15, 0, 0, 0, true));
+  }
+  return p;
+}
+
+/** Devorador (#118): monstruo con unas fauces enormes y guadañas. */
+function devorador(pose: number): Part[] {
+  const p = garra(pose, true, { monster: true, gun: "escupidor" });
+  const C = SW;
+  for (let i = 0; i < 3; i++) {                                                   // espinas dorsales
+    const zz = -0.05 - i * 0.16, yy = 0.95 - i * 0.08;
+    p.push(spike([0, y(yy), zz], [0, y(yy + 0.3), zz - 0.1], 0.05, C.bone));
+  }
   return p;
 }
 
@@ -611,7 +672,7 @@ export function makeMiniature(kind: ModelKind, pose = 0, leader = false): THREE.
   if (!proto) {
     proto = new THREE.Group();
     const r = BASE_RADIUS[kind];
-    const legion = ["legionario", "capitan", "pesado", "andador", "exterminador", "moto", "psiquico", "francotirador", "saltador", "medico"].includes(kind);
+    const legion = ["legionario", "capitan", "pesado", "andador", "exterminador", "moto", "psiquico", "francotirador", "saltador", "medico", "tanque", "estandarte"].includes(kind);
     const rim = leader || kind === "capitan" || kind === "tirano" || kind === "psiquico" || kind === "mente" ? (legion ? LEG.trim : SW.glow) : legion ? LEG.rim : SW.rim;
     const [parts, scale] = bodyOf(kind, pose, leader);
     // El cuerpo escalado se hornea en la geometría: peana y cuerpo en una sola malla (#58)
@@ -645,6 +706,10 @@ function bodyOf(kind: ModelKind, pose: number, leader: boolean): [Part[], number
     case "francotirador": return [francotirador(pose), 1];
     case "gargola": return [gargola(pose, leader), 1];
     case "saltador": return [saltador(pose), 1];
+    case "tanque": return [tanque(pose), 1];
+    case "estandarte": return [portaestandarte(pose), 1];
+    case "guardiana": return [guardiana(pose), 2.6];
+    case "devorador": return [devorador(pose), 2.6];
     case "medico": return [medico(pose), 1.12];
     case "biomortero": return [biomortero(pose), 1.5];
     case "reventador": return [reventador(pose, leader), 0.95];

@@ -23,7 +23,7 @@ test("batallas de 1000 puntos: listas de prueba y al azar válidas, y el doble d
     assert.deepEqual(validateList(l, f, 1000), []);
     assert.ok(listPoints(l) > 850);
   }
-  const big = { units: [{ datasheet: "tirano" as const, models: 1 }, { datasheet: "tirano" as const, models: 1 }] };
-  assert.equal(validateList(big, "swarm", 1000).filter((e) => /Andador|Tirano/.test(e)).length, 0);
-  assert.ok(validateList(big, "swarm", 500).some((e) => /Como mucho 1/.test(e)));
+  const big = { units: [{ datasheet: "tirano" as const, models: 1 }, { datasheet: "devorador" as const, models: 1 }, { datasheet: "guardiana" as const, models: 1 }] };
+  assert.equal(validateList(big, "swarm", 1000).filter((e) => /unidades grandes/.test(e)).length, 0);
+  assert.ok(validateList(big, "swarm", 500).some((e) => /Como mucho 2 unidades grandes/.test(e)));
 });

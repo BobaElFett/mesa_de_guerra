@@ -10,7 +10,7 @@ import { DATASHEETS, WEAPONS } from "./datasheets";
 import { disc, engaged, gap, ENGAGEMENT } from "./geometry";
 import { canChargeAfter, unitModels } from "./movement";
 import { performAttack, AttackLogEntry } from "./shooting";
-import { applyBurst, applyImpact } from "./special";
+import { applyBurst, applyImpact, devour } from "./special";
 
 // Fases de carga y combate del reglamento.
 //  - Carga: a 12" o menos de un enemigo, 2D6; si alcanza para quedar a 1", la unidad entra en contacto.
@@ -189,7 +189,9 @@ export function applyFight(s: GameState, unitId: string, targetId: string): Atta
     const alive = group.filter((p) => s.pieces.includes(p));
     if (!alive.length) continue;
     const before = unitModels(s, targetId);
-    entries.push(performAttack(s, "combate", unitId, alive, WEAPONS[wid], targetId));
+    const hit = performAttack(s, "combate", unitId, alive, WEAPONS[wid], targetId);
+    entries.push(hit);
+    devour(s, unitId, hit.result.slain.length);
     applyBurst(s, targetId, unitId, before.filter((p) => !s.pieces.includes(p)));
     if (!unitModels(s, unitId).length) break;                           // los reventones acabaron con ella
   }

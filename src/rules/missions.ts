@@ -1,3 +1,4 @@
+import { nearAura } from "./auras";
 import { unitCost } from "./datasheets";
 import { note } from "./history";
 import { BASE_RADIUS, Faction, GameState, PLAYERS } from "../core/state";
@@ -158,12 +159,14 @@ export function objectiveStatus(s: GameState, o: Objective): { oc: [number, numb
     return { oc, holder: u ? (PLAYERS.indexOf(u.faction) as 0 | 1) : null };
   }
   const marker = { x: o.x, z: o.z, r: OBJECTIVE_RADIUS };
+  const banner = new Map<string, boolean>();
   for (const p of s.pieces) {
     if (!p.unit) continue;
     const u = s.units.find((x) => x.id === p.unit);
     if (!u || u.shocked) continue;
     if (gap({ x: p.x, z: p.z, r: BASE_RADIUS[p.model] }, marker) > OBJECTIVE_RANGE + 1e-6) continue;
-    oc[PLAYERS.indexOf(p.faction)] += DATASHEETS[u.datasheet].profile.OC;
+    if (!banner.has(u.id)) banner.set(u.id, nearAura(s, u.id, "estandarte"));
+    oc[PLAYERS.indexOf(p.faction)] += DATASHEETS[u.datasheet].profile.OC + (banner.get(u.id) ? 1 : 0);
   }
   const holder = oc[0] > oc[1] ? 0 : oc[1] > oc[0] ? 1 : null;
   return { oc, holder };

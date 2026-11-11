@@ -5,7 +5,7 @@ la **Legión Astral** (super soldados con servoarmadura) contra **El Enjambre** 
 Se juega como en una mesa de verdad (mover, medir y tirar dados) o con el **modo reglas**, que guía las fases y resuelve las tiradas.
 Three.js + TypeScript, compilado con esbuild a un único `dist/index.html`.
 
-Versión **0.43**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
+Versión **0.44**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
 
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor ni conexión.
@@ -33,19 +33,21 @@ Cada bando tiene un ejército de **500 puntos** (*Escaramuza*) o **1.000** (*Bat
 **Condiciones:** *Noche* (nada dispara a más de 24") y *Tormenta* (−1 a impactar a más de 12").
 
 ## Ejércitos
-Máximo 3 unidades iguales y 1 Andador o Tirano (el doble a 1.000 puntos); al menos un personaje. Varias unidades tienen **equipo opcional** (casillas en Ejércitos) y las de Despliegue profundo o Túneles pueden empezar **en reserva** (hasta la mitad de los puntos).
+Máximo 3 unidades iguales y 2 unidades grandes —Andador, Tanque, Tirano, Bestia Guardiana o Devorador— (el doble a 1.000 puntos); al menos un personaje. Varias unidades tienen **equipo opcional** (casillas en Ejércitos) y las de Despliegue profundo o Túneles pueden empezar **en reserva** (hasta la mitad de los puntos).
 
 | Legión Astral | M | R | Sv | H | Puntos | Armas | Habilidades |
 |---|---|---|---|---|---|---|---|
 | **Capitán** (personaje) | 6" | 4 | 3+/4++ | 5 | 1: 80 | Pistola de plasma, Espada de energía | Al mando |
 | **Escuadra de Asalto Táctico** | 6" | 4 | 3+ | 2 | 5: 90 · 10: 170 | Rifle bólter, Cuchillo de combate, Pistola bólter, Espada sierra | Sargento |
 | **Escuadra de Fuego Pesado** | 5" | 4 | 3+ | 2 | 5: 150 | Cañón pesado, Cuchillo de combate | — |
-| **Andador de Combate** | 8" | 9 | 2+ | 12 | 1: 170 | Cañón de asalto, Puño de combate | Blindado |
+| **Andador de Combate** | 8" | 9 | 2+ | 12 | 1: 190 | Cañón de asalto, Puño de combate | Blindado |
 | **Exterminadores** | 5" | 5 | 2+/4++ | 3 | 5: 175 | Bólter de asalto, Puño de energía | Despliegue profundo |
 | **Psíquico de la Legión** (personaje) | 6" | 4 | 3+/5++ | 4 | 1: 70 | Pistola bólter, Báculo psíquico | Psíquico |
 | **Motoristas de Asalto** | 12" | 5 | 3+ | 2 | 3: 90 · 6: 180 | Bólter gemelo, Cuchillo de combate | Turbo |
 | **Francotiradores** | 6" | 4 | 3+ | 2 | 5: 110 | Rifle de precisión, Cuchillo de combate | Infiltrador |
 | **Saltadores de Asalto** | 12" | 4 | 3+ | 2 | 5: 100 · 10: 200 | Pistola bólter, Espada sierra | Vuelo, Impacto |
+| **Tanque Martillo** | 10" | 10 | 2+ | 12 | 1: 175 | Cañón de batalla, Bólter gemelo, Orugas | Blindado |
+| **Portaestandarte** (personaje) | 6" | 4 | 3+ | 4 | 1: 45 | Pistola bólter, Espada sierra | Estandarte; lidera como el Médico |
 | **Médico de Campaña** (personaje) | 6" | 4 | 3+ | 4 | 1: 55 | Pistola bólter, Cuchillo de combate | Sanador; lidera Asalto, Fuego Pesado, Exterminadores, Francotiradores o Saltadores |
 
 | El Enjambre | M | R | Sv | H | Puntos | Armas | Habilidades |
@@ -57,6 +59,8 @@ Máximo 3 unidades iguales y 1 Andador o Tirano (el doble a 1.000 puntos); al me
 | **Garras Menores** | 8" | 4 | 5+ | 1 | 10: 55 · 20: 110 | Garras | Rapidez |
 | **Escupidores** | 6" | 3 | 4+ | 1 | 10: 55 · 20: 110 | Escupidor, Mordiscos | — |
 | **Gárgolas** | 12" | 3 | 6+ | 1 | 10: 70 · 20: 140 | Escupe-púas, Garras aladas | Vuelo |
+| **Bestia Guardiana** | 7" | 8 | 3+ | 8 | 1: 135 | Garras monstruosas | Escudo vivo |
+| **Devorador** | 8" | 8 | 3+ | 9 | 1: 130 | Fauces devoradoras, Escupidor | Devorar |
 | **Biomorteros** | 5" | 5 | 4+ | 3 | 2: 75 · 4: 150 | Biomortero (Indirecto, Explosiva), Garras | — |
 | **Reventadores** | 8" | 3 | 6+ | 1 | 10: 45 · 20: 90 | Mordiscos | Estallido |
 | **Guerreros Nodo** | 6" | 5 | 4+ | 3 | 3: 80 · 6: 160 | Cañón bio, Garras afiladas | Sináptico |

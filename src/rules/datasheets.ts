@@ -41,7 +41,7 @@ export interface Profile {
   OC: number;   // control de objetivo
 }
 
-export type UnitAbility = "alMando" | "sargento" | "blindado" | "sinaptico" | "rapidez" | "despliegueProfundo" | "tuneles" | "turbo" | "aterrador" | "psiquico" | "infiltrador" | "vuelo" | "impacto" | "sanador" | "estallido";
+export type UnitAbility = "alMando" | "sargento" | "blindado" | "sinaptico" | "rapidez" | "despliegueProfundo" | "tuneles" | "turbo" | "aterrador" | "psiquico" | "infiltrador" | "vuelo" | "impacto" | "sanador" | "estallido" | "estandarte" | "escudoVivo" | "devorar";
 
 /**
  * Equipo opcional (#63): cambia un arma por otra en el líder, en una miniatura normal o en todas.
@@ -86,7 +86,8 @@ export type DatasheetId =
   | "capitan" | "asalto" | "fuegoPesado" | "andador" | "exterminadores"
   | "tirano" | "garras" | "escupidores" | "nodo" | "acechadores"
   | "motoristas" | "carnifice" | "psiquico" | "mente" | "francotiradores" | "gargolas"
-  | "saltadores" | "medico" | "biomorteros" | "reventadores";
+  | "saltadores" | "medico" | "biomorteros" | "reventadores"
+  | "tanque" | "portaestandarte" | "guardiana" | "devorador";
 
 /** Qué hace cada habilidad de arma (#110), para el Códice y las fichas. */
 export const WEAPON_ABILITY_TEXT: Record<WeaponAbility["kind"], { name: string; text: string }> = {
@@ -145,6 +146,9 @@ export const WEAPONS: Record<string, Weapon> = Object.fromEntries([
   // Poderes psíquicos (#78): se resuelven como heridas mortales (D3, sin tirada para impactar)
   w("rayoMental", "Rayo mental", 18, "D3", null, 1, 0, 1),
   // Impacto (#111) y Estallido (#114): un dado por miniatura; cada éxito, una herida mortal
+  w("canonBatalla", "Cañón de batalla", 48, "D6", 3, 9, -2, 3, [{ kind: "explosiva" }]),
+  w("orugas", "Orugas", "CC", 3, 4, 6, 0, 1),
+  w("fauces", "Fauces devoradoras", "CC", 5, 3, 7, -2, 2),
   w("aterrizaje", "Aterrizaje", "CC", 1, 5, 1, 0, 1),
   w("estallidoBio", "Estallido", "CC", 1, 4, 1, 0, 1),
   w("morteroBio", "Biomortero", 48, 3, 4, 6, -1, 2, [{ kind: "indirecto" }, { kind: "explosiva" }]),
@@ -159,6 +163,19 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
     profile: { M: 6, T: 4, Sv: 3, Inv: 4, W: 5, Ld: 6, OC: 1 },
     sizes: [{ models: 1, points: 80 }], weapons: ["pistolaPlasma", "espadaEnergia"],
     abilities: ["alMando"], model: "capitan", leads: ["asalto", "fuegoPesado"],
+  },
+  tanque: {
+    id: "tanque", name: "Tanque Martillo", faction: "legion", big: true,
+    profile: { M: 10, T: 10, Sv: 2, W: 12, Ld: 6, OC: 3 },
+    sizes: [{ models: 1, points: 175 }], weapons: ["canonBatalla", "bolterGemelo", "orugas"],
+    abilities: ["blindado"], model: "tanque",
+  },
+  portaestandarte: {
+    id: "portaestandarte", name: "Portaestandarte", faction: "legion",
+    profile: { M: 6, T: 4, Sv: 3, W: 4, Ld: 6, OC: 1 },
+    sizes: [{ models: 1, points: 45 }], weapons: ["pistolaBolter", "espadaSierra"],
+    abilities: ["estandarte"], model: "estandarte", character: true,
+    leads: ["asalto", "fuegoPesado", "exterminadores", "francotiradores", "saltadores"],
   },
   saltadores: {
     id: "saltadores", name: "Saltadores de Asalto", faction: "legion",
@@ -205,7 +222,7 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
   andador: {
     id: "andador", name: "Andador de Combate", faction: "legion", big: true,
     profile: { M: 8, T: 9, Sv: 2, W: 12, Ld: 6, OC: 4 },
-    sizes: [{ models: 1, points: 170 }], weapons: ["canonAsalto", "punoCombate"],
+    sizes: [{ models: 1, points: 190 }], weapons: ["canonAsalto", "punoCombate"],
     abilities: ["blindado"], model: "andador",
   },
   exterminadores: {
@@ -267,6 +284,18 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
     options: [
       { id: "acido", name: "Todos: ácido corrosivo (12\", 2 ataques, FP−1, en vez de escupidor)", who: "todos", replace: "escupidor", with: "acidoCorrosivo", points: 0 },
     ],
+  },
+  guardiana: {
+    id: "guardiana", name: "Bestia Guardiana", faction: "swarm", big: true,
+    profile: { M: 7, T: 8, Sv: 3, W: 8, Ld: 8, OC: 3 },
+    sizes: [{ models: 1, points: 135 }], weapons: ["garrasMonstruosas"],
+    abilities: ["escudoVivo"], model: "guardiana",
+  },
+  devorador: {
+    id: "devorador", name: "Devorador", faction: "swarm", big: true,
+    profile: { M: 8, T: 8, Sv: 3, W: 9, Ld: 8, OC: 3 },
+    sizes: [{ models: 1, points: 130 }], weapons: ["fauces", "escupidor"],
+    abilities: ["devorar"], model: "devorador",
   },
   biomorteros: {
     id: "biomorteros", name: "Biomorteros", faction: "swarm",
@@ -360,6 +389,9 @@ export const UNIT_ABILITY_TEXT: Record<UnitAbility, { name: string; text: string
   turbo: { name: "Turbo", text: "Al avanzar suma 6\" sin tirar el dado." },
   aterrador: { name: "Aterrador", text: "Las unidades enemigas a 6\" o menos restan 1 a su Liderazgo en los chequeos de moral." },
   infiltrador: { name: "Infiltrador", text: "Despliega en cualquier punto de su mitad de la mesa a más de 6\" de la línea central, no solo en su zona de despliegue." },
+  estandarte: { name: "Estandarte", text: "Tus unidades con alguna miniatura a 6\" o menos de él suman +1 al control de objetivos de cada miniatura y repiten los chequeos de moral fallados." },
+  escudoVivo: { name: "Escudo vivo", text: "Tus unidades con alguna miniatura a 6\" o menos de ella tienen salvación invulnerable 5+ contra los disparos." },
+  devorar: { name: "Devorar", text: "Cada miniatura enemiga que mata en combate le cura 1 herida." },
   impacto: { name: "Impacto", text: "Al llegar con una carga, tira un dado por miniatura: cada 5+ es una herida mortal a la unidad cargada." },
   sanador: { name: "Sanador", text: "Al empezar tu fase de mando, si la escuadra que lidera ha perdido miniaturas, vuelve una (sin heridas) junto a ella." },
   estallido: { name: "Estallido", text: "Cada miniatura que cae en combate revienta: tira un dado; con 4+, la unidad que la ha matado sufre una herida mortal." },

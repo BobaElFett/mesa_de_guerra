@@ -29,6 +29,9 @@ export function listPoints(list: ArmyList): number {
 }
 
 /** Errores de una lista según el reglamento (vacío si es válida). */
+/** Unidades grandes por cada 500 puntos (#115): dos desde la fase 25. */
+export const MAX_BIG = 2;
+
 export function validateList(list: ArmyList, faction: Faction, limit = POINTS_LIMIT): string[] {
   const errs: string[] = [];
   const counts = new Map<DatasheetId, number>();
@@ -53,11 +56,11 @@ export function validateList(list: ArmyList, faction: Faction, limit = POINTS_LI
     else if (led.has(u.leads)) errs.push(`${DATASHEETS[to.datasheet].name} tiene dos líderes.`);
     led.add(u.leads);
   }
-  // Batallas de 1000 puntos (#88): el doble de todo (6 iguales, 2 Andadores o Tiranos)
+  // Batallas de 1000 puntos (#88): el doble de todo (6 iguales, 4 unidades grandes)
   const k = Math.max(1, Math.round(limit / POINTS_LIMIT));
   for (const [id, n] of counts) if (n > 3 * k) errs.push(`Como mucho ${3 * k} ${DATASHEETS[id].name} (hay ${n}).`);
-  if (big > k) errs.push(k > 1 ? `Como mucho ${k} Andadores o Tiranos.` : "Como mucho 1 Andador o Tirano.");
-  if (!characters) errs.push("Hace falta al menos un personaje (Capitán o Tirano Sináptico).");
+  if (big > MAX_BIG * k) errs.push(`Como mucho ${MAX_BIG * k} unidades grandes (Andador, Tanque, Tirano, Bestia Guardiana, Devorador).`);
+  if (!characters) errs.push("Hace falta al menos un personaje (Capitán, Psíquico, Médico, Portaestandarte, Tirano o Mente).");
   const pts = listPoints(list);
   if (pts > limit) errs.push(`${pts} puntos: pasa de ${limit}.`);
   if (!list.units.length) errs.push("La lista está vacía.");

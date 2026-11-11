@@ -1,6 +1,6 @@
 import { Faction } from "../core/state";
 import { nextRandom } from "../core/rng";
-import { ArmyEntry, ArmyList, listPoints, POINTS_LIMIT, validateList } from "./armies";
+import { ArmyEntry, ArmyList, listPoints, MAX_BIG, POINTS_LIMIT, validateList } from "./armies";
 import { DATASHEETS, Datasheet, DatasheetId, optionPoints, unitPoints } from "./datasheets";
 import { canReserve } from "./reserves";
 
@@ -36,7 +36,7 @@ export function randomList(faction: Faction, seed: number, limit = POINTS_LIMIT)
     for (let tries = 0; tries < 40 && listPoints({ units }) < limit - 40; tries++) {
       const ds = pick(troops);
       if (units.filter((u) => u.datasheet === ds.id).length >= 3) continue;
-      if (ds.big && units.some((u) => DATASHEETS[u.datasheet].big)) continue;
+      if (ds.big && units.filter((u) => DATASHEETS[u.datasheet].big).length >= MAX_BIG * Math.max(1, Math.round(limit / 500))) continue;
       add(ds);
     }
     // El personaje lidera una escuadra que pueda
