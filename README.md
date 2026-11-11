@@ -5,7 +5,7 @@ la **Legión Astral** (super soldados con servoarmadura) contra **El Enjambre** 
 Se juega como en una mesa de verdad (mover, medir y tirar dados) o con el **modo reglas**, que guía las fases y resuelve las tiradas.
 Three.js + TypeScript, compilado con esbuild a un único `dist/index.html`.
 
-Versión **0.38**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
+Versión **0.39**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
 
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor ni conexión.
@@ -44,6 +44,7 @@ Máximo 3 unidades iguales y 1 Andador o Tirano (el doble a 1.000 puntos); al me
 | **Exterminadores** | 5" | 5 | 2+/4++ | 3 | 5: 200 | Bólter de asalto, Puño de energía | Despliegue profundo |
 | **Psíquico de la Legión** (personaje) | 6" | 4 | 3+/5++ | 4 | 1: 75 | Pistola bólter, Báculo psíquico | Psíquico |
 | **Motoristas de Asalto** | 12" | 5 | 3+ | 2 | 3: 110 · 6: 220 | Bólter gemelo, Cuchillo de combate | Turbo |
+| **Francotiradores** | 6" | 4 | 3+ | 2 | 5: 85 | Rifle de precisión, Cuchillo de combate | Infiltrador |
 
 | El Enjambre | M | R | Sv | H | Puntos | Armas | Habilidades |
 |---|---|---|---|---|---|---|---|
@@ -53,6 +54,7 @@ Máximo 3 unidades iguales y 1 Andador o Tirano (el doble a 1.000 puntos); al me
 | **Tirano Sináptico** (personaje) | 8" | 9 | 2+/5++ | 11 | 1: 180 | Garras monstruosas, Escupe-bilis | Sináptico |
 | **Garras Menores** | 8" | 4 | 5+ | 1 | 10: 55 · 20: 110 | Garras | Rapidez |
 | **Escupidores** | 6" | 3 | 4+ | 1 | 10: 60 · 20: 120 | Escupidor, Mordiscos | — |
+| **Gárgolas** | 12" | 3 | 6+ | 1 | 10: 85 · 20: 170 | Escupe-púas, Garras aladas | Vuelo |
 | **Guerreros Nodo** | 6" | 5 | 4+ | 3 | 3: 80 · 6: 160 | Cañón bio, Garras afiladas | Sináptico |
 
 ## Ayudas

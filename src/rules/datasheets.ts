@@ -10,7 +10,9 @@ export type Dice = number | "D3" | "D6";
 export type WeaponAbility =
   | { kind: "asalto" } | { kind: "pesada" } | { kind: "pistola" }
   | { kind: "rafaga"; x: number } | { kind: "sostenida"; x: number }
-  | { kind: "letal" } | { kind: "devastadora" } | { kind: "explosiva" } | { kind: "torrente" };
+  | { kind: "letal" } | { kind: "devastadora" } | { kind: "explosiva" } | { kind: "torrente" }
+  /** Precisión (#103): ignora la cobertura, +1 para herir a personajes y puede apuntar a uno protegido por su escuadra. */
+  | { kind: "precision" };
 
 export interface Weapon {
   id: string;
@@ -37,7 +39,7 @@ export interface Profile {
   OC: number;   // control de objetivo
 }
 
-export type UnitAbility = "alMando" | "sargento" | "blindado" | "sinaptico" | "rapidez" | "despliegueProfundo" | "tuneles" | "turbo" | "aterrador" | "psiquico";
+export type UnitAbility = "alMando" | "sargento" | "blindado" | "sinaptico" | "rapidez" | "despliegueProfundo" | "tuneles" | "turbo" | "aterrador" | "psiquico" | "infiltrador" | "vuelo";
 
 /**
  * Equipo opcional (#63): cambia un arma por otra en el líder, en una miniatura normal o en todas.
@@ -81,7 +83,7 @@ export interface Datasheet {
 export type DatasheetId =
   | "capitan" | "asalto" | "fuegoPesado" | "andador" | "exterminadores"
   | "tirano" | "garras" | "escupidores" | "nodo" | "acechadores"
-  | "motoristas" | "carnifice" | "psiquico" | "mente";
+  | "motoristas" | "carnifice" | "psiquico" | "mente" | "francotiradores" | "gargolas";
 
 const w = (id: string, name: string, range: number | "CC", attacks: Dice, skill: number | null,
   strength: number, ap: number, damage: Dice, abilities: WeaponAbility[] = []): Weapon =>
@@ -113,6 +115,9 @@ export const WEAPONS: Record<string, Weapon> = Object.fromEntries([
   w("canonBio", "Cañón bio", 24, 3, 4, 5, -1, 1),
   w("garrasAfiladas", "Garras afiladas", "CC", 4, 3, 5, -2, 1),
   // Unidades nuevas (#57)
+  w("rifleFrancotirador", "Rifle de precisión", 36, 1, 3, 6, -2, 3, [{ kind: "pesada" }, { kind: "precision" }]),
+  w("escupePuas", "Escupe-púas", 18, 2, 4, 4, 0, 1, [{ kind: "asalto" }]),
+  w("garrasAladas", "Garras aladas", "CC", 2, 4, 4, 0, 1),
   w("bolterAsalto", "Bólter de asalto", 24, 2, 3, 4, 0, 1, [{ kind: "rafaga", x: 2 }]),
   w("punoEnergia", "Puño de energía", "CC", 3, 4, 8, -2, 2),
   w("cuchillasDobles", "Cuchillas dobles", "CC", 5, 3, 6, -2, 1, [{ kind: "sostenida", x: 1 }]),
@@ -132,6 +137,12 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
     profile: { M: 6, T: 4, Sv: 3, Inv: 4, W: 5, Ld: 6, OC: 1 },
     sizes: [{ models: 1, points: 80 }], weapons: ["pistolaPlasma", "espadaEnergia"],
     abilities: ["alMando"], model: "capitan", leads: ["asalto", "fuegoPesado"],
+  },
+  francotiradores: {
+    id: "francotiradores", name: "Francotiradores", faction: "legion",
+    profile: { M: 6, T: 4, Sv: 3, W: 2, Ld: 6, OC: 1 },
+    sizes: [{ models: 5, points: 85 }], weapons: ["rifleFrancotirador", "cuchillo"],
+    abilities: ["infiltrador"], model: "francotirador",
   },
   asalto: {
     id: "asalto", name: "Escuadra de Asalto Táctico", faction: "legion",
@@ -222,6 +233,12 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
       { id: "acido", name: "Todos: ácido corrosivo (12\", 2 ataques, FP−1, en vez de escupidor)", who: "todos", replace: "escupidor", with: "acidoCorrosivo", points: 0 },
     ],
   },
+  gargolas: {
+    id: "gargolas", name: "Gárgolas", faction: "swarm",
+    profile: { M: 12, T: 3, Sv: 6, W: 1, Ld: 8, OC: 1 },
+    sizes: [{ models: 10, points: 85 }, { models: 20, points: 170 }], weapons: ["escupePuas", "garrasAladas"],
+    abilities: ["vuelo"], model: "gargola",
+  },
   nodo: {
     id: "nodo", name: "Guerreros Nodo", faction: "swarm",
     profile: { M: 6, T: 5, Sv: 4, W: 3, Ld: 7, OC: 1 },
@@ -295,5 +312,7 @@ export const UNIT_ABILITY_TEXT: Record<UnitAbility, { name: string; text: string
   psiquico: { name: "Psíquico", text: "Una vez por turno, en su disparo, usa su poder contra un enemigo visible a 18\": 2D6; con 7 o más, D3 heridas mortales. Con doble 1 o doble 6 sufre 1 herida mortal (peligros de la disformidad)." },
   turbo: { name: "Turbo", text: "Al avanzar suma 6\" sin tirar el dado." },
   aterrador: { name: "Aterrador", text: "Las unidades enemigas a 6\" o menos restan 1 a su Liderazgo en los chequeos de moral." },
+  infiltrador: { name: "Infiltrador", text: "Despliega en cualquier punto de su mitad de la mesa a más de 6\" de la línea central, no solo en su zona de despliegue." },
+  vuelo: { name: "Vuelo", text: "Al mover, avanzar, retirarse o cargar pasa por encima de la escenografía sólida (contenedores, búnker, barricadas); no puede acabar encima." },
   tuneles: { name: "Túneles", text: "Puede empezar en reserva y salir de un túnel en la fase de movimiento (desde la ronda 2) a más de 9\" de los enemigos. Si al acabar la ronda 3 no ha llegado, se pierde." },
 };

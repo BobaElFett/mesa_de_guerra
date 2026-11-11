@@ -137,7 +137,7 @@ export function deployArmies(s: GameState, legion: ArmyList, swarm: ArmyList, mi
   // Nadie empieza encima de contenedores, búnker o barricadas: al hueco más cercano de su zona
   const mine = s.pieces.filter((p) => p.unit);
   const fixed = resolveOverlaps(s.pieces, mine.map((p) => ({ id: p.id, x: p.x, z: p.z })), {
-    zBand: (id) => { const p = mine.find((x) => x.id === id)!; return zoneBand(p.faction, BASE_RADIUS[p.model]); },
+    zBand: (id) => { const p = mine.find((x) => x.id === id)!; return zoneBand(p.faction, BASE_RADIUS[p.model]); },   // al empezar, todos en su zona
     blocked: (x, z, r) => onForbiddenTerrain(s.terrain, x, z, r + 0.05) !== null,
   });
   const at = new Map(fixed.map((m) => [m.id, m]));

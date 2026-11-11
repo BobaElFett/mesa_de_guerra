@@ -16,6 +16,8 @@ export const UNIT_LORE: Record<DatasheetId, string> = {
   psiquico: "En la Legión, el don de la mente se trata como una herida: se vigila, se cura y se aprovecha. Los psíquicos llevan capucha para que sus hermanos no vean lo que les pasa por los ojos cuando el poder despierta.",
   motoristas: "Exploradores y cazadores. Rodean al enemigo, castigan a quien se queda solo y llegan antes que nadie a los objetivos. Su lema es corto, como sus permisos de reparación.",
   tirano: "El nodo mayor: una bestia del tamaño de un edificio que piensa por todo el Enjambre a su alrededor. Mientras vive, las criaturas cercanas no conocen el miedo. Cuando cae, el silencio se oye en kilómetros.",
+  francotiradores: "Cinco legionarios con capa de camuflaje que no esperan a que empiece la batalla: ya están dentro de ella. Se cuelan de noche hasta media mesa y eligen a quién quitar de en medio. Ningún general del Enjambre está a salvo detrás de su escolta.",
+  gargolas: "Garras con alas de membrana que vuelan bajo, en bandadas que tapan el sol. Pasan por encima de muros y búnkeres, escupen púas al vuelo y caen sobre quien creía tener la espalda cubierta.",
   garras: "Miles de ellas por cada nido. No piensan; corren, saltan y muerden. Una sola no es peligrosa. Veinte, sí. Cuando los nodos las empujan, cubren la tierra como una marea de quitina.",
   escupidores: "Criaturas con un saco de ácido en la garganta y la puntería de quien no necesita apuntar. Disuelven la armadura lentamente: el Enjambre siempre tiene tiempo.",
   nodo: "Guerreros grandes y listos, con cañones de hueso en los brazos. Son los nodos menores: llevan la voluntad del Tirano a los rincones del campo de batalla donde él no llega.",

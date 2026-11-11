@@ -19,7 +19,7 @@ test("el resumen cuenta las bajas y los PV del turno rival", () => {
     if (s.active !== prev.active) {
       if (start) {
         const r = turnRecap(start, s, prev.active);
-        const lostModels = start.pieces.filter((p) => p.faction === (s.active === 0 ? "legion" : "swarm")).length
+        const lostModels: number = start.pieces.filter((p) => p.faction === (s.active === 0 ? "legion" : "swarm")).length
           - s.pieces.filter((p) => p.faction === (s.active === 0 ? "legion" : "swarm")).length;
         assert.equal(r.lost.reduce((n, l) => n + l.models, 0), lostModels);
         assert.equal(r.vp[0], (s.vp ?? [0, 0])[0] - (start.vp ?? [0, 0])[0]);

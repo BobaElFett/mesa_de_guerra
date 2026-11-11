@@ -502,6 +502,47 @@ function psiquico(pose: number): Part[] {
   return p;
 }
 
+/** Francotirador (#103): legionario con capa de camuflaje, capucha y un rifle largo. */
+function francotirador(pose: number): Part[] {
+  const p = legionario(pose, false, "tactico");
+  const A = LEG, cloak = "#4a5a3a", cloakD = "#3a4a2e";
+  p.push(box(0.62, 0.5, 0.1, cloak, 0, y(0.92), -0.3, -0.18));                 // capa a la espalda
+  p.push(box(0.66, 0.12, 0.42, cloakD, 0, y(1.16), -0.06));                     // sobre los hombros
+  p.push(box(0.26, 0.2, 0.26, cloak, 0, y(1.24), 0.0));                         // capucha
+  // Rifle de precisión: cañón largo, mira y bípode
+  const a0: V3 = [0.2, y(0.98), 0.1], a1: V3 = [0.22, y(1.02), 1.05];
+  p.push(segment(a0, a1, 0.05, 0.05, A.dark));
+  p.push(segment([0.22, y(1.1), 0.3], [0.22, y(1.1), 0.55], 0.05, 0.05, A.metal));
+  p.push(place(new THREE.BoxGeometry(0.03, 0.03, 0.02), A.visor, 0.22, y(1.1), 0.56, 0, 0, 0, true));
+  for (const s of [-1, 1]) p.push(segment([0.22, y(1.0), 0.9], [0.22 + s * 0.08, y(0.82), 0.95], 0.02, 0.02, A.metal));
+  return p;
+}
+
+/** Triángulo de dos caras (membranas de las alas). */
+function membrane(a: V3, b: V3, c: V3): THREE.BufferGeometry {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.Float32BufferAttribute([...a, ...b, ...c, ...a, ...c, ...b], 3));
+  g.computeVertexNormals();
+  return g;
+}
+
+/** Gárgola (#104): garra con alas de membrana y escupe-púas. */
+function gargola(pose: number, leader: boolean): Part[] {
+  const p = garra(pose, leader, { scythes: false, gun: "escupidor" });
+  const C = SW;
+  const flap = [0.5, 0.2, 0.8][pose % 3];
+  for (const s of [-1, 1]) {
+    const root: V3 = [s * 0.12, y(0.9), -0.12];
+    const tip: V3 = [s * 0.95, y(0.95 + flap), -0.35];
+    const back: V3 = [s * 0.6, y(0.6 + flap * 0.4), -0.55];
+    p.push(segment(root, tip, 0.05, 0.04, C.bone));                              // hueso del ala
+    p.push(segment(root, back, 0.04, 0.03, C.bone));
+    // Membrana: un triángulo de dos caras entre la raíz y las puntas de los huesos
+    p.push(place(membrane(root, tip, back), leader ? C.shellD : C.shell));
+  }
+  return p;
+}
+
 /** Mente del Enjambre: cuerpo pequeño bajo un cerebro enorme que brilla. */
 function mente(pose: number): Part[] {
   const p = garra(pose, true, { scythes: false });
@@ -523,7 +564,7 @@ export function makeMiniature(kind: ModelKind, pose = 0, leader = false): THREE.
   if (!proto) {
     proto = new THREE.Group();
     const r = BASE_RADIUS[kind];
-    const legion = ["legionario", "capitan", "pesado", "andador", "exterminador", "moto", "psiquico"].includes(kind);
+    const legion = ["legionario", "capitan", "pesado", "andador", "exterminador", "moto", "psiquico", "francotirador"].includes(kind);
     const rim = leader || kind === "capitan" || kind === "tirano" || kind === "psiquico" || kind === "mente" ? (legion ? LEG.trim : SW.glow) : legion ? LEG.rim : SW.rim;
     const [parts, scale] = bodyOf(kind, pose, leader);
     // El cuerpo escalado se hornea en la geometría: peana y cuerpo en una sola malla (#58)
@@ -554,6 +595,8 @@ function bodyOf(kind: ModelKind, pose: number, leader: boolean): [Part[], number
     case "psiquico": return [psiquico(pose), 1.12];
     case "mente": return [mente(pose), 1.5];
     case "carnifice": return [carnifice(pose), 2.9];
+    case "francotirador": return [francotirador(pose), 1];
+    case "gargola": return [gargola(pose, leader), 1];
   }
 }
 

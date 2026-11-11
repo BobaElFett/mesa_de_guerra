@@ -2,6 +2,12 @@
 
 Lo nuevo de cada versión de *Mesa de Guerra*, de la más reciente a la primera.
 
+## 0.39 · fase 20, tropas nuevas (#103–#104)
+- **Francotiradores (#103, Legión):** cinco legionarios con capa de camuflaje (85 pts). *Infiltrador*: despliegan en cualquier punto de su mitad a más de 6" de la línea central; durante el despliegue se ve esa franja, más tenue que la zona normal. *Rifle de precisión* (36", A1, 3+, F6, FP−2, D3, Pesada): con la habilidad nueva *Precisión* ignora la cobertura, suma 1 para herir a los personajes y puede apuntar a un personaje protegido por su escuadra. La IA los coloca en ruinas o bosques adelantados.
+- **Gárgolas (#104, Enjambre):** garras aladas (10: 85, 20: 170), M12", con *Escupe-púas* (18", A2, Asalto) y *Garras aladas*. *Vuelo*: pasan por encima de contenedores, búnker y barricadas, aunque no pueden acabar encima. La IA vuela en línea recta sin rodear nada.
+- Las dos tienen miniatura propia, entrada en el Códice con su trasfondo y entran en las listas al azar.
+- **Equilibrio** (IA Difícil contra Difícil, con el despliegue de la IA, 60 partidas por variante): la lista de prueba de la Legión gana 34-25; cambiando la escuadra de 5 por Francotiradores, 31-28; por otra de Fuego Pesado, 29-30. Con Gárgolas en vez de 10 Garras, el Enjambre pasa de 73 a 77 victorias de 150. La primera versión del Francotirador (Sv4+, F5, D2, 100 pts) perdía demasiado y se mejoró.
+
 ## 0.38 · fase 19, saber qué ha pasado (#100–#102)
 - **Resumen del turno rival (#100):** al volver a tu turno contra la IA (o en línea), una tarjeta encima de la barra de fases dice lo que ha hecho el otro bando: tus bajas y unidades destruidas, lo que has destruido tú (en combate o con fuego defensivo), lo que ha llegado de la reserva, los PV de cada bando y las frases clave del registro (cargas, estratagemas, moral, órdenes). Se cierra con un clic o al pasar de fase; se apaga en Ajustes. No sale al deshacer, en la repetición ni en los desafíos.
 - **Panel de la misión compacto (#101):** las órdenes secundarias se pliegan en una línea con los PV de cada bando y una ✓ si alguna tuya se cumpliría ahora; se recuerda, y en pantallas bajas empiezan plegadas. El panel se desplaza si no cabe y, en pantallas de menos de 780 px de alto, oculta el texto de la misión (está en la ayuda).

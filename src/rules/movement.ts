@@ -96,6 +96,12 @@ export interface MoveCheck {
  *  - cada miniatura, como mucho a su asignación de su origen;
  *  - ninguna acaba a 1" o menos de un enemigo (si pasa, vuelve a donde estaba).
  */
+/** Vuelo (#104): la unidad pasa por encima de la escenografía sólida. */
+export function flies(s: GameState, unitId: string | undefined): boolean {
+  const u = unitId ? s.units.find((x) => x.id === unitId) : undefined;
+  return !!u && DATASHEETS[u.datasheet].abilities.includes("vuelo");
+}
+
 export function checkMove(s: GameState, unitId: string, moves: PieceMove[], move: UnitMove): MoveCheck {
   const max = allowance(s, unitId, move);
   const enemies = enemyModels(s, unitId).map((e) => ({ x: e.x, z: e.z, r: BASE_RADIUS[e.model] + ENGAGEMENT }));
@@ -110,7 +116,7 @@ export function checkMove(s: GameState, unitId: string, moves: PieceMove[], move
     const [cx, cz] = clampToAllowance(originOf(s, p), m.x, m.z, max);
     if (Math.hypot(cx - m.x, cz - m.z) > 0.01) clamped = true;
     // No se atraviesan contenedores ni búnker (#49): el camino desde donde está ahora
-    const t = crossesSolid(s.terrain, p.x, p.z, cx, cz, BASE_RADIUS[p.model]);
+    const t = flies(s, p.unit) ? null : crossesSolid(s.terrain, p.x, p.z, cx, cz, BASE_RADIUS[p.model]);
     if (t) { through.push(m.id); wall = TERRAIN[t.kind].name; continue; }
     wanted.push({ ...m, x: cx, z: cz });
   }

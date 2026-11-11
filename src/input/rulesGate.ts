@@ -3,7 +3,7 @@ import { formation, formationModels } from "../rules/leaders";
 import { CommandBus, PieceMove } from "../core/commands";
 import { FACTIONS, PLAYERS } from "../core/state";
 import { PHASE_INFO } from "../rules/turn";
-import { checkDeploy, clampToZone } from "../rules/deployment";
+import { checkDeploy, pieceBand } from "../rules/deployment";
 import { BASE_RADIUS } from "../core/state";
 import { allowance, checkMove, clampToAllowance, isEngaged, originOf } from "../rules/movement";
 import { PiecesView } from "../view/piecesView";
@@ -57,7 +57,9 @@ export function createRulesGate(bus: CommandBus, view: PiecesView, notify: (msg:
     clampLive(id, x, z) {
       if (deploying()) {
         const p = view.pieceOf(id);
-        return p ? [x, clampToZone(p.faction, BASE_RADIUS[p.model], z)] : [x, z];
+        if (!p) return [x, z];
+        const [lo, hi] = pieceBand(bus.state, p);
+        return [x, Math.min(hi, Math.max(lo, z))];
       }
       if (!inMovement()) return [x, z];
       const p = view.pieceOf(id), u = p?.unit;

@@ -13,6 +13,13 @@ export const TRAY = { x: 42, z: 0, w: 10.6, d: 14.6, floorY: TOP + 0.25, wall: 0
 
 export class Table {
   readonly group = new THREE.Group();
+  private infiltration: THREE.Mesh[] = [];
+
+  /** Muestra la zona de infiltración de cada bando (en el despliegue, si tiene infiltradores). */
+  showInfiltration(legion: boolean, swarm: boolean) {
+    if (this.infiltration[0]) this.infiltration[0].visible = legion;
+    if (this.infiltration[1]) this.infiltration[1].visible = swarm;
+  }
   readonly mat: THREE.Mesh;
   readonly grid: THREE.Group;
 
@@ -72,6 +79,17 @@ export class Table {
     };
     this.group.add(zone(FACTIONS.legion.color, BOARD.d / 2 - DEPLOY_DEPTH / 2));
     this.group.add(zone(FACTIONS.swarm.color, -BOARD.d / 2 + DEPLOY_DEPTH / 2));
+    // Zona de los infiltradores (#103): de 6" de la línea central al borde de la zona, más tenue
+    const depth = BOARD.d / 2 - DEPLOY_DEPTH - 6;
+    for (const [i, f, sign] of [[0, "legion", 1], [1, "swarm", -1]] as const) {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(BOARD.w, depth),
+        new THREE.MeshBasicMaterial({ color: FACTIONS[f].color, transparent: true, opacity: 0.045, depthWrite: false }));
+      m.rotation.x = -Math.PI / 2;
+      m.position.set(0, 0.005, sign * (6 + depth / 2));
+      m.visible = false;
+      this.infiltration[i] = m;
+      this.group.add(m);
+    }
 
     // Rejilla: cada pulgada tenue, cada 6" más marcada
     this.grid = new THREE.Group();

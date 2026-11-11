@@ -7,7 +7,7 @@ import { overwatchBlocked, overwatchWeapons } from "../rules/reactions";
 import { CommandBus, PieceMove } from "../core/commands";
 import { BASE_RADIUS, Faction, GameState, Piece, PLAYERS, TERRAIN, TerrainPiece } from "../core/state";
 import { DATASHEETS, hasAbility, WEAPONS } from "../rules/datasheets";
-import { allowance, checkMove, isEngaged, movedSoFar } from "../rules/movement";
+import { allowance, checkMove, flies, isEngaged, movedSoFar } from "../rules/movement";
 import { shootingOptions } from "../rules/shooting";
 import { chargeOptions, fightOptions } from "../rules/melee";
 import { formation, formationModels, partnerOf, underCommand } from "../rules/leaders";
@@ -133,6 +133,7 @@ function detours(s: GameState, models: Piece[], c: { x: number; z: number }, tx:
 
 /** ¿Pueden todas las miniaturas hacer este movimiento (o sus dos tramos) sin atravesar nada sólido? */
 function pathClear(s: GameState, models: Piece[], cnd: Plan): boolean {
+  if (models.length && models.every((p) => flies(s, p.unit))) return true;
   return models.every((p) => {
     const r = BASE_RADIUS[p.model];
     if (!cnd.via) return !crossesSolid(s.terrain, p.x, p.z, p.x + cnd.dx, p.z + cnd.dz, r);
@@ -240,7 +241,7 @@ function scorePosition(s: GameState, unitId: string, dx: number, dz: number, kin
       if (kind === "retirarse" || (kind === "avanzar" && !hasAbility(w, "asalto"))) continue;
       let wb = 0;
       for (const e of enemies) {
-        if (e.attachedTo && partnerOf(s, e.id)) continue;   // protegido por su escuadra
+        if (e.attachedTo && partnerOf(s, e.id) && !hasAbility(w, "precision")) continue;   // protegido por su escuadra
         const g = groupGap(models, s.pieces.filter((p) => p.unit === e.id));
         if (g > reach(s, w)) continue;
         const v = attackValue(s, e.id, expectedAttack(s, w, n, e.id, { distance: g, stationary, rerollHitOnes: underCommand(s, unitId), rerollWoundOnes: !!s.units.find((x) => x.id === unitId)?.veteran }));
@@ -400,7 +401,7 @@ function planMove(s: GameState, unitId: string, W: Weights, claimed: Map<string,
         const ux = vx / len, uz = vz / len;
         cands.push({ dx: ux * d, dz: uz * d, kind, score: 0, why: "" });
         // Si el camino recto choca con escenografía sólida, prueba a rodear (#49, #87)
-        if (models.some((p) => crossesSolid(s.terrain, p.x, p.z, p.x + ux * d, p.z + uz * d, BASE_RADIUS[p.model]))) {
+        if (models.some((p) => !flies(s, p.unit) && crossesSolid(s.terrain, p.x, p.z, p.x + ux * d, p.z + uz * d, BASE_RADIUS[p.model]))) {
           for (const ang of [0.6, -0.6, 1.1, -1.1]) {
             const c = Math.cos(ang), sn = Math.sin(ang);
             cands.push({ dx: (ux * c - uz * sn) * d, dz: (ux * sn + uz * c) * d, kind, score: 0, why: "" });

@@ -1,6 +1,7 @@
 import type { PieceMove } from "../core/commands";
 import { BASE_RADIUS, BOARD, DEPLOY_DEPTH, Faction, GameState } from "../core/state";
-import { checkDeploy, zoneBand } from "../rules/deployment";
+import { checkDeploy, INFILTRATE_LINE, pieceBand } from "../rules/deployment";
+import { DATASHEETS } from "../rules/datasheets";
 import { formation, formationModels } from "../rules/leaders";
 import { TERRAIN_RULES } from "../rules/geometry";
 import { roleOf } from "./tactics";
@@ -27,7 +28,12 @@ export function aiDeploy(s: GameState, f: Faction): PieceMove[] {
   for (const u of order) {
     const role = roleOf(s, u.id);
     let cx: number, cz: number;
-    if (u === keeper && home) { cx = home.x; cz = home.z; }
+    const infiltrator = DATASHEETS[u.datasheet].abilities.includes("infiltrador");
+    if (infiltrator) {
+      // Infiltrados: en ruinas (o bosque) de su mitad cerca de la línea, si hay; si no, en un flanco adelantado
+      const hide = s.terrain.find((t) => TERRAIN_RULES[t.kind].cover && !TERRAIN_RULES[t.kind].noEnd && Math.sign(t.z) === sign && Math.abs(t.z) > INFILTRATE_LINE + 1 && Math.abs(t.z) < INFILTRATE_LINE + 10);
+      if (hide) { cx = hide.x; cz = hide.z; } else { cx = lanes[lane++ % lanes.length]; cz = sign * (INFILTRATE_LINE + 4); }
+    } else if (u === keeper && home) { cx = home.x; cz = home.z; }
     else if (role === "heavy") { cx = 0; cz = back - sign * 2; }
     else if (role === "melee") continue;          // las de choque se quedan donde las pone la lista (delante) else if (coverUsed < cover.length) { const t = cover[coverUsed++]; cx = t.x; cz = t.z; }
     else { cx = lanes[lane++ % lanes.length]; cz = front + sign * 5; }
@@ -37,7 +43,7 @@ export function aiDeploy(s: GameState, f: Faction): PieceMove[] {
     const step = 2 * r + 0.5, per = Math.min(5, ms.length);
     ms.forEach((p, i) => {
       const col = i % per, row = Math.floor(i / per);
-      const band = zoneBand(f, BASE_RADIUS[p.model]);
+      const band = pieceBand(s, p);
       const z = Math.max(band[0], Math.min(band[1], cz + sign * row * step));
       moves.push({ id: p.id, x: cx + (col - (per - 1) / 2) * step, z });
     });

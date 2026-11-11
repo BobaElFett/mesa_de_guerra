@@ -122,9 +122,9 @@ export function shootingOptions(s: GameState, unitId: string): ShootingOptions {
         }
         if (ok) t.attackers.push(id);
       }
-      t.cover = t.attackers.length > 0 && !anyClear;
+      t.cover = t.attackers.length > 0 && !anyClear && !hasAbility(weapon, "precision");
       if (opt.blocked) t.blocked = opt.blocked;
-      else if (isGuarded(s, e.id)) t.blocked = "Protegido por su escuadra: primero hay que acabar con ella.";
+      else if (isGuarded(s, e.id) && !hasAbility(weapon, "precision")) t.blocked = "Protegido por su escuadra: primero hay que acabar con ella.";
       else if (selfEngaged && !engagedWithMe) t.blocked = "Trabada: solo puede disparar a quien la traba.";
       else if (!selfEngaged && engagedWithAny(s, e.id)) t.blocked = "Está trabada con tus tropas.";
       else if (t.distance === Infinity) t.blocked = "Sin visión.";
@@ -182,7 +182,8 @@ export function performAttack(s: GameState, kind: AttackLogEntry["kind"], unitId
     rerollWoundOnes: !!attacker.veteran && !extra.mortal,
     onlySixes: extra.overwatch,
     mortal: extra.mortal,
-    woundMod: kind === "disparo" && !extra.overwatch && hasStrat(s, "punteria", unitId) ? 1 : 0,
+    woundMod: (kind === "disparo" && !extra.overwatch && hasStrat(s, "punteria", unitId) ? 1 : 0)
+      + (hasAbility(weapon, "precision") && tds.character && !extra.mortal ? 1 : 0),
     hitMod: (kind === "combate" && hasStrat(s, "furia", unitId) ? 1 : 0)
       + (kind === "disparo" && !extra.overwatch && !extra.mortal ? conditionHitMod(s, extra.distance) : 0),
   }, dice);

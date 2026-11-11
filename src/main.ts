@@ -648,6 +648,11 @@ function refresh(_s?: unknown, cmd?: Command | null) {
   solids.sync(bus.state.terrain);
   applyAtmosphere(bus.state.rulesMode ? bus.state.conditions : undefined);
   if (arriving && arrivalBlocked(bus.state, arriving)) stopArrival();
+  {
+    const s = bus.state, dep = s.rulesMode && s.phase === "despliegue";
+    const has = (f: "legion" | "swarm") => s.units.some((u) => u.faction === f && DATASHEETS[u.datasheet].abilities.includes("infiltrador") && s.pieces.some((p) => p.unit === u.id));
+    table.showInfiltration(dep && has("legion"), dep && has("swarm"));
+  }
   missionPanel.render(bus.state);
   recapBox.enabled = settings.turnRecap;
   recapBox.track(bus.state, (p) => !runtime.spectate && controllable(PLAYERS[p]), replay.active || challengeOn);
