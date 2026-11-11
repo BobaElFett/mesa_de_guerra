@@ -2,6 +2,11 @@
 
 Lo nuevo de cada versión de *Mesa de Guerra*, de la más reciente a la primera.
 
+## 0.38 · fase 19, saber qué ha pasado (#100–#102)
+- **Resumen del turno rival (#100):** al volver a tu turno contra la IA (o en línea), una tarjeta encima de la barra de fases dice lo que ha hecho el otro bando: tus bajas y unidades destruidas, lo que has destruido tú (en combate o con fuego defensivo), lo que ha llegado de la reserva, los PV de cada bando y las frases clave del registro (cargas, estratagemas, moral, órdenes). Se cierra con un clic o al pasar de fase; se apaga en Ajustes. No sale al deshacer, en la repetición ni en los desafíos.
+- **Panel de la misión compacto (#101):** las órdenes secundarias se pliegan en una línea con los PV de cada bando y una ✓ si alguna tuya se cumpliría ahora; se recuerda, y en pantallas bajas empiezan plegadas. El panel se desplaza si no cabe y, en pantallas de menos de 780 px de alto, oculta el texto de la misión (está en la ayuda).
+- **La IA apunta a sus órdenes (#102):** con *Decapitar* o *Abatir al coloso* en la mano, valora más acabar con personajes o unidades grandes. Probado también premiar cualquier baja (*Golpe certero*, *Masacre*): desequilibraba a favor de la Legión (86-62) y se descartó. 150 partidas Difícil contra Difícil: Legión 75, Enjambre 73, 2 empates.
+
 ## 0.37 · fase 18, órdenes secundarias (#97–#99)
 - **Órdenes secundarias (#97):** cada bando tiene un mazo de nueve órdenes, barajado con la semilla de la partida, y roba hasta tener 2 al empezar su mando. Al acabar su turno, cada orden cumplida da sus PV y se descarta; las demás se quedan. Tope de 20 PV en la partida. Una vez por turno puede descartar una orden para ganar 1 PM. Las que ya no se pueden cumplir (no quedan personajes ni unidades grandes, o no hay objetivos en la mitad enemiga) se descartan solas al robarlas.
   - *Decapitar* (4): destruye un personaje. *Golpe certero* (3): destruye una unidad. *Masacre* (5): destruye dos. *Abatir al coloso* (4): destruye una unidad grande. Todas en tu turno.

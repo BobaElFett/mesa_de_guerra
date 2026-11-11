@@ -8,7 +8,7 @@ export type AiLevel = "facil" | "normal" | "dificil";
 export interface GameSettings {
   aiSide: Faction | null; aiLevel: AiLevel; mission: MissionId; map: "actual" | "ejemplo" | "aleatorio" | "urbano" | "llanura" | "bosque"; diceSpeed: "normal" | "rapido" | "instante";
   /** Ajustes (#55) */
-  volume: number; followAi: boolean; guideRings: boolean; confirmAdvance: boolean; hoverTips: boolean; showMenu: boolean; animations: boolean; statusIcons: boolean; secondaries: boolean;
+  volume: number; followAi: boolean; guideRings: boolean; confirmAdvance: boolean; hoverTips: boolean; showMenu: boolean; animations: boolean; statusIcons: boolean; secondaries: boolean; turnRecap: boolean;
   /** Gráficos (#58): alta = sombras suaves y pantalla nítida; rapida = sin sombras y a 1×. */
   graphics: "alta" | "rapida";
   /** Condiciones de batalla de la próxima partida (#68). */
@@ -28,7 +28,7 @@ export interface GameSettings {
 
 const KEY = "mesa-de-guerra.ajustes";
 const DEFAULTS: GameSettings = { aiSide: "swarm", aiLevel: "normal", mission: "tomar", map: "actual", diceSpeed: "normal",
-  volume: 0.55, followAi: true, guideRings: true, confirmAdvance: true, hoverTips: true, showMenu: true, animations: true, statusIcons: true, secondaries: true, graphics: "alta", conditions: "", uiScale: 1, palette: "normal", legionScheme: "azul", swarmScheme: "morado", ambient: 0.35, gameSize: 500 };
+  volume: 0.55, followAi: true, guideRings: true, confirmAdvance: true, hoverTips: true, showMenu: true, animations: true, statusIcons: true, secondaries: true, turnRecap: true, graphics: "alta", conditions: "", uiScale: 1, palette: "normal", legionScheme: "azul", swarmScheme: "morado", ambient: 0.35, gameSize: 500 };
 
 export const AI_LEVEL_NAME: Record<AiLevel, string> = { facil: "Fácil", normal: "Normal", dificil: "Difícil" };
 

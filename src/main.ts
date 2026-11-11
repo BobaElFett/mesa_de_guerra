@@ -1,5 +1,6 @@
 import { StatusIcons } from "./view/statusIcons";
 import { createRoom } from "./app/room";
+import { TurnRecapBox } from "./ui/turnRecap";
 import { setupHelpSearch, setupKeysSheet } from "./ui/helpPanel";
 import { playAttackFx } from "./app/battleFx";
 import { formation, formationModels } from "./rules/leaders";
@@ -626,6 +627,7 @@ let wasOver = bus.state.gameOver;
 hud.onSheetToggle = () => hud.renderSelection(bus.state, controls.selected, coherencyWarnings());
 hud.onTargetHover = (u) => { targetHover = u; };
 
+const recapBox = new TurnRecapBox();
 function refresh(_s?: unknown, cmd?: Command | null) {
   const last = bus.state.rolls.at(-1);
   const log = bus.state.combatLog;
@@ -647,6 +649,8 @@ function refresh(_s?: unknown, cmd?: Command | null) {
   applyAtmosphere(bus.state.rulesMode ? bus.state.conditions : undefined);
   if (arriving && arrivalBlocked(bus.state, arriving)) stopArrival();
   missionPanel.render(bus.state);
+  recapBox.enabled = settings.turnRecap;
+  recapBox.track(bus.state, (p) => !runtime.spectate && controllable(PLAYERS[p]), replay.active || challengeOn);
   if (bus.state.gameOver && !wasOver) { recordCampaign(); recordHistory(); }
   if (bus.state.gameOver && !wasOver && bus.state.mission && !replay.active && !challengeOn && !challengeEnding) setTimeout(() => endDialog.show(bus.state), shots.playing ? 2500 : 600);
   wasOver = bus.state.gameOver;

@@ -1,7 +1,8 @@
+import { SECONDARIES } from "../rules/secondaries";
 import { unitCost as costOf } from "../rules/datasheets";
 import { conditionHitMod } from "../rules/conditions";
 import { pieceWeaponIds } from "../rules/datasheets";
-import { BASE_RADIUS, GameState, Piece } from "../core/state";
+import { BASE_RADIUS, GameState, Piece, PLAYERS } from "../core/state";
 import { abilityX, DATASHEETS, Dice, hasAbility, unitPoints, Weapon, WEAPONS } from "../rules/datasheets";
 import { saveTarget, woundTarget } from "../rules/attack";
 import { disc, gap } from "../rules/geometry";
@@ -121,11 +122,28 @@ export function objectivePresence(s: GameState, unitId: string): number {
  * Valor (en puntos) de un ataque esperado: heridas × puntos por herida, más un extra si
  * acaba con la unidad o si la unidad está en un objetivo.
  */
+/**
+ * Lo que vale para las órdenes de Decapitar y Abatir al coloso del jugador activo destruir `targetId`
+ * (#102), en puntos: unos 8 por PV.
+ */
+export function secondaryKillBonus(s: GameState, targetId: string): number {
+  const sec = s.secondaries;
+  const t = s.units.find((u) => u.id === targetId);
+  if (!sec || !t || t.faction === PLAYERS[s.active]) return 0;
+  const ds = DATASHEETS[t.datasheet];
+  let vp = 0;
+  for (const id of sec.hand[s.active]) {
+    const c = SECONDARIES[id];
+    if ((id === "decapitar" && ds.character) || (id === "coloso" && ds.big)) vp += c.vp;
+  }
+  return vp * 6;
+}
+
 export function attackValue(s: GameState, targetId: string, exp: { damage: number }, killBonus = 0): number {
   if (exp.damage <= 0) return 0;
   const left = woundsLeft(s, targetId);
   let v = exp.damage * pointsPerWound(s, targetId);
-  if (left > 0 && exp.damage >= left * 0.9) v += unitCost(s, targetId) * 0.15 + killBonus;
+  if (left > 0 && exp.damage >= left * 0.9) v += unitCost(s, targetId) * 0.15 + killBonus + secondaryKillBonus(s, targetId);
   const onObj = objectivePresence(s, targetId);
   if (onObj > 0) v *= 1 + Math.min(0.6, onObj / 12);
   // Las unidades con mucho daño propio son más peligrosas

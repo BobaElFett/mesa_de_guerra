@@ -124,6 +124,7 @@ export class SettingsDialog {
     $<HTMLInputElement>("set-menu").checked = settings.showMenu;
     $<HTMLInputElement>("set-anim").checked = settings.animations;
     $<HTMLInputElement>("set-icons").checked = settings.statusIcons;
+    $<HTMLInputElement>("set-recap").checked = settings.turnRecap;
     $("settings-backdrop").hidden = false;
     modal.open = true;
   }
@@ -152,6 +153,7 @@ export class SettingsDialog {
     settings.showMenu = $<HTMLInputElement>("set-menu").checked;
     settings.animations = $<HTMLInputElement>("set-anim").checked;
     settings.statusIcons = $<HTMLInputElement>("set-icons").checked;
+    settings.turnRecap = $<HTMLInputElement>("set-recap").checked;
     saveSettings();
     this.onChange();
   }

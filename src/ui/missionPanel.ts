@@ -11,6 +11,9 @@ const $ = (id: string) => document.getElementById(id)!;
 
 export class MissionPanel {
   private folded = false;
+  /** Órdenes secundarias plegadas (#101); se recuerda. */
+  private secFolded = (() => { try { const v = localStorage.getItem("mesa-de-guerra.ordenes-plegadas"); return v === null ? window.innerHeight < 820 : v === "1"; } catch { return false; } })();
+  private last: GameState | null = null;
   onShowSummary: () => void = () => {};
   /** Descartar una orden secundaria (#97). */
   onDiscard: (id: SecondaryId) => void = () => {};
@@ -25,12 +28,18 @@ export class MissionPanel {
       if (!b) return;
       if (b.dataset.act === "fold") { this.folded = !this.folded; $("mission").classList.toggle("folded", this.folded); b.textContent = this.folded ? "Ver" : "Plegar"; }
       if (b.dataset.act === "summary") this.onShowSummary();
+      if (b.dataset.act === "secfold") {
+        this.secFolded = !this.secFolded;
+        try { localStorage.setItem("mesa-de-guerra.ordenes-plegadas", this.secFolded ? "1" : "0"); } catch { /* nada */ }
+        if (this.last) this.render(this.last);
+      }
       if (b.dataset.act === "discard") this.onDiscard(b.dataset.id as SecondaryId);
     });
   }
 
   render(s: GameState) {
     const el = $("mission");
+    this.last = s;
     const m = s.mission ? MISSIONS[s.mission] : null;
     el.hidden = !m || this.hiddenByTerrain || this.hiddenByLog;
     if (!m) return;
@@ -67,7 +76,10 @@ export class MissionPanel {
         }).join("") || `<li class="dim">Sin órdenes${s.phase === "despliegue" ? " (se roban al empezar el mando)" : ""}</li>`;
         return `<div class="sec-side"><div class="sec-head" style="color:${C(pl)}">${FACTIONS[PLAYERS[pl]].name} <span class="dim">${secondaryVp(s, pl)}/${SECONDARY_CAP} PV</span></div><ul>${cards}</ul></div>`;
       };
-      orders = `<div class="m-sec"><div class="m-sec-title">Órdenes secundarias <span class="dim">(se cumplen al acabar tu turno; ✓ = se cumpliría ahora)</span></div>${side(0)}${side(1)}</div>`;
+      const fold = `<button class="m-fold" data-act="secfold">${this.secFolded ? "Ver" : "Plegar"}</button>`;
+      orders = this.secFolded
+        ? `<div class="m-sec"><div class="m-sec-title row">Órdenes <span class="dim"><span style="color:${C(0)}">${secondaryVp(s, 0)}</span> · <span style="color:${C(1)}">${secondaryVp(s, 1)}</span> / ${SECONDARY_CAP} PV${sec.hand[s.active].some((id) => s.phase !== "despliegue" && SECONDARIES[id].done(s, s.active)) ? " · ✓" : ""}</span>${fold}</div></div>`
+        : `<div class="m-sec"><div class="m-sec-title row">Órdenes secundarias ${fold}</div><div class="dim sec-note">Se cumplen al acabar tu turno; ✓ = se cumpliría ahora.</div>${side(0)}${side(1)}</div>`;
     }
     const end = s.gameOver ? `<div style="margin-top:6px"><button data-act="summary" class="primary">Ver resumen</button></div>` : "";
     el.innerHTML = `<div class="m-head"><span class="m-name">${m.name}</span><span class="dim">ronda ${Math.min(s.turn, MAX_ROUNDS)}/${MAX_ROUNDS}</span>`
