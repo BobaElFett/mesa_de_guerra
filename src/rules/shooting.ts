@@ -197,7 +197,8 @@ export function performAttack(s: GameState, kind: AttackLogEntry["kind"], unitId
       + (hasAbility(weapon, "precision") && tds.character && !extra.mortal ? 1 : 0),
     hitMod: (kind === "combate" && hasStrat(s, "furia", unitId) ? 1 : 0)
       + (kind === "disparo" && !extra.overwatch && !extra.mortal ? conditionHitMod(s, extra.distance) : 0)
-      + (extra.indirect ? -1 : 0),
+      + (extra.indirect ? -1 : 0)
+      + (kind === "disparo" && !extra.mortal && tds.abilities.includes("sigilo") ? -1 : 0),
   }, dice);
   s.rng = dice.state;
 

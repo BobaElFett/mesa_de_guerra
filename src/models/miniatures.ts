@@ -502,6 +502,29 @@ function psiquico(pose: number): Part[] {
   return p;
 }
 
+/** Guardia de Honor (#119): exterminador ligero con escudo de energía y hacha. */
+function guardia(pose: number): Part[] {
+  const p = legionario(pose, false, "capitan");
+  const A = LEG;
+  p.push(box(0.08, 0.62, 0.48, A.armorD, -0.42, y(0.55), 0.12));                 // escudo
+  p.push(box(0.09, 0.5, 0.38, A.trim, -0.43, y(0.6), 0.12));
+  p.push(place(new THREE.OctahedronGeometry(0.08, 0), A.visor, -0.48, y(0.85), 0.12, 0, 0, 0, true));
+  return p;
+}
+
+/** Ingeniero de combate (#120): legionario con un servobrazo que asoma por encima del hombro. */
+function ingeniero(pose: number): Part[] {
+  const A = LEG, red = "#9a2f2a";
+  const p = legionario(pose, false, "tactico").map((q) => (q.color === A.armor ? { ...q, color: red } : q));
+  p.push(box(0.42, 0.36, 0.2, A.metal, 0, y(0.95), -0.3));                       // mochila de herramientas
+  const a: V3 = [0.15, y(1.25), -0.32], b: V3 = [0.32, y(1.7), -0.05], c: V3 = [0.36, y(1.45), 0.35];
+  p.push(segment(a, b, 0.05, 0.045, A.metal));
+  p.push(segment(b, c, 0.045, 0.04, A.metal));
+  p.push(place(new THREE.SphereGeometry(0.07, 6, 4), A.dark, b[0], b[1], b[2]));
+  for (const s of [-1, 1]) p.push(spike(c, [c[0] + s * 0.06, c[1] - 0.1, c[2] + 0.14], 0.03, A.trim));
+  return p;
+}
+
 /** Tanque Martillo (#115): casco, orugas, torreta con cañón largo y bólter en el casco. */
 function tanque(pose: number): Part[] {
   const A = LEG, p: Part[] = [];
@@ -591,6 +614,23 @@ function devorador(pose: number): Part[] {
   return p;
 }
 
+/** Aguijón (#121): criatura pequeña con una cola curva rematada en un aguijón. */
+function aguijon(pose: number, leader: boolean): Part[] {
+  const p = garra(pose, leader, { scythes: false });
+  const C = SW;
+  const t0: V3 = [0, y(0.5), -0.25], t1: V3 = [0, y(0.75), -0.5], t2: V3 = [0, y(1.05), -0.42];
+  p.push(segment(t0, t1, 0.07, 0.05, C.shell));
+  p.push(segment(t1, t2, 0.05, 0.035, C.shellD));
+  p.push(spike(t2, [0, y(1.0), -0.2], 0.04, "#b6f04a"));
+  return p;
+}
+
+/** Acechador oculto (#122): monstruo esbelto de piel mimética y guadañas largas. */
+function lictor(pose: number): Part[] {
+  const C = SW, skin = "#4f6a58", skinD = "#3a5044";
+  return garra(pose, true, { monster: true, scythes: true }).map((q) => (q.color === C.shell ? { ...q, color: skin } : q.color === C.shellD ? { ...q, color: skinD } : q));
+}
+
 /** Biomortero (#113): bestia acorazada con un saco de gas en el lomo y un tubo hacia el cielo. */
 function biomortero(pose: number): Part[] {
   const p = garra(pose, true, { monster: true, scythes: false });
@@ -672,7 +712,7 @@ export function makeMiniature(kind: ModelKind, pose = 0, leader = false): THREE.
   if (!proto) {
     proto = new THREE.Group();
     const r = BASE_RADIUS[kind];
-    const legion = ["legionario", "capitan", "pesado", "andador", "exterminador", "moto", "psiquico", "francotirador", "saltador", "medico", "tanque", "estandarte"].includes(kind);
+    const legion = ["legionario", "capitan", "pesado", "andador", "exterminador", "moto", "psiquico", "francotirador", "saltador", "medico", "tanque", "estandarte", "guardia", "ingeniero"].includes(kind);
     const rim = leader || kind === "capitan" || kind === "tirano" || kind === "psiquico" || kind === "mente" ? (legion ? LEG.trim : SW.glow) : legion ? LEG.rim : SW.rim;
     const [parts, scale] = bodyOf(kind, pose, leader);
     // El cuerpo escalado se hornea en la geometría: peana y cuerpo en una sola malla (#58)
@@ -707,6 +747,10 @@ function bodyOf(kind: ModelKind, pose: number, leader: boolean): [Part[], number
     case "gargola": return [gargola(pose, leader), 1];
     case "saltador": return [saltador(pose), 1];
     case "tanque": return [tanque(pose), 1];
+    case "guardia": return [guardia(pose), 1.15];
+    case "ingeniero": return [ingeniero(pose), 1.05];
+    case "aguijon": return [aguijon(pose, leader), 0.9];
+    case "lictor": return [lictor(pose), 1.9];
     case "estandarte": return [portaestandarte(pose), 1];
     case "guardiana": return [guardiana(pose), 2.6];
     case "devorador": return [devorador(pose), 2.6];

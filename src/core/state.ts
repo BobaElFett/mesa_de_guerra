@@ -14,7 +14,8 @@ export const DEPLOY_DEPTH = 10;                   // zona de despliegue desde ca
 
 export type Faction = "legion" | "swarm";
 export type ModelKind = "legionario" | "garra" | "capitan" | "pesado" | "andador" | "tirano" | "nodo" | "escupidor" | "exterminador" | "acechador" | "moto" | "carnifice" | "psiquico" | "mente" | "francotirador" | "gargola" | "saltador" | "medico" | "biomortero" | "reventador"
-  | "tanque" | "estandarte" | "guardiana" | "devorador";
+  | "tanque" | "estandarte" | "guardiana" | "devorador"
+  | "guardia" | "ingeniero" | "aguijon" | "lictor";
 
 /** Radio de la peana en pulgadas: 32 mm para la Legión, 25 mm para las Garras. */
 export const BASE_RADIUS: Record<ModelKind, number> = {
@@ -24,7 +25,8 @@ export const BASE_RADIUS: Record<ModelKind, number> = {
   moto: 1.0, carnifice: 1.6, psiquico: 0.63, mente: 0.79,
   francotirador: 0.63, gargola: 0.49,
   saltador: 0.63, medico: 0.63, biomortero: 0.98, reventador: 0.49,
-  tanque: 2.2, estandarte: 0.63, guardiana: 1.6, devorador: 1.6,         // óvalo grande, 32 mm, 80 mm (#115-#118)      // 32, 32, 50 y 25 mm (#111-#114)                              // 32 mm y 25 mm (#103, #104)                                       // peana de moto y 105 mm (#62)
+  tanque: 2.2, estandarte: 0.63, guardiana: 1.6, devorador: 1.6,
+  guardia: 0.79, ingeniero: 0.63, aguijon: 0.49, lictor: 0.98,           // 40, 32, 25 y 50 mm (#119-#122)         // óvalo grande, 32 mm, 80 mm (#115-#118)      // 32, 32, 50 y 25 mm (#111-#114)                              // 32 mm y 25 mm (#103, #104)                                       // peana de moto y 105 mm (#62)
 };
 
 export const FACTIONS: Record<Faction, { name: string; of: string; color: string }> = {

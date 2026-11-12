@@ -14,7 +14,9 @@ export type WeaponAbility =
   /** Precisión (#103): ignora la cobertura, +1 para herir a personajes y puede apuntar a uno protegido por su escuadra. */
   | { kind: "precision" }
   /** Indirecto (#113): puede disparar sin línea de visión, con −1 para impactar y el objetivo en cobertura. */
-  | { kind: "indirecto" };
+  | { kind: "indirecto" }
+  /** Veneno (#121): hiere como mucho a 4+, sea cual sea la Resistencia. */
+  | { kind: "veneno" };
 
 export interface Weapon {
   id: string;
@@ -41,7 +43,8 @@ export interface Profile {
   OC: number;   // control de objetivo
 }
 
-export type UnitAbility = "alMando" | "sargento" | "blindado" | "sinaptico" | "rapidez" | "despliegueProfundo" | "tuneles" | "turbo" | "aterrador" | "psiquico" | "infiltrador" | "vuelo" | "impacto" | "sanador" | "estallido" | "estandarte" | "escudoVivo" | "devorar";
+export type UnitAbility = "alMando" | "sargento" | "blindado" | "sinaptico" | "rapidez" | "despliegueProfundo" | "tuneles" | "turbo" | "aterrador" | "psiquico" | "infiltrador" | "vuelo" | "impacto" | "sanador" | "estallido" | "estandarte" | "escudoVivo" | "devorar"
+  | "contraataque" | "reparar" | "sigilo";
 
 /**
  * Equipo opcional (#63): cambia un arma por otra en el líder, en una miniatura normal o en todas.
@@ -87,7 +90,8 @@ export type DatasheetId =
   | "tirano" | "garras" | "escupidores" | "nodo" | "acechadores"
   | "motoristas" | "carnifice" | "psiquico" | "mente" | "francotiradores" | "gargolas"
   | "saltadores" | "medico" | "biomorteros" | "reventadores"
-  | "tanque" | "portaestandarte" | "guardiana" | "devorador";
+  | "tanque" | "portaestandarte" | "guardiana" | "devorador"
+  | "guardiaHonor" | "ingeniero" | "aguijones" | "lictor";
 
 /** Qué hace cada habilidad de arma (#110), para el Códice y las fichas. */
 export const WEAPON_ABILITY_TEXT: Record<WeaponAbility["kind"], { name: string; text: string }> = {
@@ -100,6 +104,7 @@ export const WEAPON_ABILITY_TEXT: Record<WeaponAbility["kind"], { name: string; 
   devastadora: { name: "Devastadora", text: "Cada 6 para herir no permite salvación." },
   explosiva: { name: "Explosiva", text: "+1 ataque por cada 5 miniaturas de la unidad objetivo." },
   torrente: { name: "Torrente", text: "Impacta siempre, sin tirar para impactar." },
+  veneno: { name: "Veneno", text: "Hiere a 4+ como mucho, aunque la Resistencia del objetivo sea mayor." },
   indirecto: { name: "Indirecto", text: "Puede disparar a un enemigo que no ve, con −1 para impactar; el objetivo cuenta como en cobertura." },
   precision: { name: "Precisión", text: "Ignora la cobertura, +1 para herir a personajes y puede apuntar a un personaje protegido por su escuadra." },
 };
@@ -147,6 +152,11 @@ export const WEAPONS: Record<string, Weapon> = Object.fromEntries([
   w("rayoMental", "Rayo mental", 18, "D3", null, 1, 0, 1),
   // Impacto (#111) y Estallido (#114): un dado por miniatura; cada éxito, una herida mortal
   w("canonBatalla", "Cañón de batalla", 48, "D6", 3, 9, -2, 3, [{ kind: "explosiva" }]),
+  w("hachaEnergia", "Hacha de energía", "CC", 3, 3, 6, -2, 2),
+  w("servobrazo", "Servobrazo", "CC", 2, 4, 8, -2, 3),
+  w("aguijonVeneno", "Aguijón venenoso", "CC", 2, 4, 3, -1, 1, [{ kind: "veneno" }]),
+  w("garrasLictor", "Garras de acechador", "CC", 6, 2, 7, -2, 2),
+  w("ganchos", "Ganchos de carne", 12, 2, 3, 6, -1, 2, [{ kind: "pistola" }]),
   w("orugas", "Orugas", "CC", 3, 4, 6, 0, 1),
   w("fauces", "Fauces devoradoras", "CC", 5, 3, 7, -2, 2),
   w("aterrizaje", "Aterrizaje", "CC", 1, 5, 1, 0, 1),
@@ -169,6 +179,18 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
     profile: { M: 10, T: 10, Sv: 2, W: 12, Ld: 6, OC: 3 },
     sizes: [{ models: 1, points: 175 }], weapons: ["canonBatalla", "bolterGemelo", "orugas"],
     abilities: ["blindado"], model: "tanque",
+  },
+  guardiaHonor: {
+    id: "guardiaHonor", name: "Guardia de Honor", faction: "legion",
+    profile: { M: 6, T: 4, Sv: 2, W: 3, Ld: 6, OC: 1, Inv: 4 },
+    sizes: [{ models: 3, points: 110 }, { models: 6, points: 220 }], weapons: ["pistolaBolter", "hachaEnergia"],
+    abilities: ["contraataque"], model: "guardia",
+  },
+  ingeniero: {
+    id: "ingeniero", name: "Ingeniero de Combate", faction: "legion", character: true,
+    profile: { M: 6, T: 4, Sv: 2, W: 4, Ld: 6, OC: 1 },
+    sizes: [{ models: 1, points: 65 }], weapons: ["pistolaBolter", "servobrazo"],
+    abilities: ["reparar"], model: "ingeniero",
   },
   portaestandarte: {
     id: "portaestandarte", name: "Portaestandarte", faction: "legion",
@@ -246,7 +268,7 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
   mente: {
     id: "mente", name: "Mente del Enjambre", faction: "swarm",
     profile: { M: 6, T: 5, Sv: 4, Inv: 5, W: 5, Ld: 7, OC: 1 },
-    sizes: [{ models: 1, points: 50 }], weapons: ["garrasAfiladas"],
+    sizes: [{ models: 1, points: 40 }], weapons: ["garrasAfiladas"],
     abilities: ["psiquico", "sinaptico"], model: "mente", character: true, leads: ["garras", "escupidores", "nodo"],
   },
   motoristas: {
@@ -285,6 +307,18 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
       { id: "acido", name: "Todos: ácido corrosivo (12\", 2 ataques, FP−1, en vez de escupidor)", who: "todos", replace: "escupidor", with: "acidoCorrosivo", points: 0 },
     ],
   },
+  aguijones: {
+    id: "aguijones", name: "Aguijones", faction: "swarm",
+    profile: { M: 7, T: 3, Sv: 5, W: 1, Ld: 8, OC: 1 },
+    sizes: [{ models: 10, points: 60 }, { models: 20, points: 120 }], weapons: ["aguijonVeneno"],
+    abilities: [], model: "aguijon",
+  },
+  lictor: {
+    id: "lictor", name: "Acechador Oculto", faction: "swarm",
+    profile: { M: 8, T: 6, Sv: 4, W: 6, Ld: 8, OC: 1 },
+    sizes: [{ models: 1, points: 90 }], weapons: ["ganchos", "garrasLictor"],
+    abilities: ["infiltrador", "sigilo"], model: "lictor",
+  },
   guardiana: {
     id: "guardiana", name: "Bestia Guardiana", faction: "swarm", big: true,
     profile: { M: 7, T: 8, Sv: 3, W: 8, Ld: 8, OC: 3 },
@@ -294,7 +328,7 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
   devorador: {
     id: "devorador", name: "Devorador", faction: "swarm", big: true,
     profile: { M: 8, T: 8, Sv: 3, W: 9, Ld: 8, OC: 3 },
-    sizes: [{ models: 1, points: 130 }], weapons: ["fauces", "escupidor"],
+    sizes: [{ models: 1, points: 120 }], weapons: ["fauces", "escupidor"],
     abilities: ["devorar"], model: "devorador",
   },
   biomorteros: {
@@ -389,6 +423,9 @@ export const UNIT_ABILITY_TEXT: Record<UnitAbility, { name: string; text: string
   turbo: { name: "Turbo", text: "Al avanzar suma 6\" sin tirar el dado." },
   aterrador: { name: "Aterrador", text: "Las unidades enemigas a 6\" o menos restan 1 a su Liderazgo en los chequeos de moral." },
   infiltrador: { name: "Infiltrador", text: "Despliega en cualquier punto de su mitad de la mesa a más de 6\" de la línea central, no solo en su zona de despliegue." },
+  contraataque: { name: "Contraataque", text: "Combate primero, como si hubiera cargado, aunque sea ella la cargada." },
+  reparar: { name: "Reparar", text: "Al empezar tu fase de mando, cura D3 heridas a un Andador o Tanque propio a 3\" o menos." },
+  sigilo: { name: "Sigilo", text: "Los disparos contra ella restan 1 para impactar." },
   estandarte: { name: "Estandarte", text: "Tus unidades con alguna miniatura a 6\" o menos de él suman +1 al control de objetivos de cada miniatura y repiten los chequeos de moral fallados." },
   escudoVivo: { name: "Escudo vivo", text: "Tus unidades con alguna miniatura a 6\" o menos de ella tienen salvación invulnerable 5+ contra los disparos." },
   devorar: { name: "Devorar", text: "Cada miniatura enemiga que mata en combate le cura 1 herida." },

@@ -2,6 +2,14 @@
 
 Lo nuevo de cada versión de *Mesa de Guerra*, de la más reciente a la primera.
 
+## 0.45 · fase 26, cuatro tropas más III (#119–#122)
+- **Guardia de Honor (#119, Legión, 3: 110, 6: 220):** veteranos con escudo de energía (Sv2+, invulnerable 4+, 3 H) y Hacha de energía (A3, 3+, F6, FP−2, D2). *Contraataque*: combaten primero, como si hubieran cargado, aunque sean los cargados.
+- **Ingeniero de Combate (#120, Legión, personaje, 65 pts):** de rojo, con un servobrazo sobre el hombro (A2, F8, FP−2, D3). *Reparar*: al empezar tu mando cura D3 heridas a un Andador o Tanque propio a 3" o menos.
+- **Aguijones (#121, Enjambre, 10: 60, 20: 120):** criaturas con cola de aguijón. Su arma tiene la habilidad nueva *Veneno*: hiere a 4+ como mucho, aunque la Resistencia del objetivo sea mayor; buena contra Tanques y Andadores.
+- **Acechador Oculto (#122, Enjambre, 90 pts):** monstruo esbelto de piel mimética, con Ganchos de carne (12", Pistola) y Garras de acechador (A6, 2+, F7). *Infiltrador* y *Sigilo*: los disparos contra él restan 1 para impactar.
+- Miniaturas, Códice con trasfondo, ayuda, listas al azar e IA para las cuatro.
+- **Equilibrio** (2 rondas de 800 partidas con listas, mapas y misiones al azar): con los costes de partida la Legión ganaba el 53 %. El Ingeniero subió de 55 a 65; bajaron los Aguijones (70 → 60), la Mente (50 → 40) y el Devorador (130 → 120). Queda 50 %–50 %. Las listas con Mente siguen rindiendo menos que las de Tirano (−12 puntos): es cosa del Tirano, no de su coste.
+
 ## 0.44 · fase 25, cuatro tropas más II (#115–#118)
 - **Tanque Martillo (#115, Legión, 175 pts):** carro con orugas, torreta y bólter en el casco (M10", R10, Sv2+, 12 H). Lleva *Cañón de batalla* (48", D6 ataques, F9, FP−2, D3, Explosiva), Bólter gemelo y Orugas para el cuerpo a cuerpo. *Blindado*: cada ataque que recibe hace 1 daño menos (mínimo 1).
 - **Portaestandarte (#116, Legión, 45 pts):** personaje con un estandarte alto. Lidera las mismas escuadras que el Médico. *Estandarte* (aura): tus unidades con alguna miniatura a 6" o menos suman +1 al control de objetivos de cada miniatura y repiten los chequeos de moral fallados.

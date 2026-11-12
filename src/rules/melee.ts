@@ -126,9 +126,15 @@ export interface FightOptions {
 /** Unidades que deben combatir antes: las que cargaron con éxito este turno y aún no han combatido. */
 export function pendingChargers(s: GameState): string[] {
   const fought = new Set(s.turnLog.fought ?? []);
-  return Object.entries(s.turnLog.charges ?? {})
+  const chargers = Object.entries(s.turnLog.charges ?? {})
     .filter(([u, c]) => c.success && !fought.has(u) && unitModels(s, u).length && engaged(unitModels(s, u), foesOf(s, u)))
     .map(([u]) => u);
+  // Contraataque (#119): también combaten primero, aunque las hayan cargado
+  const counter = s.units
+    .filter((u) => !fought.has(u.id) && !chargers.includes(u.id) && DATASHEETS[u.datasheet].abilities.includes("contraataque")
+      && unitModels(s, u.id).length && engaged(unitModels(s, u.id), foesOf(s, u.id)))
+    .map((u) => u.id);
+  return [...chargers, ...counter];
 }
 
 export function fightOptions(s: GameState, unitId: string): FightOptions {
@@ -145,7 +151,7 @@ export function fightOptions(s: GameState, unitId: string): FightOptions {
   else if (!targets.length) blocked = "No está trabada.";
   else {
     const first = pendingChargers(s);
-    if (first.length && !first.includes(unitId)) blocked = "Primero combaten las unidades que han cargado.";
+    if (first.length && !first.includes(unitId)) blocked = "Primero combaten las unidades que han cargado (y las de Contraataque).";
   }
   return { blocked, targets, fought };
 }

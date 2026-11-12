@@ -1,4 +1,5 @@
 import { BASE_RADIUS, GameState, Piece, PLAYERS } from "../core/state";
+import { rollDice } from "../core/rng";
 import { resolveOverlaps } from "../core/placement";
 import { DATASHEETS, WEAPONS } from "./datasheets";
 import { ENGAGEMENT, onForbiddenTerrain } from "./geometry";
@@ -87,4 +88,23 @@ export function devour(s: GameState, unitId: string, kills: number) {
     if (!left) break;
   }
   if (healed) note(s, "combate", `${unitName(s, unitId)} devora a sus víctimas y recupera ${healed} herida${healed === 1 ? "" : "s"}`);
+}
+
+/** Reparar (#120): al empezar tu mando, cada ingeniero cura D3 heridas a un vehículo propio a 3" o menos. */
+export function repairVehicles(s: GameState) {
+  for (const u of s.units) {
+    if (u.faction !== PLAYERS[s.active] || !has(s, u.id, "reparar")) continue;
+    const eng = unitModels(s, u.id)[0];
+    if (!eng) continue;
+    const near = s.pieces
+      .filter((p) => p.faction === u.faction && p.damage && p.unit && has(s, p.unit, "blindado")
+        && Math.hypot(p.x - eng.x, p.z - eng.z) - BASE_RADIUS[p.model] - BASE_RADIUS[eng.model] <= 3)
+      .sort((a, b) => (b.damage ?? 0) - (a.damage ?? 0))[0];
+    if (!near) continue;
+    const [d, rng] = rollDice(s.rng, 1, 3);
+    s.rng = rng;
+    const h = Math.min(near.damage!, d[0]);
+    near.damage! -= h;
+    note(s, "turno", `${unitName(s, u.id)} repara ${h} herida${h === 1 ? "" : "s"} a ${unitName(s, near.unit!)}`);
+  }
 }

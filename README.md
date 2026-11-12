@@ -5,7 +5,7 @@ la **Legión Astral** (super soldados con servoarmadura) contra **El Enjambre** 
 Se juega como en una mesa de verdad (mover, medir y tirar dados) o con el **modo reglas**, que guía las fases y resuelve las tiradas.
 Three.js + TypeScript, compilado con esbuild a un único `dist/index.html`.
 
-Versión **0.44**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
+Versión **0.45**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
 
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor ni conexión.
@@ -46,6 +46,8 @@ Máximo 3 unidades iguales y 2 unidades grandes —Andador, Tanque, Tirano, Best
 | **Motoristas de Asalto** | 12" | 5 | 3+ | 2 | 3: 90 · 6: 180 | Bólter gemelo, Cuchillo de combate | Turbo |
 | **Francotiradores** | 6" | 4 | 3+ | 2 | 5: 110 | Rifle de precisión, Cuchillo de combate | Infiltrador |
 | **Saltadores de Asalto** | 12" | 4 | 3+ | 2 | 5: 100 · 10: 200 | Pistola bólter, Espada sierra | Vuelo, Impacto |
+| **Guardia de Honor** | 6" | 4 | 2+/4++ | 3 | 3: 110 · 6: 220 | Pistola bólter, Hacha de energía | Contraataque |
+| **Ingeniero de Combate** (personaje) | 6" | 4 | 2+ | 4 | 1: 65 | Pistola bólter, Servobrazo | Reparar |
 | **Tanque Martillo** | 10" | 10 | 2+ | 12 | 1: 175 | Cañón de batalla, Bólter gemelo, Orugas | Blindado |
 | **Portaestandarte** (personaje) | 6" | 4 | 3+ | 4 | 1: 45 | Pistola bólter, Espada sierra | Estandarte; lidera como el Médico |
 | **Médico de Campaña** (personaje) | 6" | 4 | 3+ | 4 | 1: 55 | Pistola bólter, Cuchillo de combate | Sanador; lidera Asalto, Fuego Pesado, Exterminadores, Francotiradores o Saltadores |
@@ -53,14 +55,16 @@ Máximo 3 unidades iguales y 2 unidades grandes —Andador, Tanque, Tirano, Best
 | El Enjambre | M | R | Sv | H | Puntos | Armas | Habilidades |
 |---|---|---|---|---|---|---|---|
 | **Acechadores** | 8" | 5 | 4+ | 3 | 3: 75 · 6: 150 | Cuchillas dobles | Túneles, Rapidez |
-| **Mente del Enjambre** (personaje) | 6" | 5 | 4+/5++ | 5 | 1: 50 | Garras afiladas | Psíquico, Sináptico; lidera Garras, Escupidores o Nodo |
+| **Mente del Enjambre** (personaje) | 6" | 5 | 4+/5++ | 5 | 1: 40 | Garras afiladas | Psíquico, Sináptico; lidera Garras, Escupidores o Nodo |
 | **Carnífice** | 8" | 9 | 2+ | 10 | 1: 190 | Lanzapinchos, Guadañas monstruosas | Aterrador |
 | **Tirano Sináptico** (personaje) | 8" | 9 | 2+/5++ | 11 | 1: 195 | Garras monstruosas, Escupe-bilis | Sináptico |
 | **Garras Menores** | 8" | 4 | 5+ | 1 | 10: 55 · 20: 110 | Garras | Rapidez |
 | **Escupidores** | 6" | 3 | 4+ | 1 | 10: 55 · 20: 110 | Escupidor, Mordiscos | — |
 | **Gárgolas** | 12" | 3 | 6+ | 1 | 10: 70 · 20: 140 | Escupe-púas, Garras aladas | Vuelo |
+| **Aguijones** | 7" | 3 | 5+ | 1 | 10: 60 · 20: 120 | Aguijón venenoso (Veneno) | — |
+| **Acechador Oculto** | 8" | 6 | 4+ | 6 | 1: 90 | Ganchos de carne, Garras de acechador | Infiltrador, Sigilo |
 | **Bestia Guardiana** | 7" | 8 | 3+ | 8 | 1: 135 | Garras monstruosas | Escudo vivo |
-| **Devorador** | 8" | 8 | 3+ | 9 | 1: 130 | Fauces devoradoras, Escupidor | Devorar |
+| **Devorador** | 8" | 8 | 3+ | 9 | 1: 120 | Fauces devoradoras, Escupidor | Devorar |
 | **Biomorteros** | 5" | 5 | 4+ | 3 | 2: 75 · 4: 150 | Biomortero (Indirecto, Explosiva), Garras | — |
 | **Reventadores** | 8" | 3 | 6+ | 1 | 10: 45 · 20: 90 | Mordiscos | Estallido |
 | **Guerreros Nodo** | 6" | 5 | 4+ | 3 | 3: 80 · 6: 160 | Cañón bio, Garras afiladas | Sináptico |

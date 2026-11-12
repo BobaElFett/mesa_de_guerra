@@ -147,7 +147,7 @@ export function resolveAttack(input: AttackInput, dice: DiceSource): AttackResul
   // --- Herir -----------------------------------------------------------------------
   const lethal = hasAbility(weapon, "letal") ? crits : 0;
   res.autoWounds = lethal;
-  const toWound = woundTarget(weapon.strength, target.profile.T);
+  const toWound = Math.min(woundTarget(weapon.strength, target.profile.T), hasAbility(weapon, "veneno") ? 4 : 6);
   const wmod = clamp1(input.woundMod);
   let wounds = lethal, critWounds = 0;
   if (input.mortal) wounds = res.hits;
