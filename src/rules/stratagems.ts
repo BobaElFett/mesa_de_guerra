@@ -14,7 +14,8 @@ import { respawn } from "./special";
 // Cada estratagema se usa como mucho una vez por turno (cada una va con una sola fase) y
 // nunca sobre una unidad desmoralizada, salvo Reagrupar, que es justo para eso.
 
-export type StratId = "reagrupar" | "punteria" | "impetu" | "furia" | "granadas" | "oleada";
+export type StratId = "reagrupar" | "punteria" | "impetu" | "furia" | "granadas" | "oleada"
+  | "fuegoSostenido" | "avanceTactico" | "frenesi" | "hambre";
 
 export interface Stratagem {
   id: StratId; name: string; cost: number; phase: Phase; text: string;
@@ -33,6 +34,15 @@ export const STRATAGEMS: Record<StratId, Stratagem> = {
     text: "Una unidad que puede disparar lanza granadas a un enemigo visible a 8\" o menos: 6D6, cada 4+ es una herida mortal (sin salvación). Puede disparar igual." },
   oleada: { id: "oleada", name: "Oleada sin fin", cost: 1, phase: "mando", faction: "swarm",
     text: "Unas Garras Menores en sinapsis que hayan perdido miniaturas recuperan D3+1, junto a la unidad." },
+  // Estratagemas propias de cada bando (#123)
+  fuegoSostenido: { id: "fuegoSostenido", name: "Fuego sostenido", cost: 1, phase: "disparo", faction: "legion",
+    text: "Las armas a distancia de una unidad ganan Sostenida 1 esta fase: cada 6 para impactar da un impacto más." },
+  avanceTactico: { id: "avanceTactico", name: "Avance táctico", cost: 1, phase: "movimiento", faction: "legion",
+    text: "Una unidad puede disparar este turno aunque avance, como si todas sus armas fueran de Asalto." },
+  frenesi: { id: "frenesi", name: "Frenesí", cost: 1, phase: "combate", faction: "swarm",
+    text: "Cada miniatura de una unidad hace 1 ataque más en combate esta fase." },
+  hambre: { id: "hambre", name: "Hambre voraz", cost: 1, phase: "carga", faction: "swarm",
+    text: "+2 a la tirada de carga de una unidad esta fase." },
 };
 
 export const GRENADE_RANGE = 8;
@@ -55,7 +65,12 @@ export function stratBlocked(s: GameState, id: StratId, unitId: string): string 
   const ds = DATASHEETS[u.datasheet];
   if (id === "punteria" && !ds.weapons.concat(ds.leaderWeapons ?? []).some((w) => WEAPONS[w].range !== "CC")) return "No tiene armas a distancia.";
   if (id === "impetu" && s.turnLog.charges?.[unitId]) return "Ya ha cargado.";
-  if (id === "furia" && (s.turnLog.fought ?? []).includes(unitId)) return "Ya ha combatido.";
+  if ((id === "furia" || id === "frenesi") && (s.turnLog.fought ?? []).includes(unitId)) return "Ya ha combatido.";
+  if (id === "hambre" && s.turnLog.charges?.[unitId]) return "Ya ha cargado.";
+  if (id === "fuegoSostenido" && !ds.weapons.concat(ds.leaderWeapons ?? []).some((w) => WEAPONS[w].range !== "CC")) return "No tiene armas a distancia.";
+  if (id === "fuegoSostenido" && (s.turnLog.shot?.[unitId] ?? []).length) return "Ya ha disparado.";
+  if (id === "avanceTactico" && !ds.weapons.concat(ds.leaderWeapons ?? []).some((w) => WEAPONS[w].range !== "CC")) return "No tiene armas a distancia.";
+  if (id === "avanceTactico" && s.turnLog.moves[unitId]?.kind === "retirarse") return "Se ha retirado.";
   if (id === "granadas") {
     if (isEngaged(s, unitId)) return "Trabada en combate.";
     const mv = s.turnLog.moves[unitId];

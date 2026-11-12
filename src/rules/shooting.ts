@@ -9,7 +9,7 @@ import { isGuarded, underCommand } from "./leaders";
 import { GameState, Piece, PLAYERS } from "../core/state";
 import { DATASHEETS, Weapon, WEAPONS, hasAbility } from "./datasheets";
 import { resolveAttack, SeededDice, woundTarget, AttackResult } from "./attack";
-import { disc, engaged, gap, sight, Sight } from "./geometry";
+import { disc, engaged, gap, onHill, sight, Sight } from "./geometry";
 import { canShootAfter, movedSoFar, unitModels } from "./movement";
 
 // Fase de disparo del reglamento: cada unidad dispara con sus armas a unidades enemigas
@@ -101,7 +101,7 @@ export function shootingOptions(s: GameState, unitId: string): ShootingOptions {
     const opt: WeaponOption = { weapon, carriers: ids, fired: fired.has(wid), targets: [] };
     const pistol = hasAbility(weapon, "pistola");
     if (opt.fired) opt.blocked = "Ya ha disparado esta fase.";
-    else if (!canShootAfter(move, hasAbility(weapon, "asalto")))
+    else if (!canShootAfter(move, hasAbility(weapon, "asalto") || hasStrat(s, "avanceTactico", unitId)))
       opt.blocked = move?.kind === "retirarse" ? "Se ha retirado este turno." : "Ha avanzado: solo dispara con armas de Asalto.";
     else if (selfEngaged && !pistol) opt.blocked = "Trabada: solo dispara con pistolas.";
 
@@ -181,8 +181,11 @@ export function performAttack(s: GameState, kind: AttackLogEntry["kind"], unitId
     .map((x) => ({ id: x.p.id, woundsLeft: x.left }));
 
   const dice = new SeededDice(s.rng);
+  // Fuego sostenido (#123): las armas a distancia ganan Sostenida 1 esta fase
+  const w = kind === "disparo" && !extra.mortal && hasStrat(s, "fuegoSostenido", unitId) && !hasAbility(weapon, "sostenida")
+    ? { ...weapon, abilities: [...weapon.abilities, { kind: "sostenida" as const, x: 1 }] } : weapon;
   const res = resolveAttack({
-    weapon, attackers: attackers.length,
+    weapon: w, attackers: attackers.length,
     target: {
       // Escudo vivo (#117): invulnerable 5+ contra disparos cerca de una Bestia Guardiana
       profile: kind === "disparo" && !extra.mortal && nearAura(s, targetId, "escudoVivo") ? { ...tds.profile, Inv: Math.min(tds.profile.Inv ?? 7, 5) } : tds.profile,
@@ -195,9 +198,14 @@ export function performAttack(s: GameState, kind: AttackLogEntry["kind"], unitId
     mortal: extra.mortal,
     woundMod: (kind === "disparo" && !extra.overwatch && hasStrat(s, "punteria", unitId) ? 1 : 0)
       + (hasAbility(weapon, "precision") && tds.character && !extra.mortal ? 1 : 0),
+    extraAttacks: kind === "combate" && !extra.mortal && hasStrat(s, "frenesi", unitId) ? 1 : 0,
     hitMod: (kind === "combate" && hasStrat(s, "furia", unitId) ? 1 : 0)
+      + (kind === "combate" && !extra.mortal && nearAura(s, unitId, "voluntad") ? 1 : 0)
       + (kind === "disparo" && !extra.overwatch && !extra.mortal ? conditionHitMod(s, extra.distance) : 0)
       + (extra.indirect ? -1 : 0)
+      // Colina (#125): +1 si la mayoría de los que disparan están en alto y el objetivo no
+      + (kind === "disparo" && !extra.mortal && attackers.filter((a) => onHill(s.terrain, a.x, a.z)).length * 2 > attackers.length
+        && !unitModels(s, targetId).some((m) => onHill(s.terrain, m.x, m.z)) ? 1 : 0)
       + (kind === "disparo" && !extra.mortal && tds.abilities.includes("sigilo") ? -1 : 0),
   }, dice);
   s.rng = dice.state;

@@ -19,6 +19,8 @@ export const TERRAIN_RULES: Record<TerrainKind, { blocks: boolean; cover: boolea
   // Bosque (#84): se atraviesa y se puede acabar dentro; da cobertura dentro o detrás, y tapa la
   // visión si la línea cruza más de FOREST_DEPTH" de bosque (y ninguna de las dos está dentro)
   bosque: { blocks: true, cover: true, solid: false, noEnd: false },
+  // Colina (#125): no tapa ni cubre; desde arriba se dispara mejor
+  colina: { blocks: false, cover: false, solid: false, noEnd: false },
 };
 export const FOREST_DEPTH = 3;
 
@@ -92,6 +94,18 @@ export function insideTerrain(t: TerrainPiece, x: number, z: number, pad = 0): b
   return Math.abs(lx) <= f.w / 2 + pad && Math.abs(lz) <= f.d / 2 + pad;
 }
 
+/** Altura de la meseta de la colina (#125), en pulgadas. */
+export const HILL_HEIGHT = 0.45;
+
+/** ¿Está el punto sobre una colina? (elipse inscrita en la huella) */
+export function onHill(terrain: TerrainPiece[], x: number, z: number): boolean {
+  return terrain.some((t) => {
+    if (t.kind !== "colina") return false;
+    const [lx, lz] = toLocal(t, x, z), f = TERRAIN[t.kind];
+    return (lx / (f.w / 2)) ** 2 + (lz / (f.d / 2)) ** 2 <= 1;
+  });
+}
+
 /** ¿Corta el segmento a→b la huella de la pieza? (método de las franjas en coordenadas locales) */
 export function segmentHitsTerrain(t: TerrainPiece, ax: number, az: number, bx: number, bz: number): boolean {
   const f = TERRAIN[t.kind];
@@ -126,6 +140,7 @@ export const TERRAIN_SOLIDS: Record<TerrainKind, LocalRect[]> = {
   ],
   crater: [],
   bosque: [],
+  colina: [],
   bunker: [{ x: 0, z: 0, w: 5.6, d: 3.6 }],        // cuerpo y losa del techo
   barricada: [{ x: 0, z: 0, w: 4.05, d: 0.55 }],
 };

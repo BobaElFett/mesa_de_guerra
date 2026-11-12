@@ -44,7 +44,7 @@ export interface Profile {
 }
 
 export type UnitAbility = "alMando" | "sargento" | "blindado" | "sinaptico" | "rapidez" | "despliegueProfundo" | "tuneles" | "turbo" | "aterrador" | "psiquico" | "infiltrador" | "vuelo" | "impacto" | "sanador" | "estallido" | "estandarte" | "escudoVivo" | "devorar"
-  | "contraataque" | "reparar" | "sigilo";
+  | "contraataque" | "reparar" | "sigilo" | "voluntad";
 
 /**
  * Equipo opcional (#63): cambia un arma por otra en el líder, en una miniatura normal o en todas.
@@ -268,8 +268,8 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
   mente: {
     id: "mente", name: "Mente del Enjambre", faction: "swarm",
     profile: { M: 6, T: 5, Sv: 4, Inv: 5, W: 5, Ld: 7, OC: 1 },
-    sizes: [{ models: 1, points: 40 }], weapons: ["garrasAfiladas"],
-    abilities: ["psiquico", "sinaptico"], model: "mente", character: true, leads: ["garras", "escupidores", "nodo"],
+    sizes: [{ models: 1, points: 55 }], weapons: ["garrasAfiladas"],
+    abilities: ["psiquico", "sinaptico", "voluntad"], model: "mente", character: true, leads: ["garras", "escupidores", "nodo"],
   },
   motoristas: {
     id: "motoristas", name: "Motoristas de Asalto", faction: "legion",
@@ -423,6 +423,7 @@ export const UNIT_ABILITY_TEXT: Record<UnitAbility, { name: string; text: string
   turbo: { name: "Turbo", text: "Al avanzar suma 6\" sin tirar el dado." },
   aterrador: { name: "Aterrador", text: "Las unidades enemigas a 6\" o menos restan 1 a su Liderazgo en los chequeos de moral." },
   infiltrador: { name: "Infiltrador", text: "Despliega en cualquier punto de su mitad de la mesa a más de 6\" de la línea central, no solo en su zona de despliegue." },
+  voluntad: { name: "Voluntad de la colmena", text: "Tus unidades con alguna miniatura a 6\" o menos de ella suman +1 para impactar en combate." },
   contraataque: { name: "Contraataque", text: "Combate primero, como si hubiera cargado, aunque sea ella la cargada." },
   reparar: { name: "Reparar", text: "Al empezar tu fase de mando, cura D3 heridas a un Andador o Tanque propio a 3\" o menos." },
   sigilo: { name: "Sigilo", text: "Los disparos contra ella restan 1 para impactar." },

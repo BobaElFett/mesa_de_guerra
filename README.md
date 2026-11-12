@@ -5,7 +5,7 @@ la **Legión Astral** (super soldados con servoarmadura) contra **El Enjambre** 
 Se juega como en una mesa de verdad (mover, medir y tirar dados) o con el **modo reglas**, que guía las fases y resuelve las tiradas.
 Three.js + TypeScript, compilado con esbuild a un único `dist/index.html`.
 
-Versión **0.45**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
+Versión **0.46**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
 
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor ni conexión.
@@ -55,7 +55,7 @@ Máximo 3 unidades iguales y 2 unidades grandes —Andador, Tanque, Tirano, Best
 | El Enjambre | M | R | Sv | H | Puntos | Armas | Habilidades |
 |---|---|---|---|---|---|---|---|
 | **Acechadores** | 8" | 5 | 4+ | 3 | 3: 75 · 6: 150 | Cuchillas dobles | Túneles, Rapidez |
-| **Mente del Enjambre** (personaje) | 6" | 5 | 4+/5++ | 5 | 1: 40 | Garras afiladas | Psíquico, Sináptico; lidera Garras, Escupidores o Nodo |
+| **Mente del Enjambre** (personaje) | 6" | 5 | 4+/5++ | 5 | 1: 55 | Garras afiladas | Psíquico, Sináptico, Voluntad de la colmena; lidera Garras, Escupidores o Nodo |
 | **Carnífice** | 8" | 9 | 2+ | 10 | 1: 190 | Lanzapinchos, Guadañas monstruosas | Aterrador |
 | **Tirano Sináptico** (personaje) | 8" | 9 | 2+/5++ | 11 | 1: 195 | Garras monstruosas, Escupe-bilis | Sináptico |
 | **Garras Menores** | 8" | 4 | 5+ | 1 | 10: 55 · 20: 110 | Garras | Rapidez |

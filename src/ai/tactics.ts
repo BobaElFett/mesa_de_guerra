@@ -7,7 +7,7 @@ import { overwatchBlocked, overwatchWeapons } from "../rules/reactions";
 import { CommandBus, PieceMove } from "../core/commands";
 import { BASE_RADIUS, Faction, GameState, Piece, PLAYERS, TERRAIN, TerrainPiece } from "../core/state";
 import { DATASHEETS, hasAbility, WEAPONS } from "../rules/datasheets";
-import { allowance, checkMove, flies, isEngaged, movedSoFar } from "../rules/movement";
+import { allowance, checkMove, flies, isEngaged, movedSoFar, unitModels } from "../rules/movement";
 import { shootingOptions } from "../rules/shooting";
 import { chargeOptions, fightOptions } from "../rules/melee";
 import { formation, formationModels, partnerOf, underCommand } from "../rules/leaders";
@@ -15,7 +15,7 @@ import { OBJECTIVE_RADIUS, OBJECTIVE_RANGE, objectiveStatus } from "../rules/mis
 import { canCarry, PICK_RANGE, RELIC_R } from "../rules/relic";
 import { grenadeTargets, hasStrat, stratBlocked } from "../rules/stratagems";
 import { isPsyker, powerOf, psychicBlocked, psychicTargets } from "../rules/psychic";
-import { crossesSolid, disc, gap, onForbiddenTerrain, sight } from "../rules/geometry";
+import { crossesSolid, disc, gap, onForbiddenTerrain, onHill, sight } from "../rules/geometry";
 import {
   attackValue, centroid, expectedAttack, groupGap, meleeExpected, p2D6, pointsPerWound, unitCost,
 } from "./evaluate";
@@ -249,6 +249,9 @@ function scorePosition(s: GameState, unitId: string, dx: number, dz: number, kin
       }
       best += wb;
     }
+    // Colina (#125): desde arriba se impacta mejor (+1, ~un tercio más de impactos)
+    const high = models.filter((m) => onHill(s.terrain, m.x, m.z)).length * 2 > models.length;
+    if (high && best > 0) { best *= 1.25; if (!why) why = "en alto"; }
     score += best * (role === "heavy" ? W.heavyMult : 1);
     if (best > 0 && !why) why = "dispara";
   }
@@ -542,6 +545,11 @@ function shootStep(bus: CommandBus, W: Weights): boolean {
     const total = picks.filter((p) => p.unit === pick.unit).reduce((n, p) => Math.max(n, p.value), 0);
     if (total >= 25) { bus.dispatch({ type: "stratagem", id: "punteria", unit: pick.unit }); lastAction = `Estratagema Puntería en ${nameOf(s, pick.unit)}`; return true; }
   }
+  // Fuego sostenido (#123): en la unidad con más disparos, si sobran PM
+  if (W.strats && f === "legion" && s.cp[s.active] > W.cpReserve + 1 && !stratBlocked(s, "fuegoSostenido", pick.unit)) {
+    const total = picks.filter((p) => p.unit === pick.unit).reduce((n, p) => Math.max(n, p.value), 0);
+    if (total >= 30) { bus.dispatch({ type: "stratagem", id: "fuegoSostenido", unit: pick.unit }); lastAction = `Estratagema Fuego sostenido en ${nameOf(s, pick.unit)}`; return true; }
+  }
   bus.dispatch({ type: "shoot", unit: pick.unit, weapon: pick.weapon, target: pick.target });
   lastActor = pick.unit;
   lastAction = `${nameOf(s, pick.unit)} dispara ${WEAPONS[pick.weapon].name} a ${nameOf(s, pick.target)}`;
@@ -594,7 +602,10 @@ function chargeStep(bus: CommandBus, W: Weights): boolean {
   if (!best) return false;
   if (W.strats && p2D6(chargeOptions(s, best.unit).targets.find((x) => x.unit === best!.target)!.need) < 0.75
     && !stratBlocked(s, "impetu", best.unit) && s.cp[s.active] > W.cpReserve && best.net > 20) {
-    bus.dispatch({ type: "stratagem", id: "impetu", unit: best.unit });
+    // Hambre voraz (#123) suma +2 y sale mejor que repetir cuando la carga es larga
+    const need = chargeOptions(s, best.unit).targets.find((x) => x.unit === best!.target)!.need;
+    const id = f === "swarm" && need >= 8 && !stratBlocked(s, "hambre", best.unit) ? "hambre" : "impetu";
+    bus.dispatch({ type: "stratagem", id, unit: best.unit });
   }
   bus.dispatch({ type: "charge", unit: best.unit, target: best.target });
   const rec = bus.state.turnLog.charges?.[best.unit];
@@ -620,7 +631,9 @@ export function fightStep(bus: CommandBus, f: Faction, level: AiLevel = "normal"
   if (!best) return false;
   const W = level === "facil" ? null : WEIGHTS[level];
   if (W && W.strats && PLAYERS[s.active] === f && !stratBlocked(s, "furia", best.unit) && s.cp[s.active] > W.cpReserve && best.value >= 20) {
-    bus.dispatch({ type: "stratagem", id: "furia", unit: best.unit });
+    // El Enjambre, con muchas miniaturas, saca más de un ataque extra (Frenesí, #123)
+    const many = unitModels(s, best.unit).length >= 8 && !stratBlocked(s, "frenesi", best.unit);
+    bus.dispatch({ type: "stratagem", id: many ? "frenesi" : "furia", unit: best.unit });
   }
   bus.dispatch({ type: "fight", unit: best.unit, target: best.target });
   lastActor = best.unit;

@@ -81,6 +81,8 @@ export interface AttackInput {
   rerollWoundOnes?: boolean;
   /** Fuego defensivo: solo impacta con 6 (sin modificadores). Torrente sigue impactando solo. */
   onlySixes?: boolean;
+  /** Ataques de más por miniatura (Frenesí, #123). */
+  extraAttacks?: number;
   /** Heridas mortales: cada impacto hiere solo y no hay salvación (Granadas). */
   mortal?: boolean;
 }
@@ -118,7 +120,7 @@ export function resolveAttack(input: AttackInput, dice: DiceSource): AttackResul
   // --- Ataques ---------------------------------------------------------------
   const alive = target.models.filter((m) => m.woundsLeft > 0).length;
   const range = typeof weapon.range === "number" ? weapon.range : 0;
-  let perModelBonus = 0;
+  let perModelBonus = input.extraAttacks ?? 0;
   if (hasAbility(weapon, "rafaga") && input.distance !== undefined && range > 0 && input.distance <= range / 2) perModelBonus += abilityX(weapon, "rafaga");
   if (hasAbility(weapon, "explosiva")) perModelBonus += Math.floor(alive / 5);
   for (let i = 0; i < input.attackers; i++) res.attacks += rollDiceExpr(weapon.attacks, dice) + perModelBonus;

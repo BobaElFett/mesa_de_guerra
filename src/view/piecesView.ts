@@ -1,3 +1,4 @@
+import { HILL_HEIGHT, onHill } from "../rules/geometry";
 import * as THREE from "three";
 import { GameState, Piece, TerrainPiece, TERRAIN } from "../core/state";
 import { miniatureFor, BASE_RADIUS } from "../models/miniatures";
@@ -97,7 +98,7 @@ export class PiecesView {
       if (this.dragging.has(id)) { e.base.copy(g.position); e.anims.length = 0; continue; }
       const p = placedOf(e.item), b = e.base;
       const dx = p.x - b.x, dz = p.z - b.z;
-      b.x += dx * k; b.z += dz * k; b.y += (0 - b.y) * k;
+      b.x += dx * k; b.z += dz * k; b.y += ((this.hills.length && onHill(this.hills, p.x, p.z) ? HILL_HEIGHT : 0) - b.y) * k;
       g.rotation.y += shortAngle(g.rotation.y, p.rot) * k;
       let ox = 0, oy = 0, oz = 0, tilt = 0;
       // Al andar: pasitos (sube y baja) y un leve balanceo
@@ -125,6 +126,9 @@ export class PiecesView {
       g.rotation.z = tilt;
     }
   }
+
+  /** Colinas de la mesa (#125): las miniaturas que están encima se suben a la meseta. */
+  hills: import("../core/state").TerrainPiece[] = [];
 
   /** Animaciones de miniaturas; se pueden apagar. */
   animate = true;

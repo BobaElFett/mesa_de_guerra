@@ -2,6 +2,15 @@
 
 Lo nuevo de cada versión de *Mesa de Guerra*, de la más reciente a la primera.
 
+## 0.46 · fase 27, más tácticas (#123–#125)
+- **Estratagemas de bando (#123), 1 PM cada una:**
+  - Legión: *Fuego sostenido* (disparo; las armas a distancia de una unidad ganan Sostenida 1) y *Avance táctico* (movimiento; la unidad puede disparar aunque avance, como si todo fuera de Asalto).
+  - Enjambre: *Frenesí* (combate; +1 ataque por miniatura) y *Hambre voraz* (carga; +2 a la tirada).
+  - Salen en la ficha de la unidad como las demás. La IA usa Fuego sostenido en su mejor tirador, Hambre voraz en cargas de 8" o más y Frenesí en unidades de 8 miniaturas o más.
+- **Mente del Enjambre: Voluntad de la colmena (#124).** Aura nueva: tus unidades a 6" o menos suman +1 para impactar en combate. Las listas con Mente ya rinden como las de Tirano (antes −12 puntos), así que vuelve a 55 pts.
+- **Colinas (#125):** escenografía nueva de 9 × 7, una loma baja con meseta. Las miniaturas que se ponen encima suben a ella. No tapa la vista ni da cobertura, pero si la mayoría de la unidad que dispara está en alto y el objetivo no, suma +1 para impactar; como el máximo sigue siendo +1, no se suma a Pesada. Aparecen en los mapas al azar y de llanura, y en el editor de escenografía. La IA valora más las posiciones en alto para sus tiradores.
+- Equilibrio con listas, mapas y misiones al azar (800 partidas): Legión 49 % – Enjambre 50 %.
+
 ## 0.45 · fase 26, cuatro tropas más III (#119–#122)
 - **Guardia de Honor (#119, Legión, 3: 110, 6: 220):** veteranos con escudo de energía (Sv2+, invulnerable 4+, 3 H) y Hacha de energía (A3, 3+, F6, FP−2, D2). *Contraataque*: combaten primero, como si hubieran cargado, aunque sean los cargados.
 - **Ingeniero de Combate (#120, Legión, personaje, 65 pts):** de rojo, con un servobrazo sobre el hombro (A2, F8, FP−2, D3). *Reparar*: al empezar tu mando cura D3 heridas a un Andador o Tanque propio a 3" o menos.

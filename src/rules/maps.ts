@@ -20,9 +20,9 @@ type MapStyle = "aleatorio" | "urbano" | "llanura" | "bosque";
 // (#87: con poca, el Enjambre llega a la Legión sin un sitio donde esconderse y pierde casi
 // siempre; el mapa de ejemplo tiene unas 96 por mitad, casi todas en la franja central).
 const STYLES: Record<MapStyle, { pool: TerrainKind[]; min: number; extra: number; center: number; cover: number }> = {
-  aleatorio: { pool: ["ruinaGrande", "ruina", "ruina", "cajas", "crater", "barricada", "barricada", "cajas", "bosque"], min: 5, extra: 2, center: 0.8, cover: 90 },
+  aleatorio: { pool: ["ruinaGrande", "ruina", "ruina", "cajas", "crater", "barricada", "barricada", "cajas", "bosque", "colina"], min: 5, extra: 2, center: 0.8, cover: 90 },
   urbano: { pool: ["ruinaGrande", "ruinaGrande", "ruina", "ruina", "ruina", "barricada", "crater"], min: 7, extra: 2, center: 1, cover: 120 },
-  llanura: { pool: ["crater", "crater", "barricada", "cajas"], min: 2, extra: 2, center: 0.4, cover: 24 },
+  llanura: { pool: ["crater", "crater", "barricada", "cajas", "colina"], min: 2, extra: 2, center: 0.4, cover: 24 },
   bosque: { pool: ["bosque", "bosque", "bosque", "bosque", "ruina", "crater"], min: 5, extra: 2, center: 0.5, cover: 140 },
 };
 

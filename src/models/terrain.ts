@@ -112,6 +112,23 @@ function crater(): Part[] {
   return p;
 }
 
+/** Colina (#125): loma baja de laderas suaves y meseta llana, con algunas piedras. */
+function colina(): Part[] {
+  const p: Part[] = [];
+  const r = rnd(9);
+  // Tres escalones elípticos (la huella es 9 × 7)
+  for (const [k, h, c] of [[1, 0.18, "#5f6a3e"], [0.82, 0.32, "#6b7646"], [0.64, 0.45, "#76814f"]] as const) {
+    const g = new THREE.CylinderGeometry(4.5 * k, 4.5 * k + 0.4, h, 14);
+    g.scale(1, 1, 7 / 9);
+    p.push(place(g, c, 0, h / 2, 0));
+  }
+  for (let i = 0; i < 4; i++) {
+    const a = r() * Math.PI * 2, rad = 1 + r() * 1.8;
+    p.push(place(new THREE.DodecahedronGeometry(0.25 + r() * 0.2, 0), "#7d7a70", Math.cos(a) * rad, 0.5, Math.sin(a) * rad * 0.7, r(), r(), r()));
+  }
+  return p;
+}
+
 function bunker(): Part[] {
   const p: Part[] = [];
   p.push(box(6, 0.3, 4, CONCRETE, 0, 0, 0));                       // zócalo
@@ -162,7 +179,7 @@ function bosque(): Part[] {
   return p;
 }
 
-const BUILDERS: Record<TerrainKind, () => Part[]> = { ruina, ruinaGrande, cajas, crater, bunker, barricada, bosque };
+const BUILDERS: Record<TerrainKind, () => Part[]> = { ruina, ruinaGrande, cajas, crater, bunker, barricada, bosque, colina };
 
 export function makeTerrain(kind: TerrainKind): THREE.Group {
   return build(BUILDERS[kind]());

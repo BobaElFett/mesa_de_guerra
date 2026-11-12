@@ -69,13 +69,14 @@ export function applyCharge(s: GameState, unitId: string, targetId: string): Cha
   if (o.blocked || o.done || !t || t.blocked) return null;
   let [dice, rng] = rollDice(s.rng, 2, 6);
   s.rng = rng;
-  let roll = dice[0] + dice[1];
+  const bonus = hasStrat(s, "hambre", unitId) ? 2 : 0;                 // Hambre voraz (#123)
+  let roll = dice[0] + dice[1] + bonus;
   s.rolls.push({ player: s.active, turn: s.turn, sides: 6, results: dice });
   let success = roll >= t.distance - ENGAGEMENT;
   if (!success && hasStrat(s, "impetu", unitId)) {          // Ímpetu: se repite la tirada fallada
     [dice, rng] = rollDice(s.rng, 2, 6);
     s.rng = rng;
-    roll = dice[0] + dice[1];
+    roll = dice[0] + dice[1] + bonus;
     s.rolls.push({ player: s.active, turn: s.turn, sides: 6, results: dice });
     success = roll >= t.distance - ENGAGEMENT;
   }

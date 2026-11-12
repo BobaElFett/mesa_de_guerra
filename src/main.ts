@@ -642,6 +642,7 @@ function refresh(_s?: unknown, cmd?: Command | null) {
     else tray.show(last, false);
   }
   renderTray();
+  pieces.hills = bus.state.terrain.filter((t) => t.kind === "colina");
   pieces.sync(bus.state);
   statusIcons.sync(bus.state);
   objectives.sync(bus.state);
