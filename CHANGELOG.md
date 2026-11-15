@@ -2,6 +2,18 @@
 
 Lo nuevo de cada versión de *Mesa de Guerra*, de la más reciente a la primera.
 
+## 0.47 · fase 28, atacar más fácil (#126–#129)
+- **Panel de ataque (#127):** al elegir un enemigo con tu unidad seleccionada (clic en él, en su etiqueta o en la lista de la ficha) se abre un panel encima de la barra de turno.
+  - **Disparo:** una fila por arma con las miniaturas que disparan, los ataques, la tirada para **impactar**, **herir** y **salvar**, y las **bajas esperadas** (y heridas, si el objetivo tiene varias). Debajo, los modificadores que se aplican, con su motivo: colina, Sigilo, Pesada, cobertura, noche, Escudo vivo, al mando, Precisión…
+  - Las armas se desmarcan para repartir el fuego. **Disparar** tira todas las marcadas de una vez y para si el objetivo cae; es una sola orden, así que se deshace de una vez. Antes había que disparar arma a arma desde una lista de botones.
+  - Abajo, el total de bajas y la **probabilidad de destruir la unidad**.
+  - Las estratagemas de la fase (Puntería, Fuego sostenido, Furia, Frenesí) se activan desde el panel y las cifras se recalculan al momento. Granadas y poderes psíquicos aparecen en «También».
+  - Las cifras salen de simular el ataque varios cientos de veces con exactamente los mismos modificadores que tendrá al tirarlo, no de una estimación aparte.
+- **Combate y carga (#128):** el mismo panel. *Combatir* enseña los golpes de cada arma tras agruparse, con sus tiradas y bajas esperadas. *Cargar* da la distancia, la tirada necesaria, la **probabilidad** de llegar (y con Ímpetu u Hambre voraz, que se activan ahí mismo) y el fuego defensivo esperado si el rival tiene PM. En la fase de combate, una tira bajo el turno muestra **el orden de combate**: quién combate primero (★, porque cargó o tiene Contraataque), quién queda y quién ya combatió; clic en una unidad la elige y abre su panel.
+- **Etiquetas sobre los objetivos (#129):** con una unidad tuya elegida, encima de cada enemigo al que puede atacar sale una etiqueta con las bajas esperadas (disparo, combate) o «7+ · 58 %» (carga). Clic en ella abre el panel. Se apagan con *Consejos al pasar el ratón* en Ajustes.
+- **Mesa despejada (#126):** en las partidas con reglas, el panel de ayuda y el de dados empiezan recogidos. Los botones **Ayuda** (o F1) y **Dados** de la barra de arriba los muestran u ocultan, y se recuerda lo elegido. Lo que apenas se usa durante una batalla (Mesa libre/Modo reglas, Ejércitos, Mesas, En línea, Escenografía, Nueva mesa) pasa al menú **Más ▾**.
+- La ficha de la unidad lista ahora los objetivos con sus bajas esperadas en vez de un botón por arma y objetivo. La ayuda y el tutorial explican el panel nuevo.
+
 ## 0.46 · fase 27, más tácticas (#123–#125)
 - **Estratagemas de bando (#123), 1 PM cada una:**
   - Legión: *Fuego sostenido* (disparo; las armas a distancia de una unidad ganan Sostenida 1) y *Avance táctico* (movimiento; la unidad puede disparar aunque avance, como si todo fuera de Asalto).

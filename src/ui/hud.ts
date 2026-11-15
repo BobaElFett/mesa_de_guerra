@@ -1,3 +1,4 @@
+import { previewAttacks, chance2d6, expectText } from "../rules/preview";
 import { outcome } from "../rules/missions";
 import { arrivalBlocked, reserveUnits, LAST_ARRIVAL_ROUND } from "../rules/reserves";
 import { pieceWeaponIds, unitCost } from "../rules/datasheets";
@@ -9,7 +10,7 @@ import { FACTIONS, GameState, PLAYERS, RollRecord, TERRAIN } from "../core/state
 import { PHASES, PHASE_INFO, MAX_ROUNDS, Phase } from "../rules/turn";
 import { DATASHEETS } from "../rules/datasheets";
 import { allowance, isEngaged, movedSoFar, MoveKind } from "../rules/movement";
-import { shootingOptions } from "../rules/shooting";
+import { shootingOptions, shootSteps } from "../rules/shooting";
 import { chargeOptions, fightOptions, pendingChargers } from "../rules/melee";
 import { belowHalf, inSynapse } from "../rules/morale";
 import { Weapon, WEAPONS, Profile, UNIT_ABILITY_TEXT, unitPoints } from "../rules/datasheets";
@@ -158,16 +159,18 @@ function phaseActions(s: GameState, uid: string, inFormation = false): string {
     const o = shootingOptions(s, uid);
     if (o.blocked) html += `<div class="dim">${o.blocked}</div>`;
     if (!o.weapons.length) html += `<div class="dim">Sin armas a distancia.</div>`;
-    for (const w of o.weapons) {
-      html += `<div class="weapon"><b>${w.weapon.name}</b> <span class="dim">${weaponLine(w.weapon)} · ${w.carriers.length} ${w.carriers.length === 1 ? "miniatura" : "miniaturas"}</span>`;
-      if (w.fired) html += `<div class="dim">Ya ha disparado.</div>`;
-      else if (w.blocked) html += `<div class="dim">${w.blocked}</div>`;
-      else for (const t of w.targets) {
-        const ok = !t.blocked;
-        const info = t.blocked ?? `${fmtIn(t.distance)}${t.cover ? " · en cobertura" : ""}${t.attackers.length < w.carriers.length ? ` · ${t.attackers.length} a tiro` : ""}`;
-        html += `<div class="shoot-row"><button data-shoot="${uid}|${w.weapon.id}|${t.unit}" data-target="${t.unit}"${ok ? "" : " disabled"}>Disparar a ${t.name}</button> <span class="dim">${info}</span></div>`;
-      }
-      html += `</div>`;
+    // Armas, en una línea cada una; los objetivos, debajo, con las bajas esperadas (#127)
+    html += `<div class="weapon">${o.weapons.map((w) => `<div${w.fired ? ' class="dim"' : ""}><b>${w.weapon.name}</b> <span class="dim">${weaponLine(w.weapon)} · ${w.carriers.length}×${w.fired ? " · ya disparó" : w.blocked ? ` · ${w.blocked}` : ""}</span></div>`).join("")}</div>`;
+    if (!o.blocked && o.weapons.some((w) => !w.fired && !w.blocked)) {
+      const ids = o.weapons.map((w) => w.weapon.id);
+      const rows = s.units.filter((e) => e.faction !== unit.faction && s.pieces.some((p) => p.unit === e.id)).map((e) => {
+        const steps = shootSteps(s, uid, e.id, ids);
+        if (!steps.length) return null;
+        const pv = previewAttacks(s, steps, 120);
+        const d = Math.min(...steps.map((st) => st.extra.distance ?? 99));
+        return { e: e.id, kills: pv.kills, html: `<div class="shoot-row"><button data-aim="${e.id}" data-target="${e.id}">${DATASHEETS[e.datasheet].name}</button> <span class="dim">${fmtIn(d)}${steps.some((st) => st.extra.cover) ? " · cobertura" : ""} · ${expectText(pv.kills, pv.damage, DATASHEETS[e.datasheet].profile.W)}</span></div>` };
+      }).filter((x): x is NonNullable<typeof x> => !!x).sort((a, b) => b.kills - a.kills);
+      html += rows.length ? `<div class="dim" style="margin-top:4px">Objetivos (clic para apuntar):</div>${rows.map((r) => r.html).join("")}` : `<div class="dim">Ningún enemigo a tiro.</div>`;
     }
   }
   if (s.phase === "carga" && !s.gameOver) {
@@ -180,7 +183,8 @@ function phaseActions(s: GameState, uid: string, inFormation = false): string {
       if (o.blocked) html += `<div class="dim">${o.blocked}</div>`;
       else if (!o.targets.length) html += `<div class="dim">No hay enemigos.</div>`;
       else for (const t of o.targets) {
-        html += `<div class="shoot-row"><button data-charge="${uid}|${t.unit}" data-target="${t.unit}"${t.blocked ? " disabled" : ""}>Cargar a ${t.name}</button> <span class="dim">${fmtIn(t.distance)}${t.blocked ? ` · ${t.blocked}` : ` · necesita ${t.need}+ en 2D6`}</span></div>`;
+        const p = chance2d6(t.need - (hasStrat(s, "hambre", uid) ? 2 : 0), hasStrat(s, "impetu", uid));
+        html += `<div class="shoot-row"><button data-aim="${t.unit}" data-target="${t.unit}"${t.blocked ? " disabled" : ""}>${t.name}</button> <span class="dim">${fmtIn(t.distance)}${t.blocked ? ` · ${t.blocked}` : ` · ${t.need}+ en 2D6 · ${Math.round(p * 100)} %`}</span></div>`;
       }
     }
   }
@@ -193,7 +197,7 @@ function phaseActions(s: GameState, uid: string, inFormation = false): string {
     else if (o.blocked && !o.targets.length) html += `<div class="dim">${o.blocked}</div>`;
     else {
       if (o.blocked) html += `<div class="dim">${o.blocked}</div>`;
-      for (const t of o.targets) html += `<div class="shoot-row"><button data-fight="${uid}|${t.unit}" data-target="${t.unit}"${o.blocked ? " disabled" : ""}>Combatir contra ${t.name}</button></div>`;
+      for (const t of o.targets) html += `<div class="shoot-row"><button data-aim="${t.unit}" data-target="${t.unit}"${o.blocked ? " disabled" : ""}>Combatir contra ${t.name}…</button></div>`;
     }
     const first = pendingChargers(s);
     if (first.length && !first.includes(uid)) html += `<div class="dim">Pendientes de combatir primero: ${first.map((u) => DATASHEETS[s.units.find((x) => x.id === u)!.datasheet].name).join(", ")}.</div>`;
@@ -261,6 +265,8 @@ export class Hud {
       if (ch && !ch.disabled) { const [u, t] = ch.dataset.charge!.split("|"); this.onCharge(u, t); }
       const fi = (e.target as HTMLElement).closest("button[data-fight]") as HTMLButtonElement | null;
       if (fi && !fi.disabled) { const [u, t] = fi.dataset.fight!.split("|"); this.onFight(u, t); }
+      const am = (e.target as HTMLElement).closest("button[data-aim]") as HTMLButtonElement | null;
+      if (am && !am.disabled) this.onAim(am.dataset.aim!);
       const st = (e.target as HTMLElement).closest("button[data-strat]") as HTMLButtonElement | null;
       if (st && !st.disabled) { const [id, u] = st.dataset.strat!.split("|"); bus.dispatch({ type: "stratagem", id: id as StratId, unit: u }); }
     });
@@ -398,6 +404,8 @@ export class Hud {
   /** Se ha plegado o desplegado la hoja de datos (hay que volver a pintar la selección). */
   onSheetToggle: () => void = () => {};
   onFight: (unit: string, target: string) => void = () => {};
+  /** Abre el panel de ataque contra esa unidad enemiga (#127). */
+  onAim: (target: string) => void = () => {};
   /** El ratón pasa por encima de un botón de objetivo (para resaltar esa unidad). */
   onTargetHover: (unit: string | null) => void = () => {};
 

@@ -51,6 +51,11 @@
   #turn-text b { font-family: "Rajdhani", sans-serif; font-size: 17px; letter-spacing: .04em; }
 
   #tools { right: 12px; top: 12px; padding: 6px; display: flex; gap: 6px; }
+  #tools .more-wrap { position: relative; }
+  #more-menu { position: absolute; right: 0; top: calc(100% + 6px); display: flex; flex-direction: column; gap: 4px; padding: 6px; min-width: 150px; z-index: 12; }
+  #more-menu button { text-align: left; }
+  #more-menu[hidden] { display: none; }
+  body.no-help #help, body.no-dice #dice { display: none; }
 
   #dice { right: 12px; bottom: 12px; width: 330px; padding: 10px 12px; }
   .tray-row { margin-top: 6px; flex-wrap: wrap; }
@@ -238,6 +243,40 @@
   #settings label { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
   #settings input[type=range] { flex: 1; }
   #board-tip { position: fixed; z-index: 6; pointer-events: none; font-size: 12px; padding: 5px 8px; max-width: 300px; }
+  /* Panel de ataque (#127) */
+  #attack-panel { position: fixed; z-index: 8; left: 50%; bottom: 182px; transform: translateX(-50%); width: min(640px, 92vw); padding: 8px 12px 10px; font-size: 13px; max-height: calc(100vh / var(--ui, 1) - 260px); overflow-y: auto; }
+  #attack-panel .ap-head { display: flex; align-items: baseline; gap: 8px; margin-bottom: 6px; }
+  #attack-panel .ap-head b { font-size: 15px; }
+  #attack-panel .ap-verb { color: var(--gold); font-weight: 600; }
+  #attack-panel .ap-head button { margin-left: auto; padding: 0 8px; }
+  #attack-panel .ap-table { width: 100%; border-collapse: collapse; }
+  #attack-panel .ap-table th { font-weight: 400; color: var(--dim); font-size: 11px; text-align: center; padding: 0 4px 2px; }
+  #attack-panel .ap-table th:nth-child(2) { text-align: left; }
+  #attack-panel .ap-table td { padding: 3px 4px; border-top: 1px solid rgba(255,255,255,.08); text-align: center; vertical-align: middle; }
+  #attack-panel .ap-table td:nth-child(2) { text-align: left; }
+  #attack-panel .ap-table td .dim { font-size: 11px; }
+  #attack-panel .ap-table tr.off td { opacity: .55; }
+  #attack-panel .ap-table tr.ap-sub td { text-align: left; font-weight: 600; color: var(--dim); border-top: none; padding-top: 6px; }
+  #attack-panel .ap-exp { font-weight: 700; white-space: nowrap; }
+  #attack-panel .ap-notes { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 2px; }
+  #attack-panel .ap-notes span { font-size: 11px; padding: 1px 6px; border-radius: 9px; background: rgba(255,255,255,.08); }
+  #attack-panel .ap-other { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
+  #attack-panel .ap-foot { display: flex; align-items: center; gap: 10px; margin-top: 8px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,.12); }
+  #attack-panel .ap-foot button.primary { margin-left: auto; font-size: 14px; padding: 4px 16px; }
+  #attack-panel .ap-subhead { font-weight: 600; margin-top: 6px; }
+  #attack-panel .ap-msg { margin-top: 4px; font-size: 12px; }
+  #attack-panel .ap-charge div { margin: 2px 0; }
+  #attack-panel .ap-bar { height: 8px; border-radius: 4px; background: rgba(255,255,255,.1); overflow: hidden; }
+  #target-labels .tlabel { position: fixed; z-index: 1; transform: translate(-50%, -100%); font-size: 12px; font-weight: 700; padding: 1px 7px; border-radius: 10px; background: rgba(18,20,26,.85); border: 1px solid rgba(226,184,79,.7); color: #f3e2b2; white-space: nowrap; cursor: pointer; }
+  #target-labels .tlabel:hover { background: rgba(226,184,79,.3); }
+  #fight-order { margin-top: 4px; font-size: 12px; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; justify-content: center; }
+  #fight-order .fo-label { color: var(--dim); }
+  #fight-order button { font-size: 12px; padding: 1px 8px; border-radius: 10px; }
+  #fight-order button.legion { border-color: var(--legion); }
+  #fight-order button.swarm { border-color: var(--swarm); }
+  #fight-order button.first { background: rgba(226,184,79,.18); }
+  #fight-order button.done { opacity: .45; text-decoration: line-through; }
+  #attack-panel .ap-bar span { display: block; height: 100%; background: var(--gold); }
   #action-menu { position: fixed; z-index: 8; min-width: 240px; max-width: 340px; padding: 6px; font-size: 13px; }
   #action-menu .am-head { display: flex; align-items: center; font-weight: 600; margin: 0 2px 4px; }
   #action-menu .am-head button { margin-left: auto; padding: 0 7px; }
@@ -359,8 +398,8 @@
 
 <div id="help" class="panel">
   <h1 class="title">Mesa de Guerra</h1>
-  <button id="help-toggle">Ocultar</button>
-  <div class="sub">Más tácticas (v0.46)</div>
+  <button id="help-toggle" title="Ocultar la ayuda (F1; vuelve con el botón Ayuda)">Ocultar</button>
+  <div class="sub">Atacar más fácil (v0.47)</div>
   <input id="help-search" type="search" placeholder="Buscar en la ayuda (p. ej. reserva, deshacer)…" autocomplete="off">
   <div id="help-none" class="dim" hidden>Nada con esas palabras.</div>
   <button id="tutorial-start" class="primary" style="width:100%;margin:4px 0 6px">Tutorial: tres lecciones guiadas</button>
@@ -387,7 +426,7 @@
   </ul></details>
   <details class="hsec"><summary>Partida</summary>
   <ul>
-    <li><b>Ejércitos</b>: listas, misión, rival (IA o dos jugadores) y dificultad</li>
+    <li><b>Ejércitos</b> (en <b>Más ▾</b>): listas, misión, rival (IA o dos jugadores) y dificultad</li>
     <li>Objetivos: los controla quien sume más CO a 3"; los PV, arriba a la derecha</li>
     <li>Estratagemas (1 PM): botones en la ficha de la unidad, en tu turno</li>
     <li><b>Colinas:</b> no tapan ni dan cobertura, pero si la mayoría de una unidad está en alto y su objetivo no, dispara con +1 para impactar (el máximo sigue siendo +1). <b>Estratagemas de bando:</b> Legión, <i>Fuego sostenido</i> (Sostenida 1) y <i>Avance táctico</i> (disparar tras avanzar); Enjambre, <i>Frenesí</i> (+1 ataque en combate) y <i>Hambre voraz</i> (+2 a la carga)</li>
@@ -399,7 +438,7 @@
     <li><b>Mirar IA contra IA</b>: en la partida rápida, «Tu ejército: Ninguno». <i>Pausar IA</i> para y <i>Dejar de mirar</i> te da la mesa</li>
     <li><kbd>H</kbd> o <b>Sugerir</b>: lo que haría la IA Difícil ahora (en dorado: quién, adónde y contra quién). No hace nada: tú decides</li>
     <li><kbd>?</kbd> todos los atajos de teclado</li>
-    <li><b>Psíquicos</b>: en el disparo, clic en un enemigo y elige su poder (2D6 a 7+: D3 heridas mortales)</li>
+    <li><b>Psíquicos</b>: en el disparo, clic en un enemigo y usa su poder desde el panel de ataque (2D6 a 7+: D3 heridas mortales)</li>
     <li><b>Tamaño</b>: Escaramuza (500 puntos) o Batalla (1.000), en la partida rápida, Ejércitos y la campaña</li>
     <li><b>Desafíos</b>: cinco escenarios cortos con estrellas, desde el menú</li>
     <li><b>Códice</b>: todas las unidades con su miniatura, perfil y trasfondo (menú, o botón Códice en la ficha)</li>
@@ -408,12 +447,14 @@
     <li><b>Equipo</b>: en Ejércitos, casillas debajo de cada unidad para cambiar armas (con su coste)</li>
     <li><b>Reservas</b>: Exterminadores y Acechadores pueden empezar fuera (casilla en Ejércitos). Desde la ronda 2, <b>Llegar</b> en el panel de turno y clic en la mesa, a más de 9" de los enemigos; si al acabar la ronda 3 no han llegado, se pierden</li>
     <li><b>Pausar IA</b> para tomar el control de su bando</li>
-    <li>Con una unidad tuya elegida, <b>clic en un enemigo</b>: disparar, cargar o combatir, con probabilidades</li>
+    <li>Con una unidad tuya elegida, cada enemigo atacable lleva una <b>etiqueta</b> con las bajas esperadas (o la probabilidad de carga). <b>Clic en él</b>: el <b>panel de ataque</b> enseña cada arma con su tirada para impactar, herir y salvar, los modificadores y las bajas; desmarca armas para repartir el fuego y pulsa <b>Disparar</b> (o <b>Combatir</b>, <b>Cargar</b>). Las estratagemas de la fase se activan desde el propio panel</li>
+    <li>En el combate, la tira de abajo muestra quién combate primero (★ cargó o contraataca) y quién queda; clic en una para combatir con ella</li>
+    <li><b>Ayuda</b> y <b>Dados</b> (arriba) muestran u ocultan sus paneles; en las partidas con reglas empiezan recogidos. Lo que se usa poco está en <b>Más ▾</b></li>
     <li><kbd>Tab</kbd> siguiente unidad que aún puede actuar (anillo verde) · <kbd>L</kbd> registro</li>
     <li><b>En línea</b>: crear sala o unirse (código, copiar y pegar u otra pestaña); chat abajo a la izquierda</li>
   </ul></details>
   <h2>Guardado</h2>
-  <div class="dim">La mesa se guarda sola en este navegador. <b>Mesas</b> (o <kbd>Ctrl</kbd>+<kbd>S</kbd>) la guarda con nombre, carga otras y exporta o importa archivos.</div>
+  <div class="dim">La mesa se guarda sola en este navegador. <b>Más ▾ › Mesas</b> (o <kbd>Ctrl</kbd>+<kbd>S</kbd>) la guarda con nombre, carga otras y exporta o importa archivos.</div>
 </div>
 
 <div id="turn" class="panel">
@@ -429,26 +470,32 @@
   </div>
   <div id="phases" hidden></div>
   <div id="phase-hint" class="dim" hidden></div>
+  <div id="fight-order" hidden></div>
   <div id="reserves" hidden></div>
 </div>
 
 <div id="tools" class="panel">
-  <button id="mode" title="Mesa libre: todo se mueve a mano. Modo reglas: el juego guía las fases.">Mesa libre</button>
-  <button id="armies-open" title="Listas de ejército de 500 puntos y despliegue">Ejércitos</button>
   <button id="menu-open" title="Pantalla de inicio">Menú</button>
-  <button id="tables-open" title="Ctrl+S guarda con el nombre actual">Mesas</button>
-  <button id="net-open" title="Jugar contra otra persona en otro ordenador">En línea</button>
+  <button id="help-btn" title="Mostrar u ocultar la ayuda (F1)">Ayuda</button>
   <button id="log-open" title="Registro de la batalla (L)">Registro</button>
+  <button id="dice-toggle" title="Mostrar u ocultar los dados">Dados</button>
   <button id="sound-btn" title="Sonido (activar o silenciar)" hidden>Sonido</button>
   <button id="settings-open" title="Ajustes">Ajustes</button>
   <button id="undo" title="Ctrl+Z">Deshacer</button>
   <button id="redo" title="Ctrl+Y">Rehacer</button>
-  <button id="terrain-edit" title="T: desbloquea la escenografía para moverla, añadirla o borrarla">Escenografía</button>
   <button id="tape" title="M">Cinta</button>
   <button id="range" title="C: cambia el alcance alrededor de la selección">Alcance</button>
   <button id="grid" class="on" title="G" hidden>Rejilla</button>
   <button id="topdown" title="V">Cenital</button>
-  <button id="new">Nueva mesa</button>
+  <span class="more-wrap"><button id="more-btn" title="Más opciones">Más ▾</button>
+  <div id="more-menu" class="panel" hidden>
+    <button id="mode" title="Mesa libre: todo se mueve a mano. Modo reglas: el juego guía las fases.">Mesa libre</button>
+    <button id="armies-open" title="Listas de ejército de 500 puntos y despliegue">Ejércitos</button>
+    <button id="tables-open" title="Ctrl+S guarda con el nombre actual">Mesas</button>
+    <button id="net-open" title="Jugar contra otra persona en otro ordenador">En línea</button>
+    <button id="terrain-edit" title="T: desbloquea la escenografía para moverla, añadirla o borrarla">Escenografía</button>
+    <button id="new">Nueva mesa</button>
+  </div></span>
 </div>
 
 <div id="dice" class="panel">
@@ -611,6 +658,8 @@
 <div id="tutorial" class="panel" hidden></div>
 <div id="board-tip" class="panel" hidden></div>
 <div id="action-menu" class="panel" hidden></div>
+<div id="attack-panel" class="panel" hidden></div>
+<div id="target-labels"></div>
 <div id="replay" class="panel" hidden>
   <b>Repetición</b> <span id="replay-info" class="dim"></span>
   <button data-r="start" title="Desde el despliegue">Inicio</button>
@@ -624,13 +673,6 @@
 <div id="measure" hidden></div>
 <div id="tape-label" hidden></div>
 
-<script>
-  document.getElementById("help-toggle").addEventListener("click", (e) => {
-    const h = document.getElementById("help");
-    h.classList.toggle("folded");
-    e.target.textContent = h.classList.contains("folded") ? "Ayuda" : "Ocultar";
-  });
-</script>
 <!--BUNDLE-->
 </body>
 </html>

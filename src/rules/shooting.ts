@@ -8,7 +8,7 @@ import { recordCasualties } from "./missions";
 import { isGuarded, underCommand } from "./leaders";
 import { GameState, Piece, PLAYERS } from "../core/state";
 import { DATASHEETS, Weapon, WEAPONS, hasAbility } from "./datasheets";
-import { resolveAttack, SeededDice, woundTarget, AttackResult } from "./attack";
+import { resolveAttack, SeededDice, woundTarget, AttackResult, AttackInput } from "./attack";
 import { disc, engaged, gap, onHill, sight, Sight } from "./geometry";
 import { canShootAfter, movedSoFar, unitModels } from "./movement";
 
@@ -164,11 +164,38 @@ export function applyShoot(s: GameState, unitId: string, weaponId: string, targe
 }
 
 /**
- * Resuelve un ataque de `attackers` con `weapon` contra la unidad `targetId` y lo aplica a `s`
- * (daño, bajas, RNG y registro). Lo usan el disparo y el combate.
+ * Los ataques que haría la unidad disparando a `targetId` con cada arma de `weaponIds` que pueda
+ * (#127, para la vista previa del panel de ataque). Las que no pueden se saltan.
  */
-export function performAttack(s: GameState, kind: AttackLogEntry["kind"], unitId: string, attackers: Piece[],
-  weapon: Weapon, targetId: string, extra: { distance?: number; stationary?: boolean; cover?: boolean; overwatch?: boolean; mortal?: boolean; indirect?: boolean } = {}): AttackLogEntry {
+export function shootSteps(s: GameState, unitId: string, targetId: string, weaponIds: string[]) {
+  const opts = shootingOptions(s, unitId);
+  if (opts.blocked) return [];
+  const stationary = !s.turnLog.moves[unitId] || movedSoFar(s, unitId) < 0.01;
+  const out: { kind: "disparo"; unit: string; attackers: Piece[]; weapon: Weapon; target: string; extra: AttackExtra }[] = [];
+  for (const id of weaponIds) {
+    const w = opts.weapons.find((x) => x.weapon.id === id);
+    const t = w?.targets.find((x) => x.unit === targetId);
+    if (!w || w.fired || w.blocked || !t || t.blocked) continue;
+    out.push({ kind: "disparo", unit: unitId, attackers: unitModels(s, unitId).filter((p) => t.attackers.includes(p.id)), weapon: w.weapon, target: targetId,
+      extra: { distance: t.distance, stationary, cover: t.cover, indirect: t.indirect } });
+  }
+  return out;
+}
+
+/** Dispara varias armas de la unidad al mismo objetivo, una detrás de otra, hasta que caiga (#127). */
+export function applyShootAll(s: GameState, unitId: string, targetId: string, weaponIds: string[]): AttackLogEntry[] {
+  const out: AttackLogEntry[] = [];
+  for (const id of weaponIds) {
+    if (!unitModels(s, targetId).length) break;
+    const e = applyShoot(s, unitId, id, targetId);
+    if (e) out.push(e);
+  }
+  return out;
+}
+
+/** Lo que tira un ataque: la entrada de `resolveAttack` con todos los modificadores de la partida. */
+export function attackInput(s: GameState, kind: AttackLogEntry["kind"], unitId: string, attackers: Piece[],
+  weapon: Weapon, targetId: string, extra: AttackExtra = {}): AttackInput & { notes: string[] } {
   const attacker = s.units.find((u) => u.id === unitId)!;
   const target = s.units.find((u) => u.id === targetId)!;
   const tds = DATASHEETS[target.datasheet];
@@ -180,15 +207,37 @@ export function performAttack(s: GameState, kind: AttackLogEntry["kind"], unitId
     .sort((a, b) => a.d - b.d)
     .map((x) => ({ id: x.p.id, woundsLeft: x.left }));
 
-  const dice = new SeededDice(s.rng);
   // Fuego sostenido (#123): las armas a distancia ganan Sostenida 1 esta fase
   const w = kind === "disparo" && !extra.mortal && hasStrat(s, "fuegoSostenido", unitId) && !hasAbility(weapon, "sostenida")
     ? { ...weapon, abilities: [...weapon.abilities, { kind: "sostenida" as const, x: 1 }] } : weapon;
-  const res = resolveAttack({
+  // Modificadores con su motivo (#127: el panel de ataque los enseña)
+  const notes: string[] = [];
+  const add = (cond: boolean, v: number, label: string) => { if (cond) notes.push(label); return cond ? v : 0; };
+  const hill = kind === "disparo" && !extra.mortal && attackers.filter((a) => onHill(s.terrain, a.x, a.z)).length * 2 > attackers.length
+    && !unitModels(s, targetId).some((m) => onHill(s.terrain, m.x, m.z));
+  const storm = kind === "disparo" && !extra.overwatch && !extra.mortal ? conditionHitMod(s, extra.distance) : 0;
+  const shield = kind === "disparo" && !extra.mortal && nearAura(s, targetId, "escudoVivo") && (tds.profile.Inv ?? 7) > 5;
+  const hitMod = add(kind === "combate" && hasStrat(s, "furia", unitId), 1, "+1 impactar (Furia)")
+    + add(kind === "combate" && !extra.mortal && nearAura(s, unitId, "voluntad"), 1, "+1 impactar (Voluntad de la colmena)")
+    + add(storm !== 0, storm, `${storm > 0 ? "+" : "−"}1 impactar (${s.conditions === "tormenta" ? "tormenta" : "noche"})`)
+    + add(!!extra.indirect, -1, "−1 impactar (sin visión: Indirecto)")
+    + add(hill, 1, "+1 impactar (desde la colina)")
+    + add(kind === "disparo" && !extra.mortal && tds.abilities.includes("sigilo"), -1, "−1 impactar (Sigilo)");
+  if (hasAbility(weapon, "pesada") && extra.stationary) notes.push("+1 impactar (Pesada, sin moverse)");
+  const woundMod = add(kind === "disparo" && !extra.overwatch && hasStrat(s, "punteria", unitId), 1, "+1 herir (Puntería)")
+    + add(hasAbility(weapon, "precision") && !!tds.character && !extra.mortal, 1, "+1 herir (Precisión contra personaje)");
+  const extraAttacks = add(kind === "combate" && !extra.mortal && hasStrat(s, "frenesi", unitId), 1, "+1 ataque por miniatura (Frenesí)");
+  if (w !== weapon) notes.push("Sostenida 1 (Fuego sostenido)");
+  if (extra.cover) notes.push("objetivo en cobertura (+1 a la salvación)");
+  if (shield) notes.push("invulnerable 5+ (Escudo vivo)");
+  if (underCommand(s, unitId) && !extra.overwatch) notes.push("repite los 1 al impactar (al mando)");
+  if (attacker.veteran && !extra.mortal) notes.push("repite los 1 al herir (veterana)");
+  if (tds.abilities.includes("blindado")) notes.push("−1 al daño (Blindado)");
+  return {
     weapon: w, attackers: attackers.length,
     target: {
       // Escudo vivo (#117): invulnerable 5+ contra disparos cerca de una Bestia Guardiana
-      profile: kind === "disparo" && !extra.mortal && nearAura(s, targetId, "escudoVivo") ? { ...tds.profile, Inv: Math.min(tds.profile.Inv ?? 7, 5) } : tds.profile,
+      profile: shield ? { ...tds.profile, Inv: 5 } : tds.profile,
       models: targetModels, armored: tds.abilities.includes("blindado"),
     },
     distance: extra.distance, stationary: extra.stationary, cover: extra.cover,
@@ -196,18 +245,26 @@ export function performAttack(s: GameState, kind: AttackLogEntry["kind"], unitId
     rerollWoundOnes: !!attacker.veteran && !extra.mortal,
     onlySixes: extra.overwatch,
     mortal: extra.mortal,
-    woundMod: (kind === "disparo" && !extra.overwatch && hasStrat(s, "punteria", unitId) ? 1 : 0)
-      + (hasAbility(weapon, "precision") && tds.character && !extra.mortal ? 1 : 0),
-    extraAttacks: kind === "combate" && !extra.mortal && hasStrat(s, "frenesi", unitId) ? 1 : 0,
-    hitMod: (kind === "combate" && hasStrat(s, "furia", unitId) ? 1 : 0)
-      + (kind === "combate" && !extra.mortal && nearAura(s, unitId, "voluntad") ? 1 : 0)
-      + (kind === "disparo" && !extra.overwatch && !extra.mortal ? conditionHitMod(s, extra.distance) : 0)
-      + (extra.indirect ? -1 : 0)
-      // Colina (#125): +1 si la mayoría de los que disparan están en alto y el objetivo no
-      + (kind === "disparo" && !extra.mortal && attackers.filter((a) => onHill(s.terrain, a.x, a.z)).length * 2 > attackers.length
-        && !unitModels(s, targetId).some((m) => onHill(s.terrain, m.x, m.z)) ? 1 : 0)
-      + (kind === "disparo" && !extra.mortal && tds.abilities.includes("sigilo") ? -1 : 0),
-  }, dice);
+    woundMod, extraAttacks, hitMod,
+    notes,
+  };
+}
+
+export interface AttackExtra { distance?: number; stationary?: boolean; cover?: boolean; overwatch?: boolean; mortal?: boolean; indirect?: boolean }
+
+/**
+ * Resuelve un ataque de `attackers` con `weapon` contra la unidad `targetId` y lo aplica a `s`
+ * (daño, bajas, RNG y registro). Lo usan el disparo y el combate.
+ */
+export function performAttack(s: GameState, kind: AttackLogEntry["kind"], unitId: string, attackers: Piece[],
+  weapon: Weapon, targetId: string, extra: AttackExtra = {}): AttackLogEntry {
+  const attacker = s.units.find((u) => u.id === unitId)!;
+  const target = s.units.find((u) => u.id === targetId)!;
+  const tds = DATASHEETS[target.datasheet];
+  const input = attackInput(s, kind, unitId, attackers, weapon, targetId, extra);
+  const targetModels = input.target.models;
+  const dice = new SeededDice(s.rng);
+  const res = resolveAttack(input, dice);
   s.rng = dice.state;
 
   const before = targetModels.reduce((a, m) => a + m.woundsLeft, 0);

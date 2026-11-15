@@ -12,7 +12,7 @@ import { GameState, BOARD, cloneState, createInitialState, TerrainKind, TerrainP
 import { rollDice } from "./rng";
 import { advancePhase, endTurn } from "../rules/turn";
 import type { MoveKind } from "../rules/movement";
-import { applyShoot } from "../rules/shooting";
+import { applyShootAll, applyShoot } from "../rules/shooting";
 import { applyCharge, applyFight } from "../rules/melee";
 import { deployArmies, ArmyList } from "../rules/armies";
 
@@ -45,6 +45,8 @@ export type Command =
   | { type: "setRulesMode"; on: boolean }
   /** Fase de disparo: una unidad dispara un arma a una unidad enemiga. */
   | { type: "shoot"; unit: string; weapon: string; target: string }
+  /** Panel de ataque (#127): varias armas al mismo objetivo, de una vez. */
+  | { type: "shootAll"; unit: string; target: string; weapons: string[] }
   /** Fase de carga: declarar una carga (tira 2D6 y, si llega, entra en contacto). */
   | { type: "charge"; unit: string; target: string }
   /** Fase de combate: la unidad se agrupa, golpea a la enemiga y consolida. */
@@ -174,6 +176,10 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
     }
     case "shoot": {
       applyShoot(s, cmd.unit, cmd.weapon, cmd.target);
+      break;
+    }
+    case "shootAll": {
+      applyShootAll(s, cmd.unit, cmd.target, cmd.weapons);
       break;
     }
     case "charge": {

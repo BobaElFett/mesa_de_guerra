@@ -5,7 +5,7 @@ la **Legión Astral** (super soldados con servoarmadura) contra **El Enjambre** 
 Se juega como en una mesa de verdad (mover, medir y tirar dados) o con el **modo reglas**, que guía las fases y resuelve las tiradas.
 Three.js + TypeScript, compilado con esbuild a un único `dist/index.html`.
 
-Versión **0.46**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
+Versión **0.47**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
 
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor ni conexión.
@@ -24,9 +24,9 @@ Cada bando tiene un ejército de **500 puntos** (*Escaramuza*) o **1.000** (*Bat
 
 1. **Mando:** +1 punto de mando (PM) por bando para estratagemas; las unidades por debajo de la mitad chequean moral (2D6 contra su Liderazgo).
 2. **Movimiento:** mover (hasta M), avanzar (+D6, sin disparar ni cargar después) o retirarse del combate. Desde la ronda 2 llegan las **reservas**, a más de 9" del enemigo.
-3. **Disparo:** clic en un enemigo y elegir arma. Impactar (HP), herir (Fuerza contra Resistencia), salvar (armadura o invulnerable) y daño. Las líneas de visión dicen quién ve y quién tiene cobertura; los psíquicos usan aquí su poder.
-4. **Carga:** a 12" o menos, 2D6 para llegar; el cargado puede hacer fuego defensivo (impacta a 6).
-5. **Combate:** quien cargó golpea primero; luego se alternan.
+3. **Disparo:** elige tu unidad y haz clic en un enemigo (cada uno lleva una etiqueta con las bajas esperadas). El **panel de ataque** muestra todas las armas con lo que necesitan para impactar, herir y salvar, los modificadores y las bajas esperadas; un botón dispara todas las marcadas. Impactar (HP), herir (Fuerza contra Resistencia), salvar (armadura o invulnerable) y daño. Las líneas de visión dicen quién ve y quién tiene cobertura; los psíquicos usan aquí su poder.
+4. **Carga:** a 12" o menos, 2D6 para llegar (el panel da la probabilidad); el cargado puede hacer fuego defensivo (impacta a 6).
+5. **Combate:** quien cargó (o tiene Contraataque) golpea primero; una tira muestra el orden. El panel de ataque da los golpes y las bajas esperadas de cada arma.
 
 **Misiones:** *Toma y mantén*, *Corazón del frente*, *Caza de presas* (PV por puntos destruidos), *Reliquia* (se recoge y se lleva), *Asalto* (asimétrica: uno ataca y otro defiende) y *Cabeza de la serpiente* (PV por cada personaje enemigo destruido). Gana quien tenga más PV tras la ronda 5.
 **Mapas:** de ejemplo, aleatorio, *Ruinas urbanas*, *Llanura* y *Bosque* (los bosques se atraviesan, dan cobertura y tapan la visión si se cruzan más de 3"), todos simétricos.

@@ -8,7 +8,8 @@ import * as THREE from "three";
 import { CommandBus } from "./core/commands";
 import { freshSeed } from "./core/rng";
 import { readTable, writeTable } from "./core/save";
-import { BASE_RADIUS } from "./core/state";
+import { BASE_RADIUS, GameState } from "./core/state";
+import { hasStrat } from "./rules/stratagems";
 import { TableCamera } from "./camera/tableCamera";
 import { Table } from "./world/table";
 import { PiecesView } from "./view/piecesView";
@@ -26,8 +27,11 @@ import { ShotPlayer } from "./view/shotPlayer";
 import { DATASHEETS } from "./rules/datasheets";
 import { aiPlayPhase, aiStep, canFight, fightStep } from "./ai/tactics";
 import { stateHash } from "./net/protocol";
-import { fightOptions } from "./rules/melee";
+import { chargeOptions, fightOptions, fightSteps, pendingChargers } from "./rules/melee";
 import { NetDialog } from "./ui/netDialog";
+import { AttackPanel } from "./ui/attackPanel";
+import { chance2d6, expectText, previewAttacks } from "./rules/preview";
+import { shootingOptions, shootSteps } from "./rules/shooting";
 import { ActionMenu } from "./ui/actionMenu";
 import { Effects } from "./view/effects";
 import { SolidsView } from "./view/solidsView";
@@ -299,6 +303,7 @@ hud.onCharge = (unit, target) => {
   if (c) toast(`Carga: 2D6 = ${c.roll} (necesitaba ${c.need}) — ${c.success ? "¡entra en combate!" : "no llega"}`);
 };
 hud.onFight = (unit, target) => bus.dispatch({ type: "fight", unit, target });
+hud.onAim = (target) => aim(target);
 // IA: con un bando a cargo de la IA, el botón la pausa o la reanuda; sin IA, juega la fase
 // en curso por el bando activo (para probar o para ver una partida entera)
 const replay = new Replay(bus);
@@ -373,6 +378,79 @@ function controllable(f: "legion" | "swarm"): boolean {
 }
 const actionMenu = new ActionMenu(bus);
 actionMenu.canRun = (a) => !a.cmd || !("unit" in a.cmd) || hud.canAct((a.cmd as { unit: string }).unit);
+// Panel de ataque (#127): al elegir un enemigo para disparar, cargar o combatir
+const attackPanel = new AttackPanel(bus);
+attackPanel.canAct = (u) => hud.canAct(u);
+// Mesa despejada (#126): la ayuda y los dados se muestran u ocultan con su botón. Si no se ha
+// elegido, la ayuda sale en la mesa libre y se recoge en las partidas con reglas; los dados, igual.
+const PANELS_KEY = "mesa-de-guerra.paneles";
+const panelPref: { help?: boolean; dice?: boolean } = (() => { try { return JSON.parse(localStorage.getItem(PANELS_KEY) ?? "{}"); } catch { return {}; } })();
+function applyPanels() {
+  const rules = bus.state.rulesMode;
+  const help = panelPref.help ?? !rules, dice = panelPref.dice ?? !rules;
+  document.body.classList.toggle("no-help", !help);
+  document.body.classList.toggle("no-dice", !dice);
+  document.getElementById("help-btn")!.classList.toggle("on", help);
+  document.getElementById("dice-toggle")!.classList.toggle("on", dice);
+}
+function togglePanel(k: "help" | "dice") {
+  const now = !document.body.classList.contains(k === "help" ? "no-help" : "no-dice");
+  panelPref[k] = !now;
+  try { localStorage.setItem(PANELS_KEY, JSON.stringify(panelPref)); } catch { /* nada */ }
+  applyPanels();
+}
+document.getElementById("help-toggle")!.addEventListener("click", () => togglePanel("help"));
+document.getElementById("help-btn")!.addEventListener("click", () => togglePanel("help"));
+document.getElementById("dice-toggle")!.addEventListener("click", () => togglePanel("dice"));
+window.addEventListener("keydown", (e) => { if (e.code === "F1") { e.preventDefault(); togglePanel("help"); } });
+// «Más ▾»: lo que se usa poco durante la partida
+{
+  const btn = document.getElementById("more-btn")!, menu = document.getElementById("more-menu")!;
+  btn.addEventListener("click", (e) => { e.stopPropagation(); menu.hidden = !menu.hidden; });
+  menu.addEventListener("click", () => { menu.hidden = true; });
+  window.addEventListener("pointerdown", (e) => { if (!menu.hidden && !(e.target as HTMLElement).closest(".more-wrap")) menu.hidden = true; });
+}
+
+/** Orden de combate (#128): quién combate primero y quién queda, de los dos bandos. */
+function renderFightOrder() {
+  const el = document.getElementById("fight-order")!;
+  const s = bus.state;
+  if (!s.rulesMode || s.gameOver || s.phase !== "combate") { el.hidden = true; return; }
+  const engagedUnits = s.units.filter((u) => s.pieces.some((p) => p.unit === u.id) && fightOptions(s, u.id).targets.length);
+  if (!engagedUnits.length) { el.hidden = true; return; }
+  const first = new Set(pendingChargers(s));
+  const fought = new Set(s.turnLog.fought ?? []);
+  const chip = (u: (typeof engagedUnits)[number]) => {
+    const why = first.has(u.id) ? (s.turnLog.charges?.[u.id]?.success ? "ha cargado" : "contraataque") : "";
+    return `<button data-fo="${u.id}" class="${u.faction}${first.has(u.id) ? " first" : ""}${fought.has(u.id) ? " done" : ""}" title="${why ? `Combate primero: ${why}` : fought.has(u.id) ? "Ya ha combatido" : "Pendiente"}">${DATASHEETS[u.datasheet].name}${why ? " ★" : ""}</button>`;
+  };
+  const firstList = engagedUnits.filter((u) => first.has(u.id));
+  const rest = engagedUnits.filter((u) => !first.has(u.id));
+  el.innerHTML = (firstList.length ? `<span class="fo-label">Primero:</span>${firstList.map(chip).join("")}<span class="fo-label">· Después:</span>` : `<span class="fo-label">Combaten:</span>`)
+    + rest.map(chip).join("");
+  el.hidden = false;
+}
+document.getElementById("fight-order")!.addEventListener("click", (e) => {
+  const b = (e.target as HTMLElement).closest("button[data-fo]") as HTMLButtonElement | null;
+  if (!b) return;
+  const s = bus.state, u = b.dataset.fo!;
+  controls.selected.clear();
+  for (const p of formationModels(s, u)) controls.selected.add(p.id);
+  controls.onSelectionChange();
+  const ms = formationModels(s, u);
+  if (ms.length) cam.panTo(ms.reduce((n, p) => n + p.x, 0) / ms.length, ms.reduce((n, p) => n + p.z, 0) / ms.length, 34);
+  // Si solo tiene un enemigo y es tuya, abre directamente el panel de combate
+  const o = fightOptions(s, u);
+  if (!o.blocked && o.targets.length === 1 && hud.canAct(u)) aim(o.targets[0].unit, [u]);
+});
+/** Abre el panel de ataque de la selección contra `target` (si la selección es tuya). */
+function aim(target: string, actor = actor0()) {
+  const s = bus.state;
+  if (!actor || !["disparo", "carga", "combate"].includes(s.phase)) return;
+  actionMenu.hideTip();
+  attackPanel.open(s.phase as "disparo" | "carga" | "combate", actor, target);
+}
+function actor0() { return actor(); }
 let canTargetIds = new Set<string>();
 let pendingIds = new Set<string>();
 let guideKey = "";
@@ -399,7 +477,8 @@ controls.interceptClick = (id, x, y) => {
   if (!target) return false;
   const acts = actionsAgainst(s, a, target);
   if (!acts.length) return false;
-  actionMenu.open(DATASHEETS[s.units.find((u) => u.id === target)!.datasheet].name, acts, x, y);
+  void x; void y;
+  aim(target, a);
   return true;
 };
 controls.onHover = (id, x, y) => {
@@ -451,6 +530,54 @@ controls.onBoardHover = (x, z) => {
   const m = (s.reserves ?? []).find((p) => p.unit === arriving);
   arrival.preview(x, z, arrivalPlacement(s, arriving, x, z), m ? BASE_RADIUS[m.model] : 0.6);
 };
+// Etiquetas sobre los objetivos (#129): bajas esperadas o probabilidad de carga, encima de cada
+// enemigo al que puede atacar la selección. Clic en una abre el panel de ataque.
+const labelsEl = document.getElementById("target-labels")!;
+let labelUnits: { unit: string; el: HTMLElement }[] = [];
+function buildTargetLabels(s: GameState, a: string[] | null, targets: string[]) {
+  labelsEl.innerHTML = "";
+  labelUnits = [];
+  if (!a || !targets.length || !settings.hoverTips) return;
+  const W = (u: string) => DATASHEETS[s.units.find((x) => x.id === u)!.datasheet].profile.W;
+  for (const t of targets) {
+    let text = "";
+    if (s.phase === "disparo") {
+      const steps = a.flatMap((u) => shootSteps(s, u, t, shootingOptions(s, u).weapons.map((w) => w.weapon.id)));
+      const pv = previewAttacks(s, steps, 100);
+      text = expectText(pv.kills, pv.damage, W(t));
+    } else if (s.phase === "carga") {
+      const o = chargeOptions(s, a[0]).targets.find((x) => x.unit === t);
+      if (o) text = `${o.need}+ · ${Math.round(chance2d6(o.need - (hasStrat(s, "hambre", a[0]) ? 2 : 0), hasStrat(s, "impetu", a[0])) * 100)} %`;
+    } else if (s.phase === "combate") {
+      const u = a.find((x) => fightOptions(s, x).targets.some((y) => y.unit === t));
+      if (u) { const { state, steps } = fightSteps(s, u, t); const pv = previewAttacks(state, steps, 100); text = expectText(pv.kills, pv.damage, W(t)); }
+    }
+    if (!text) continue;
+    const el = document.createElement("button");
+    el.className = "tlabel";
+    el.textContent = text;
+    el.title = "Clic: panel de ataque";
+    el.addEventListener("click", () => aim(t));
+    labelsEl.appendChild(el);
+    labelUnits.push({ unit: t, el });
+  }
+}
+const _v = new THREE.Vector3();
+function placeTargetLabels() {
+  if (!labelUnits.length) return;
+  const z = Number(getComputedStyle(document.documentElement).getPropertyValue("--ui")) || 1;
+  const r = renderer.domElement.getBoundingClientRect();
+  for (const { unit, el } of labelUnits) {
+    const ms = bus.state.pieces.filter((p) => p.unit === unit);
+    if (!ms.length || attackPanel.isOpen) { el.style.display = "none"; continue; }
+    _v.set(ms.reduce((n, p) => n + p.x, 0) / ms.length, 2.6, Math.min(...ms.map((p) => p.z)));
+    _v.project(cam.camera);
+    if (_v.z > 1) { el.style.display = "none"; continue; }
+    el.style.display = "";
+    el.style.left = `${((_v.x + 1) / 2 * r.width + r.left) / z}px`;
+    el.style.top = `${((1 - _v.y) / 2 * r.height + r.top) / z}px`;
+  }
+}
 /** Recalcula los resaltados de la guía (unidades pendientes y objetivos posibles). */
 function updateGuide() {
   const s = bus.state;
@@ -461,7 +588,9 @@ function updateGuide() {
   canTargetIds = new Set();
   pendingIds = new Set();
   if (!settings.guideRings) return;
-  if (a) for (const u of validTargets(s, a)) for (const p of s.pieces) if (p.unit === u) canTargetIds.add(p.id);
+  const targets = a ? [...validTargets(s, a)] : [];
+  for (const u of targets) for (const p of s.pieces) if (p.unit === u) canTargetIds.add(p.id);
+  buildTargetLabels(s, a, targets);
   pendingIds = new Set();
   for (const f of ["legion", "swarm"] as const) if (controllable(f)) for (const u of pendingUnits(s, f)) for (const p of s.pieces) if (p.unit === u) pendingIds.add(p.id);
 }
@@ -678,6 +807,9 @@ function refresh(_s?: unknown, cmd?: Command | null) {
   moraleLen = ml.length;
   controls.prune((id) => !!pieces.placedOf(id));
   hud.render(bus.state);
+  attackPanel.refresh();
+  renderFightOrder();
+  applyPanels();
   netStatus();
   updateReaction();
   if (suggestAt >= 0 && bus.length !== suggestAt) { suggestView.clear(); suggestAt = -1; }
@@ -771,13 +903,13 @@ renderer.setAnimationLoop(() => {
     if (sig !== shadowSig) { shadowSig = sig; renderer.shadowMap.needsUpdate = true; }
   }
   renderer.render(scene, cam.camera);
+  placeTargetLabels();
 });
 
 // Tutorial (#48)
 const tutorial = new Tutorial(bus);
 tutorial.onStart = () => {
-  const help = document.getElementById("help")!;
-  if (!help.classList.contains("folded")) document.getElementById("help-toggle")!.click();
+  if (!document.body.classList.contains("no-help")) togglePanel("help");
   cam.reset(); controls.selected.clear(); controls.onSelectionChange(); ai.paused = false; armies.hide?.(); tables.hide(); refresh(); };
 const tutorialTick = () => tutorial.check({ s: bus.state, selected: controls.selected });
 bus.onChange(() => tutorialTick());
@@ -955,4 +1087,4 @@ function recordCampaign() {
 if (settings.showMenu) menu.show();
 
 // Para pruebas desde la consola
-(window as unknown as { mesa: unknown }).mesa = { bus, renderer, scene, replay, los, suggestView, showSuggestion, hoverTarget: (u: string | null) => { targetHover = u; }, cam, pieces, controls, tape, ranges, tray, tables, shots, armies, ai, endDialog, fightOptions, net, tactics: { aiStep, fightStep, canFight, aiPlayPhase }, stateHash };
+(window as unknown as { mesa: unknown }).mesa = { aim: (t: string) => aim(t), attackPanel, bus, renderer, scene, replay, los, suggestView, showSuggestion, hoverTarget: (u: string | null) => { targetHover = u; }, cam, pieces, controls, tape, ranges, tray, tables, shots, armies, ai, endDialog, fightOptions, net, tactics: { aiStep, fightStep, canFight, aiPlayPhase }, stateHash };

@@ -3,7 +3,7 @@ import { note, unitName } from "./history";
 import { onForbiddenTerrain } from "./geometry";
 import { hasStrat } from "./stratagems";
 import { formation, formationModels } from "./leaders";
-import { GameState, Piece, PLAYERS } from "../core/state";
+import { cloneState, GameState, Piece, PLAYERS } from "../core/state";
 import { rollDice } from "../core/rng";
 import { resolveOverlaps } from "../core/placement";
 import { DATASHEETS, WEAPONS } from "./datasheets";
@@ -163,33 +163,47 @@ function withinReach(a: Piece[], b: Piece[]): boolean {
 }
 
 /**
+ * Los golpes que daría la unidad combatiendo contra `targetId` (#127): sobre una copia del
+ * estado, tras agruparse, quién golpea y con qué arma. Para la vista previa del panel de ataque.
+ */
+export function fightSteps(s0: GameState, unitId: string, targetId: string) {
+  const s = cloneState(s0);
+  const o = fightOptions(s, unitId);
+  if (o.blocked || !o.targets.some((t) => t.unit === targetId)) return { state: s, steps: [] };
+  advanceInto(s, unitId, targetId, PILE_IN, true);
+  const groups = fightGroups(s, unitId, targetId);
+  return { state: s, steps: [...groups].map(([wid, attackers]) => ({ kind: "combate" as const, unit: unitId, attackers, weapon: WEAPONS[wid], target: targetId })) };
+}
+
+/** Miniaturas que golpean (las trabadas y la segunda fila), agrupadas por su arma de combate. */
+function fightGroups(s: GameState, unitId: string, targetId: string): Map<string, Piece[]> {
+  const ds = DATASHEETS[s.units.find((u) => u.id === unitId)!.datasheet];
+  const foes = unitModels(s, targetId);
+  const mine = unitModels(s, unitId);
+  const front = mine.filter((p) => foes.some((q) => gap(disc(p), disc(q)) <= ENGAGEMENT + 1e-6));
+  const second = mine.filter((p) => !front.includes(p) && front.some((f) => gap(disc(p), disc(f)) <= SECOND_RANK + 1e-6));
+  const groups = new Map<string, Piece[]>();
+  for (const p of [...front, ...second]) {
+    const w = pieceWeaponIds(ds, p).map((id) => WEAPONS[id]).find((x) => x.range === "CC");
+    if (!w) continue;
+    if (!groups.has(w.id)) groups.set(w.id, []);
+    groups.get(w.id)!.push(p);
+  }
+  return groups;
+}
+
+/**
  * Combate de una unidad contra otra: agruparse, golpear con cada grupo de armas CC, consolidar.
  * Muta `s` y devuelve los ataques resueltos (uno por arma), o null si no es válido.
  */
 export function applyFight(s: GameState, unitId: string, targetId: string): AttackLogEntry[] | null {
   const o = fightOptions(s, unitId);
   if (o.blocked || !o.targets.some((t) => t.unit === targetId)) return null;
-  const unit = s.units.find((u) => u.id === unitId)!;
-  const ds = DATASHEETS[unit.datasheet];
-
   advanceInto(s, unitId, targetId, PILE_IN, true);                       // agruparse
 
-  // Golpean las trabadas con el objetivo y la segunda fila (a ½" de una amiga trabada)
-  const foes = unitModels(s, targetId);
-  const mine = unitModels(s, unitId);
-  const front = mine.filter((p) => foes.some((q) => gap(disc(p), disc(q)) <= ENGAGEMENT + 1e-6));
-  const second = mine.filter((p) => !front.includes(p) && front.some((f) => gap(disc(p), disc(f)) <= SECOND_RANK + 1e-6));
-  const fighters = [...front, ...second];
-
-  // Agrupa por arma CC (el líder puede llevar otra)
-  const groups = new Map<string, Piece[]>();
-  for (const p of fighters) {
-    const ids = pieceWeaponIds(ds, p);
-    const w = ids.map((id) => WEAPONS[id]).find((x) => x.range === "CC");
-    if (!w) continue;
-    if (!groups.has(w.id)) groups.set(w.id, []);
-    groups.get(w.id)!.push(p);
-  }
+  // Golpean las trabadas con el objetivo y la segunda fila (a ½" de una amiga trabada),
+  // agrupadas por arma CC (el líder puede llevar otra)
+  const groups = fightGroups(s, unitId, targetId);
   const entries: AttackLogEntry[] = [];
   for (const [wid, group] of groups) {
     if (!unitModels(s, targetId).length) break;                         // el objetivo ya cayó
