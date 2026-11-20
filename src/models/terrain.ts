@@ -182,5 +182,5 @@ function bosque(): Part[] {
 const BUILDERS: Record<TerrainKind, () => Part[]> = { ruina, ruinaGrande, cajas, crater, bunker, barricada, bosque, colina };
 
 export function makeTerrain(kind: TerrainKind): THREE.Group {
-  return build(BUILDERS[kind]());
+  return build(BUILDERS[kind](), true, { floor: 0, min: 0.72 });
 }

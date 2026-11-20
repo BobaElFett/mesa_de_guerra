@@ -2,6 +2,17 @@
 
 Lo nuevo de cada versión de *Mesa de Guerra*, de la más reciente a la primera.
 
+## 0.48 · fase 29, miniaturas mejoradas (#130–#132)
+- **Acabado (#130):** las miniaturas llevan un sombreado horneado: más oscuras abajo, entre las piernas y bajo el cuerpo, y más claras arriba, como una miniatura pintada. Cada pieza tiene una leve variación de tono para que el color plano no parezca plástico. La escenografía recibe el mismo sombreado, más suave. Las peanas tienen ahora un bisel en el borde, manchas de hierba, piedrecitas y un par de matas.
+- **Legión (#131):** casco redondeado con frontal de rejilla, dos lentes que brillan y tomas de aire a los lados. Brazos y piernas son ahora redondeados, con codos. Rodilleras en cúpula, cartucheras en el cinturón y un sello de pureza (lacre y pergamino) en sargentos y capitanes. El Ingeniero va de rojo entero.
+- **Enjambre (#132):**
+  - Rehecho el cuerpo de todas sus criaturas: patas y brazos cónicos en vez de cajas, muslos y hombros acorazados, abdomen y tórax redondeados, placas de quitina en cúpula que se solapan a lo largo del lomo, costillas en el vientre y una cola que se estrecha.
+  - Cráneo acorazado y alargado con morro, cuernos, colmillos y ojos que brillan; dedos con garras y espolón.
+  - Escupidores y cañones bio con forma orgánica y anillos de quitina. Los monstruos (Tirano, Carnífice, Acechadores, Bestia Guardiana, Devorador) tienen miembros más recios y placas más grandes.
+  - La Mente del Enjambre tiene un cerebro luminoso con pliegues sobre un cuenco de quitina y venas que bajan al cuerpo. La Bestia Guardiana lleva un gran caparazón en cúpula con la cresta luminosa a lo largo del lomo, y las alas de las Gárgolas nacen de los hombros.
+- Coste: unos 1.600–2.400 triángulos por miniatura de infantería (antes 700–950). Con 130 miniaturas en mesa sigue siendo poco para cualquier tarjeta gráfica; el ajuste de gráficos *Rápidos* sigue disponible.
+- Herramienta para revisar las miniaturas de cerca: `tools/gallery/gal.ts` (galería con una celda por modelo).
+
 ## 0.47 · fase 28, atacar más fácil (#126–#129)
 - **Panel de ataque (#127):** al elegir un enemigo con tu unidad seleccionada (clic en él, en su etiqueta o en la lista de la ficha) se abre un panel encima de la barra de turno.
   - **Disparo:** una fila por arma con las miniaturas que disparan, los ataques, la tirada para **impactar**, **herir** y **salvar**, y las **bajas esperadas** (y heridas, si el objetivo tiene varias). Debajo, los modificadores que se aplican, con su motivo: colina, Sigilo, Pesada, cobertura, noche, Escudo vivo, al mando, Precisión…

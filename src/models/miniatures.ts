@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { box, place, build, segment, spike, Part, V3 } from "./lowpoly";
+import { box, place, build, limb, segment, spike, Part, V3 } from "./lowpoly";
 import { ModelKind, BASE_RADIUS, Piece } from "../core/state";
 
 // Miniaturas definitivas de la fase 1 (issue #11): legionario de la Escuadra de Asalto Táctico
@@ -47,21 +47,36 @@ export function useSchemes(l: LegionScheme, s: SwarmScheme): { legion: string; s
   return { legion: L.rim, swarm: S.rim };
 }
 const BASE_TOP = "#5a5648", BASE_SIDE = "#2b2d31", PEBBLE = "#6f6a5a";
+const FLOCK = ["#5d6b3a", "#6e7444", "#4f5a33"], TUFT = "#8a9a4a", EDGE = "#3a3c42";
 const Y0 = 0.12;   // altura de la cara superior de la peana
 
 // --- Peana ----------------------------------------------------------------
 function peana(r: number, rim: string, seed: number): Part[] {
+  const seg = r > 1.2 ? 28 : 20;
   const p: Part[] = [
-    place(new THREE.CylinderGeometry(r * 0.95, r, 0.12, 16), BASE_SIDE, 0, 0.06, 0),
-    place(new THREE.CylinderGeometry(r * 0.93, r * 0.93, 0.01, 16), BASE_TOP, 0, 0.122, 0),
-    place(new THREE.CylinderGeometry(r * 1.0, r * 1.0, 0.03, 16), rim, 0, 0.015, 0),
+    place(new THREE.CylinderGeometry(r * 0.94, r, 0.11, seg), BASE_SIDE, 0, 0.055, 0),
+    // Bisel: un anillo fino más claro que marca el borde de la cara de arriba (#130)
+    place(new THREE.CylinderGeometry(r * 0.94, r * 0.95, 0.012, seg), EDGE, 0, 0.114, 0),
+    place(new THREE.CylinderGeometry(r * 0.91, r * 0.91, 0.01, seg), BASE_TOP, 0, 0.122, 0),
+    place(new THREE.CylinderGeometry(r * 1.0, r * 1.0, 0.03, seg), rim, 0, 0.015, 0),
   ];
-  // Unas piedrecitas en la peana
   let s = seed;
+  const rnd = () => { s = (s * 9301 + 49297) % 233280; return s / 233280; };
+  // Manchas de hierba (planas e irregulares), piedrecitas y unas matas
   for (let i = 0; i < 3; i++) {
-    s = (s * 9301 + 49297) % 233280;
-    const a = (s / 233280) * Math.PI * 2, d = r * (0.45 + 0.3 * ((i * 37) % 10) / 10);
-    p.push(place(new THREE.DodecahedronGeometry(0.05 + i * 0.015, 0), PEBBLE, Math.cos(a) * d, Y0 + 0.02, Math.sin(a) * d, a, a * 2, 0));
+    const a = rnd() * Math.PI * 2, d = r * (0.25 + 0.45 * rnd()), sz = r * (0.22 + 0.16 * rnd());
+    const g = new THREE.DodecahedronGeometry(1, 0);
+    g.scale(sz, 0.02, sz * (0.6 + 0.4 * rnd()));
+    p.push(place(g, FLOCK[i % FLOCK.length], Math.cos(a) * d, Y0 + 0.006, Math.sin(a) * d, 0, a, 0));
+  }
+  for (let i = 0; i < 3; i++) {
+    const a = rnd() * Math.PI * 2, d = r * (0.45 + 0.35 * rnd());
+    p.push(place(new THREE.DodecahedronGeometry(0.045 + i * 0.015, 0), PEBBLE, Math.cos(a) * d, Y0 + 0.02, Math.sin(a) * d, a, a * 2, 0));
+  }
+  for (let i = 0; i < 2; i++) {
+    const a = rnd() * Math.PI * 2, d = r * (0.6 + 0.25 * rnd());
+    const x = Math.cos(a) * d, z = Math.sin(a) * d;
+    for (let k = 0; k < 3; k++) p.push(spike([x + (k - 1) * 0.03, Y0, z], [x + (k - 1) * 0.06, Y0 + 0.12 + 0.03 * k, z + (k % 2 ? 0.03 : -0.02)], 0.018, TUFT, 3));
   }
   return p;
 }
@@ -100,15 +115,21 @@ function legionario(pose: number, leader: boolean, variant: LegionVariant = "tac
   // Piernas: muslo, espinillera, rodillera y bota
   for (const [side, foot, knee] of [[-1, P.footL, P.kneeL], [1, P.footR, P.kneeR]] as [number, V3, V3][]) {
     const hip: V3 = [side * 0.13, hipY, 0];
-    p.push(segment(hip, knee, 0.2, 0.22, A.armor));
-    p.push(segment(knee, [foot[0], foot[1] + 0.1, foot[2] - 0.02], 0.18, 0.2, A.armorD));
-    p.push(box(0.14, 0.12, 0.08, A.trim, knee[0], knee[1] - 0.06, knee[2] + 0.11));
+    p.push(limb(hip, knee, 0.12, 0.1, A.armor, 7));
+    p.push(limb(knee, [foot[0], foot[1] + 0.1, foot[2] - 0.02], 0.1, 0.11, A.armorD, 7));
+    p.push(plate(0.09, 1, 0.75, A.trim, [knee[0], knee[1] - 0.01, knee[2] + 0.1], Math.PI / 2 - 0.2));     // rodillera
     p.push(box(0.22, 0.12, 0.32, A.dark, foot[0], foot[1], foot[2] + 0.04));
   }
   // Cadera, abdomen y cinturón
   p.push(box(0.42, 0.14, 0.27, A.dark, 0, hipY - 0.05, 0));
   p.push(box(0.44, 0.05, 0.29, A.trim, 0, hipY + 0.06, 0));
   p.push(box(0.36, 0.16, 0.25, A.dark, 0, hipY + 0.1, lean * 0.5));
+  for (const s of [-1, 1]) p.push(box(0.08, 0.08, 0.06, A.armorD, s * 0.17, hipY - 0.02, 0.13));          // cartucheras
+  if (leader || variant === "capitan") {
+    // Sello de pureza: lacre rojo y tira de pergamino sobre la hombrera
+    p.push(place(new THREE.CylinderGeometry(0.045, 0.045, 0.025, 7), A.red, -0.5, hipY + 0.42, lean + 0.17, Math.PI / 2));
+    p.push(box(0.05, 0.14, 0.01, "#e9dcb6", -0.5, hipY + 0.27, lean + 0.18));
+  }
   // Pecho con águila
   const chestZ = lean;
   p.push(box(0.56, 0.32, 0.36, A.armor, 0, hipY + 0.24, chestZ));
@@ -136,8 +157,9 @@ function legionario(pose: number, leader: boolean, variant: LegionVariant = "tac
   const arm = (side: number, hand: V3) => {
     const sh: V3 = [side * 0.36, shY - 0.06, chestZ];
     const elbow: V3 = [(sh[0] + hand[0]) / 2 + side * 0.13, (sh[1] + hand[1]) / 2 - 0.1, (sh[2] + hand[2]) / 2 - 0.06];
-    p.push(segment(sh, elbow, 0.15, 0.16, A.armor));
-    p.push(segment(elbow, hand, 0.14, 0.15, A.armorD));
+    p.push(limb(sh, elbow, 0.085, 0.075, A.armor, 7));
+    p.push(place(new THREE.SphereGeometry(0.075, 6, 4), A.armorD, elbow[0], elbow[1], elbow[2]));       // codo
+    p.push(limb(elbow, hand, 0.08, 0.085, A.armorD, 7));
     p.push(box(0.13, 0.12, 0.13, A.dark, hand[0], hand[1] - 0.06, hand[2]));
   };
 
@@ -228,11 +250,20 @@ function legionario(pose: number, leader: boolean, variant: LegionVariant = "tac
     return p;
   }
   // Casco con rejilla y visor; el sargento lo lleva rojo con cresta y laurel
+  // Casco (#131): cuenco redondeado, frontal con rejilla, dos lentes y tomas de aire a los lados
   const helm = leader ? A.red : variant === "pesado" || variant === "exterminador" ? A.armorD : A.armor;
-  p.push(box(0.21, 0.22, 0.23, helm, hx, hipY + 0.6, hz, 0, P.headTurn));
-  p.push(box(0.14, 0.09, 0.06, A.dark, hx + Math.sin(P.headTurn) * 0.11, hipY + 0.6, hz + Math.cos(P.headTurn) * 0.11, 0, P.headTurn));
-  p.push(place(new THREE.BoxGeometry(0.17, 0.04, 0.03), A.visor,
-    hx + Math.sin(P.headTurn) * 0.12, hipY + 0.74, hz + Math.cos(P.headTurn) * 0.12, 0, P.headTurn, 0, true));
+  const ht = P.headTurn, fx = (d: number) => hx + Math.sin(ht) * d, fz = (d: number) => hz + Math.cos(ht) * d;
+  p.push(box(0.2, 0.13, 0.21, helm, hx, hipY + 0.6, hz, 0, ht));
+  const dome = new THREE.SphereGeometry(0.115, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2);
+  dome.scale(0.9, 0.85, 1.0);
+  p.push(place(dome, helm, hx, hipY + 0.72, hz, 0, ht, 0));
+  p.push(box(0.15, 0.1, 0.05, helm, fx(0.1), hipY + 0.6, fz(0.1), -0.25, ht));                // morro
+  for (let i = 0; i < 3; i++) p.push(box(0.1, 0.012, 0.012, A.dark, fx(0.13), hipY + 0.62 + i * 0.025, fz(0.13), -0.25, ht));   // rejilla
+  for (const sd of [-1, 1]) {
+    const ex = hx + Math.cos(ht) * sd * 0.05 + Math.sin(ht) * 0.11, ez = hz - Math.sin(ht) * sd * 0.05 + Math.cos(ht) * 0.11;
+    p.push(place(new THREE.BoxGeometry(0.055, 0.035, 0.02), A.visor, ex, hipY + 0.75, ez, 0, ht, 0, true));                      // lentes
+    p.push(place(new THREE.CylinderGeometry(0.035, 0.035, 0.03, 6), A.dark, hx + Math.cos(ht) * sd * 0.105, hipY + 0.66, hz - Math.sin(ht) * sd * 0.105, 0, ht, Math.PI / 2));
+  }
   if (leader) {
     for (let i = 0; i < 5; i++) p.push(box(0.05, 0.08 + (i === 2 ? 0.04 : i % 2 ? 0.02 : 0), 0.07, A.red, hx, hipY + 0.82, hz - 0.12 + i * 0.06));
     p.push(box(0.23, 0.035, 0.25, A.trim, hx, hipY + 0.78, hz, 0, P.headTurn));
@@ -242,6 +273,20 @@ function legionario(pose: number, leader: boolean, variant: LegionVariant = "tac
     p.push(box(0.025, 0.08, 0.1, A.trim, 0.18, hipY + 1.08, chestZ - 0.22));
   }
   return p;
+}
+
+// --- Formas orgánicas (#132) -----------------------------------------------------
+/** Huevo: icosaedro redondeado y estirado (cuerpos, cráneos, sacos). */
+function egg(r: number, sx: number, sy: number, sz: number): THREE.BufferGeometry {
+  const g = new THREE.IcosahedronGeometry(r, 1);
+  g.scale(sx, sy, sz);
+  return g;
+}
+/** Placa de quitina: media esfera aplastada, inclinada `rx` (y girada `ry`). */
+function plate(r: number, sx: number, sz: number, c: string, at: V3, rx = 0, ry = 0): Part {
+  const g = new THREE.SphereGeometry(r, 7, 3, 0, Math.PI * 2, 0, Math.PI / 2);
+  g.scale(sx, 0.55, sz);
+  return place(g, c, at[0], at[1], at[2], rx, ry, 0);
 }
 
 // --- Garra Menor --------------------------------------------------------------
@@ -281,73 +326,89 @@ function garra(pose: number, leader: boolean, o: SwarmOpts = {}): Part[] {
   const shell = leader ? C.shellD : C.shell;
   const hip: V3 = [0, y(0.48 - P.crouch), -0.14];
 
-  // Patas traseras digitígradas: muslo hacia delante, tarso hacia atrás, dedos
+  // Grosor: los monstruos tienen miembros más recios (#132)
+  const k = o.monster ? 1.45 : 1;
+
+  // Patas traseras digitígradas: muslo acorazado, tarso fino y dedos con garra
   for (const s of [-1, 1]) {
     const h: V3 = [s * 0.11, hip[1], hip[2]];
-    const knee: V3 = [s * 0.18, y(0.3 - P.crouch * 0.6), 0.06];
+    const knee: V3 = [s * 0.19, y(0.3 - P.crouch * 0.6), 0.06];
     const ankle: V3 = [s * 0.17, y(0.1), -0.2];
     const toe: V3 = [s * 0.18, y(0.01), 0.04];
-    p.push(segment(h, knee, 0.15, 0.17, C.flesh));
-    p.push(segment(knee, ankle, 0.09, 0.1, C.fleshD));
-    p.push(segment(ankle, toe, 0.07, 0.08, C.fleshD));
-    p.push(spike(toe, [toe[0] + s * 0.03, y(0.0), toe[2] + 0.1], 0.03, C.bone, 4));
-    p.push(box(0.12, 0.06, 0.16, shell, knee[0], knee[1] - 0.02, knee[2], 0.4, 0, 0));   // placa de la rodilla
+    p.push(limb(h, knee, 0.095 * k, 0.065 * k, C.flesh));
+    p.push(plate(0.12 * k, 0.8, 1.3, shell, [h[0] + s * 0.02, (h[1] + knee[1]) / 2 + 0.02, (h[2] + knee[2]) / 2], -0.9, s * 0.4));   // muslo
+    p.push(limb(knee, ankle, 0.055 * k, 0.04 * k, C.fleshD, 5));
+    p.push(limb(ankle, toe, 0.04 * k, 0.03 * k, C.fleshD, 5));
+    for (const d of [-1, 0, 1]) p.push(spike(toe, [toe[0] + s * 0.02 + d * 0.05, y(0.0), toe[2] + 0.12], 0.022 * k, C.bone, 3));
+    p.push(spike([ankle[0], ankle[1], ankle[2]], [ankle[0], ankle[1] + 0.02, ankle[2] - 0.12], 0.025 * k, C.bone, 3));   // espolón
+    p.push(plate(0.07 * k, 1, 1.2, shell, [knee[0], knee[1] - 0.02, knee[2] + 0.02], 1.2));                                  // rodilla
   }
 
-  // Tronco: abdomen → pecho, con placas de quitina encima
-  p.push(segment(hip, P.thorax, 0.3, 0.26, C.flesh));
+  // Tronco: abdomen y tórax de carne, cubiertos por placas de quitina que se solapan
   const mid = (t: number): V3 => [hip[0] + (P.thorax[0] - hip[0]) * t, hip[1] + (P.thorax[1] - hip[1]) * t, hip[2] + (P.thorax[2] - hip[2]) * t];
-  for (const t of [0.1, 0.45, 0.8]) {
+  const ab = mid(0.15), th = mid(0.78);
+  const pitch = Math.atan2(P.thorax[1] - hip[1], P.thorax[2] - hip[2]);
+  p.push(place(egg(0.17 * k, 1, 0.85, 1.25), C.fleshD, ab[0], ab[1], ab[2] - 0.04, -pitch * 0.5));
+  p.push(place(egg(0.17 * k, 1.15, 0.95, 1.1), C.flesh, th[0], th[1], th[2], -pitch));
+  for (const [i, t] of [0.05, 0.38, 0.7, 0.98].entries()) {
     const m = mid(t);
-    p.push(segment([m[0], m[1] + 0.12, m[2] - 0.08], [m[0], m[1] + 0.16, m[2] + 0.08], 0.34 - t * 0.06, 0.12, shell));
+    p.push(plate((0.16 + i * 0.015) * k, 1.15, 0.9, i % 2 ? C.shellD : shell, [m[0], m[1] + 0.08 * k, m[2]], -pitch - 0.25));
   }
-  // Cola segmentada
-  const t1: V3 = [0, hip[1] - 0.04, hip[2] - 0.24], t2: V3 = [0.04, hip[1] - 0.14, hip[2] - 0.44];
-  p.push(segment(hip, t1, 0.16, 0.14, C.fleshD));
-  p.push(segment(t1, t2, 0.1, 0.1, shell));
-  p.push(spike(t2, [0.08, hip[1] - 0.26, hip[2] - 0.62], 0.05, C.bone, 4));
+  // Costillas en el vientre
+  for (const t of [0.35, 0.55]) { const m = mid(t); p.push(box(0.2 * k, 0.025, 0.05, C.bone, m[0], m[1] - 0.14 * k, m[2], -pitch)); }
+  // Cola segmentada que se estrecha
+  const t1: V3 = [0, hip[1] - 0.04, hip[2] - 0.26], t2: V3 = [0.04, hip[1] - 0.14, hip[2] - 0.48], t3: V3 = [0.09, hip[1] - 0.25, hip[2] - 0.66];
+  p.push(limb([hip[0], hip[1], hip[2] - 0.08], t1, 0.1 * k, 0.075 * k, C.fleshD));
+  p.push(plate(0.08 * k, 1, 1.4, shell, [t1[0], t1[1] + 0.04, t1[2]], -0.4));
+  p.push(limb(t1, t2, 0.075 * k, 0.05 * k, C.fleshD));
+  p.push(spike(t2, t3, 0.05 * k, C.bone, 4));
 
-  // Cuello y cabeza alargada con cresta, mandíbulas y ojos
-  p.push(segment(P.thorax, P.head, 0.14, 0.14, C.fleshD));
+  // Cuello y cabeza: cráneo acorazado alargado, cresta hacia atrás, mandíbulas y ojos
+  p.push(limb(P.thorax, P.head, 0.085 * k, 0.07 * k, C.fleshD));
   const hd = P.head;
-  p.push(spike([hd[0], hd[1], hd[2] - 0.08], [hd[0], hd[1] - 0.02, hd[2] + 0.26], 0.12, shell, 5));
-  p.push(spike([hd[0], hd[1] + 0.06, hd[2] - 0.06], [hd[0], hd[1] + (leader ? 0.36 : 0.2), hd[2] - 0.3], leader ? 0.09 : 0.06, shell, 4));
+  p.push(place(egg(0.075 * k, 1, 0.7, 1.7), shell, hd[0], hd[1] + 0.03, hd[2] - 0.01, -0.35));
+  p.push(place(egg(0.06 * k, 0.85, 0.5, 1.4), C.fleshD, hd[0], hd[1] - 0.04 * k, hd[2] + 0.07 * k, 0.15));                   // morro
+  p.push(spike([hd[0], hd[1] + 0.06, hd[2] - 0.06], [hd[0], hd[1] + (leader ? 0.34 : 0.2) * k, hd[2] - 0.32 * k], (leader ? 0.08 : 0.06) * k, shell, 4));
   for (const s of [-1, 1]) {
-    p.push(spike([hd[0] + s * 0.05, hd[1] - 0.06, hd[2] + 0.08], [hd[0] + s * 0.03, hd[1] - 0.14, hd[2] + 0.24], 0.025, C.bone, 3));
-    p.push(place(new THREE.BoxGeometry(0.04, 0.035, 0.04), leader ? C.glow : C.eye, hd[0] + s * 0.065, hd[1] + 0.04, hd[2] + 0.08, 0, 0, 0, true));
+    p.push(spike([hd[0] + s * 0.04, hd[1] + 0.05, hd[2] - 0.05], [hd[0] + s * 0.14 * k, hd[1] + 0.12 * k, hd[2] - 0.24 * k], 0.03 * k, C.bone, 3));   // cuernos
+    p.push(spike([hd[0] + s * 0.05, hd[1] - 0.08 * k, hd[2] + 0.08], [hd[0] + s * 0.03, hd[1] - 0.16 * k, hd[2] + 0.26 * k], 0.025 * k, C.bone, 3)); // colmillos
+    p.push(place(new THREE.OctahedronGeometry(0.028 * k, 0), leader ? C.glow : C.eye, hd[0] + s * 0.07 * k, hd[1] + 0.03, hd[2] + 0.1 * k, 0, 0, 0, true));
   }
 
-  // Brazos-guadaña: hombro → codo → hoja (dos tramos para que se curve)
+  // Brazos-guadaña: hombro → codo (con placa) → hoja curva
   for (const s of [-1, 1]) {
     const sh: V3 = [s * 0.17, P.thorax[1] + 0.06, P.thorax[2] - 0.02];
     const el: V3 = [s * P.elbow[0], P.elbow[1], P.elbow[2]];
     const tip: V3 = [s * P.tip[0], P.tip[1], P.tip[2]];
     const bend: V3 = [(el[0] + tip[0]) / 2 + s * 0.03, Math.max(el[1], tip[1]) + 0.06, (el[2] + tip[2]) / 2];
     if (scythes) {
-      p.push(segment(sh, el, 0.09, 0.1, C.flesh));
-      p.push(box(0.1, 0.08, 0.12, shell, el[0], el[1] - 0.04, el[2]));
-      p.push(segment(el, bend, 0.04, 0.13, C.bone));
-      p.push(spike(bend, tip, 0.05, C.bone, 3));
+      p.push(limb(sh, el, 0.065 * k, 0.05 * k, C.flesh));
+      p.push(plate(0.08 * k, 1, 1.3, shell, [sh[0] + s * 0.04, sh[1] + 0.02, sh[2]], -0.2, s * 0.5));       // hombro
+      p.push(place(egg(0.06 * k, 1, 0.9, 1.3), shell, el[0], el[1], el[2]));
+      p.push(segment(el, bend, 0.035 * k, 0.14 * k, C.bone));
+      p.push(spike(bend, tip, 0.06 * k, C.bone, 3));
     }
     // Bracitos con garras bajo el pecho
     const fa: V3 = [s * 0.1, P.thorax[1] - 0.1, P.thorax[2] + 0.04];
     const fh: V3 = [s * 0.13, P.thorax[1] - 0.2, P.thorax[2] + 0.18];
-    p.push(segment(fa, fh, 0.05, 0.05, C.fleshD));
-    p.push(spike(fh, [fh[0], fh[1] - 0.04, fh[2] + 0.1], 0.03, C.bone, 3));
+    p.push(limb(fa, fh, 0.035 * k, 0.025 * k, C.fleshD, 5));
+    p.push(spike(fh, [fh[0], fh[1] - 0.04, fh[2] + 0.1], 0.025 * k, C.bone, 3));
   }
 
   // Armas de disparo biológicas
   if (o.gun === "escupidor") {
     // Tubo carnoso sujeto con los dos bracitos, apuntando al frente
     const a0: V3 = [0.02, P.thorax[1] - 0.14, P.thorax[2] + 0.12], a1: V3 = [0.02, P.thorax[1] - 0.06, P.thorax[2] + 0.62];
-    p.push(segment(a0, a1, 0.12, 0.12, C.fleshD));
-    p.push(segment([a1[0], a1[1], a1[2] - 0.06], [a1[0], a1[1] + 0.01, a1[2] + 0.05], 0.15, 0.15, shell));
-    p.push(segment([0.02, P.thorax[1] - 0.02, P.thorax[2] + 0.2], [0.02, P.thorax[1] + 0.06, P.thorax[2] + 0.42], 0.08, 0.06, C.glow, true));
+    p.push(limb(a0, a1, 0.07, 0.055, C.fleshD));
+    for (const t of [0.3, 0.6]) p.push(limb([a0[0], a0[1] + (a1[1] - a0[1]) * t, a0[2] + (a1[2] - a0[2]) * t - 0.03], [a0[0], a0[1] + (a1[1] - a0[1]) * t, a0[2] + (a1[2] - a0[2]) * t + 0.03], 0.085, 0.085, shell));
+    p.push(limb([a1[0], a1[1], a1[2] - 0.04], [a1[0], a1[1] + 0.01, a1[2] + 0.06], 0.07, 0.095, shell));                       // boca
+    p.push(place(egg(0.05, 1.2, 0.8, 1.6), C.glow, 0.02, P.thorax[1] + 0.03, P.thorax[2] + 0.28, 0, 0, 0, true));
   }
   if (o.gun === "bio") {
     const a0: V3 = [0.24, P.thorax[1] - 0.06, P.thorax[2] + 0.02], a1: V3 = [0.3, P.thorax[1] + 0.02, P.thorax[2] + 0.62];
-    p.push(segment(a0, a1, 0.15, 0.15, C.fleshD));
-    p.push(segment([a1[0], a1[1], a1[2] - 0.1], [a1[0], a1[1] + 0.01, a1[2] + 0.05], 0.19, 0.19, shell));
+    p.push(limb(a0, a1, 0.1, 0.075, C.fleshD));
+    p.push(plate(0.1, 1.1, 2.2, shell, [a0[0] + (a1[0] - a0[0]) * 0.45, a0[1] + (a1[1] - a0[1]) * 0.45 + 0.04, a0[2] + (a1[2] - a0[2]) * 0.45], -0.1));
+    p.push(limb([a1[0], a1[1], a1[2] - 0.08], [a1[0], a1[1] + 0.01, a1[2] + 0.06], 0.09, 0.12, shell));                       // boca
     for (const t of [0.3, 0.55]) p.push(place(new THREE.DodecahedronGeometry(0.05, 0), C.glow, a0[0] + (a1[0] - a0[0]) * t, a0[1] + (a1[1] - a0[1]) * t + 0.08, a0[2] + (a1[2] - a0[2]) * t, 0, 0, 0, true));
   }
   // Corona sináptica: púas que brillan sobre la cabeza
@@ -482,7 +543,7 @@ function carnifice(pose: number): Part[] {
   // Caparazón dorsal en placas y hileras de púas
   for (let i = 0; i < 4; i++) {
     const zz = 0.05 - i * 0.16, yy = 0.92 - i * 0.07;
-    p.push(box(0.42 - i * 0.05, 0.08, 0.2, i % 2 ? C.shell : C.shellD, 0, y(yy), zz, -0.35));
+    p.push(plate(0.24 - i * 0.025, 1.1, 0.9, i % 2 ? C.shell : C.shellD, [0, y(yy), zz], -0.35));
     for (const s of [-1, 1]) p.push(spike([s * 0.12, y(yy + 0.05), zz], [s * 0.3, y(yy + 0.32), zz - 0.12], 0.045, C.bone));
   }
   p.push(spike([0, y(0.9), 0.12], [0, y(1.22), 0.04], 0.05, C.bone));
@@ -515,7 +576,7 @@ function guardia(pose: number): Part[] {
 /** Ingeniero de combate (#120): legionario con un servobrazo que asoma por encima del hombro. */
 function ingeniero(pose: number): Part[] {
   const A = LEG, red = "#9a2f2a";
-  const p = legionario(pose, false, "tactico").map((q) => (q.color === A.armor ? { ...q, color: red } : q));
+  const p = legionario(pose, false, "tactico").map((q) => (q.color === A.armor ? { ...q, color: red } : q.color === A.armorD ? { ...q, color: "#7a2420" } : q));
   p.push(box(0.42, 0.36, 0.2, A.metal, 0, y(0.95), -0.3));                       // mochila de herramientas
   const a: V3 = [0.15, y(1.25), -0.32], b: V3 = [0.32, y(1.7), -0.05], c: V3 = [0.36, y(1.45), 0.35];
   p.push(segment(a, b, 0.05, 0.045, A.metal));
@@ -594,11 +655,14 @@ function medico(pose: number): Part[] {
 function guardiana(pose: number): Part[] {
   const p = garra(pose, true, { monster: true, scythes: false });
   const C = SW;
-  p.push(box(0.8, 0.12, 0.6, C.shellD, 0, y(0.95), -0.1, -0.2));                 // caparazón ancho
-  for (const s of [-1, 1]) p.push(box(0.12, 0.5, 0.5, C.shell, s * 0.42, y(0.65), -0.05, 0, 0, s * 0.3));
-  for (let i = 0; i < 5; i++) {                                                   // cresta luminosa
-    const a = -0.8 + i * 0.4;
-    p.push(place(new THREE.OctahedronGeometry(0.07, 0), C.glow, Math.sin(a) * 0.35, y(1.08 + Math.cos(a) * 0.18), -0.15, 0, 0, 0, true));
+  const P = CLAW_POSES[pose % CLAW_POSES.length];
+  const top = P.thorax[1] + 0.16;
+  // Caparazón ancho en cúpula que cubre el lomo, con faldones a los lados (#132)
+  p.push(plate(0.36, 1.25, 1.35, C.shellD, [0, top, P.thorax[2] - 0.18], -0.15));
+  for (const s of [-1, 1]) p.push(plate(0.22, 0.7, 1.3, C.shell, [s * 0.3, top - 0.12, P.thorax[2] - 0.16], -0.1, 0));
+  for (let i = 0; i < 5; i++) {                                                   // cresta luminosa a lo largo del lomo
+    const zz = P.thorax[2] - 0.42 + i * 0.12;
+    p.push(place(new THREE.OctahedronGeometry(0.055, 0), C.glow, 0, top + 0.19 - Math.abs(i - 2) * 0.03, zz, 0, 0, 0, true));
   }
   return p;
 }
@@ -680,9 +744,11 @@ function gargola(pose: number, leader: boolean): Part[] {
   const C = SW;
   const flap = [0.5, 0.2, 0.8][pose % 3];
   for (const s of [-1, 1]) {
-    const root: V3 = [s * 0.12, y(0.9), -0.12];
-    const tip: V3 = [s * 0.95, y(0.95 + flap), -0.35];
-    const back: V3 = [s * 0.6, y(0.6 + flap * 0.4), -0.55];
+    const Pz = CLAW_POSES[pose % CLAW_POSES.length].thorax;
+    const root: V3 = [s * 0.1, Pz[1] + 0.12, Pz[2] - 0.16];
+    const tip: V3 = [s * 0.95, root[1] + 0.1 + flap * 0.6, root[2] - 0.2];
+    const back: V3 = [s * 0.6, root[1] - 0.25 + flap * 0.3, root[2] - 0.45];
+    p.push(plate(0.07, 1, 1.3, C.shell, [root[0], root[1], root[2]], -0.3, s * 0.6));          // hombro del ala
     p.push(segment(root, tip, 0.05, 0.04, C.bone));                              // hueso del ala
     p.push(segment(root, back, 0.04, 0.03, C.bone));
     // Membrana: un triángulo de dos caras entre la raíz y las puntas de los huesos
@@ -695,9 +761,17 @@ function gargola(pose: number, leader: boolean): Part[] {
 function mente(pose: number): Part[] {
   const p = garra(pose, true, { scythes: false });
   const C = SW;
-  p.push(place(new THREE.IcosahedronGeometry(0.36, 0), C.shell, 0, y(1.12), -0.02));
-  p.push(place(new THREE.IcosahedronGeometry(0.26, 0), C.glow, 0, y(1.2), 0.08, 0.3, 0.4, 0, true));
-  for (const s of [-1, 1]) p.push(spike([s * 0.18, y(1.3), -0.1], [s * 0.34, y(1.55), -0.22], 0.04, C.bone));
+  const P = CLAW_POSES[pose % CLAW_POSES.length];
+  const hx = P.head[0], hy = P.head[1] + 0.2, hz = P.head[2] - 0.08;
+  // Cráneo hinchado: mandíbula y cuenco de quitina abajo, cerebro luminoso con pliegues arriba
+  p.push(plate(0.22, 1.1, 1.15, C.shell, [hx, hy - 0.05, hz], Math.PI));
+  p.push(place(egg(0.2, 1, 0.75, 1.15), C.glow, hx, hy + 0.03, hz, 0, 0, 0, true));
+  for (const [dx, dz] of [[-0.1, 0.02], [0.1, 0.02], [-0.05, -0.12], [0.05, -0.12], [0, 0.13], [-0.06, 0.1], [0.06, 0.1]]) {
+    p.push(place(egg(0.06, 0.6, 0.35, 1.5), C.shellD, hx + dx, hy + 0.13, hz + dz, 0, dx * 5, 0));   // pliegues
+  }
+  for (const s of [-1, 1]) p.push(spike([hx + s * 0.16, hy, hz - 0.08], [hx + s * 0.32, hy + 0.2, hz - 0.22], 0.035, C.bone));
+  for (const s of [-1, 1]) p.push(limb([hx + s * 0.12, hy - 0.08, hz - 0.12], [hx + s * 0.2, hy - 0.3, hz - 0.3], 0.03, 0.015, C.fleshD, 4));   // venas
+
   return p;
 }
 
@@ -720,7 +794,7 @@ export function makeMiniature(kind: ModelKind, pose = 0, leader = false): THREE.
       const m = new THREE.Matrix4().makeTranslation(0, Y0 * (1 - scale), 0).multiply(new THREE.Matrix4().makeScale(scale, scale, scale));
       for (const q of parts) q.geo.applyMatrix4(m);
     }
-    proto.add(build([...peana(r, rim, pose * 7 + 3), ...parts]));
+    proto.add(build([...peana(r, rim, pose * 7 + 3), ...parts], true, { floor: Y0 }));
     cache.set(key, proto);
   }
   return proto.clone();

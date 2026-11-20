@@ -60,6 +60,14 @@ export function segment(a: V3, b: V3, w: number, d: number, color: string, glow 
   return along(new THREE.BoxGeometry(w, 1, d), a, b, color, glow);
 }
 
+/**
+ * Miembro orgánico (#132): tronco de cono de `a` (radio r0) a `b` (radio r1), con pocas caras.
+ * Para patas, brazos y colas que deben verse redondeados y no como cajas.
+ */
+export function limb(a: V3, b: V3, r0: number, r1: number, color: string, sides = 6): Part {
+  return along(new THREE.CylinderGeometry(r1, r0, 1, sides), a, b, color);
+}
+
 /** Cono de `a` (base, radio r) a `b` (punta), con pocas caras. */
 export function spike(a: V3, b: V3, r: number, color: string, sides = 5): Part {
   return along(new THREE.ConeGeometry(r, 1, sides), a, b, color);
@@ -72,25 +80,51 @@ export function vertexColorMat(): THREE.MeshStandardMaterial {
 }
 
 const tmpColor = new THREE.Color();
-/** Copia la geometría con un atributo de color uniforme (en espacio lineal, como `mat`). */
-function painted(geo: THREE.BufferGeometry, color: string): THREE.BufferGeometry {
+
+/**
+ * Sombreado horneado (#130): las zonas bajas de la miniatura se oscurecen un poco, como la
+ * oclusión ambiental de una miniatura pintada (más luz arriba, más sombra entre las piernas).
+ * `floor` es la altura desde la que empieza (la cara de la peana) y `top` la altura del modelo.
+ */
+export interface Shade { floor: number; top: number; min: number }
+
+/** Copia la geometría con un atributo de color (en espacio lineal, como `mat`), sombreado según la altura. */
+function painted(geo: THREE.BufferGeometry, color: string, shade: Shade | null, tint: number): THREE.BufferGeometry {
   tmpColor.set(color);
-  const n = geo.getAttribute("position").count;
+  const pos = geo.getAttribute("position");
+  const n = pos.count;
   const c = new Float32Array(n * 3);
-  for (let i = 0; i < n; i++) { c[i * 3] = tmpColor.r; c[i * 3 + 1] = tmpColor.g; c[i * 3 + 2] = tmpColor.b; }
+  const span = shade ? Math.max(0.2, (shade.top - shade.floor) * 0.6) : 1;
+  for (let i = 0; i < n; i++) {
+    let k = tint;
+    if (shade) {
+      const h = pos.getY(i) - shade.floor;
+      if (h > 0) { const t = Math.min(1, h / span); k *= shade.min + (1 - shade.min) * (t * (2 - t)); }
+    }
+    c[i * 3] = tmpColor.r * k; c[i * 3 + 1] = tmpColor.g * k; c[i * 3 + 2] = tmpColor.b * k;
+  }
   geo.setAttribute("color", new THREE.BufferAttribute(c, 3));
   return geo;
 }
+
+/** Leve variación de tono por pieza (±3 %) para que el color plano no se vea de plástico. */
+const tintOf = (i: number) => 1 + (((i * 2654435761) >>> 0) % 1000 / 1000 - 0.5) * 0.06;
 
 /**
  * Fusiona las piezas en un grupo: todo lo de color plano en UNA malla con color por vértice
  * (una llamada de dibujo y una de sombra por modelo, #58) y lo que brilla, aparte por color.
  */
-export function build(parts: Part[], shadows = true): THREE.Group {
+export function build(parts: Part[], shadows = true, shade: { floor: number; min?: number } | null = null): THREE.Group {
   const g = new THREE.Group();
   const flat = parts.filter((p) => !p.glow);
   if (flat.length) {
-    const merged = mergeGeometries(flat.map((p) => painted(p.geo, p.color)), false)!;
+    let sh: Shade | null = null;
+    if (shade) {
+      let top = shade.floor;
+      for (const p of flat) { p.geo.computeBoundingBox(); top = Math.max(top, p.geo.boundingBox!.max.y); }
+      sh = { floor: shade.floor, top, min: shade.min ?? 0.62 };
+    }
+    const merged = mergeGeometries(flat.map((p, i) => painted(p.geo, p.color, sh, tintOf(i))), false)!;
     const mesh = new THREE.Mesh(merged, vertexColorMat());
     mesh.castShadow = shadows;
     mesh.receiveShadow = shadows;
