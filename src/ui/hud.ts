@@ -58,7 +58,7 @@ function singleCard(s: GameState, uid: string, inFormation = false): string {
   const alive = s.pieces.filter((p) => p.unit === uid).length;
   const badges = [
     unit.shocked ? `<span class="badge bad">Desmoralizada</span>` : "",
-    belowHalf(s, uid) && !unit.shocked ? `<span class="badge warnb">Por debajo de la mitad</span>` : "",
+    belowHalf(s, uid) && !unit.shocked ? `<span class="badge warnb">A la mitad o menos</span>` : "",
     unit.faction === "swarm" && inSynapse(s, uid) ? `<span class="badge syn" title="${UNIT_ABILITY_TEXT.sinaptico.text}">En sinapsis</span>` : "",
     unit.faction === "legion" && s.rulesMode && s.doctrine ? `<span class="badge" title="${DOCTRINES[s.doctrine].text}">${DOCTRINES[s.doctrine].name}</span>` : "",
     unit.faction === "swarm" && s.rulesMode ? `<span class="badge" title="Flota de invasión: Sostenida 1 contra infantería">Instintos de enjambre</span>` : "",

@@ -78,25 +78,22 @@ test("Hambre voraz: +2 a la carga", () => {
   assert.equal(r2.roll, r1.roll + 2);
 });
 
-test("Colina: la miniatura en alto suma +1 al disparar a quien no lo está", () => {
+test("Colina (11.ª): escenografía expuesta; no da +1 (no llega a 3\" de altura) y la infantería dentro está en cobertura", () => {
   const bus = game();
   bus.dispatch({ type: "addTerrain", kind: "colina", x: 0, z: 12, rot: 0 } as never);
   while (bus.state.phase !== "disparo") bus.dispatch({ type: "nextPhase" });
   const s = cloneState(bus.state);
-  s.objectives = [];   // sin objetivos: que no cuente la Disciplina bólter
+  s.objectives = [];
   const fp = units(s, "asalto")[1], g = units(s, "garras")[0];
   away(s, [fp, g]);
   place(s, fp, -2.5, 12); place(s, g, -6, -4);
   assert.ok(s.pieces.filter((p) => p.unit === fp).every((p) => onHill(s.terrain, p.x, p.z)));
-  const w = shootingOptions(s, fp).weapons.find((x) => x.weapon.id === "rifleBolter")!;
-  const hi = applyShoot(cloneState(s), fp, w.weapon.id, g)!.result;
+  const hi = applyShoot(cloneState(s), fp, "rifleBolter", g)!.result;
   const low = cloneState(s);
   place(low, fp, -2.5, 20);
-  const lo = applyShoot(low, fp, w.weapon.id, g)!.result;
+  const lo = applyShoot(low, fp, "rifleBolter", g)!.result;
   assert.deepEqual(hi.hitRolls, lo.hitRolls);
-  assert.equal(hi.hits - lo.hits, hi.hitRolls.filter((x) => x === 2).length);
-  place(s, fp, -2.5, 20);
-  assert.ok(!s.pieces.filter((p) => p.unit === fp).some((p) => onHill(s.terrain, p.x, p.z)));
+  assert.equal(hi.hits, lo.hits);
 });
 
 test("Guerrero alfa: la escuadra que lidera la Mente tiene Sostenida 1; la sinapsis da +1 a la Fuerza en combate", () => {

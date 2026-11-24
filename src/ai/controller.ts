@@ -1,7 +1,7 @@
 import { aiDeploy } from "./deploy";
 import { CommandBus } from "../core/commands";
 import { Faction, GameState, PLAYERS } from "../core/state";
-import { pendingChargers } from "../rules/melee";
+import { fightPicker } from "../rules/melee";
 import { aiLastAction, aiLastActor, aiPlayPhase, aiStep, aiWantsOverwatch, canFight, fightStep } from "./tactics";
 import { AI_LEVEL_NAME, runtime, settings } from "./settings";
 
@@ -37,22 +37,14 @@ export class AiController {
   private aiFightTurn(s: GameState): boolean {
     const ai = this.side!, human: Faction = ai === "legion" ? "swarm" : "legion";
     if (runtime.spectate) return canFight(s, "legion") || canFight(s, "swarm");
-    if (!canFight(s, ai)) return false;
-    const pending = pendingChargers(s);
-    if (pending.length) return pending.some((u) => s.units.find((x) => x.id === u)?.faction === ai);
-    const fought = s.turnLog.fought ?? [];
-    const last = fought.length ? s.units.find((u) => u.id === fought[fought.length - 1])?.faction : undefined;
-    return last !== ai || !canFight(s, human);
+    void human;
+    return canFight(s, ai);   // fightOptions ya respeta a quién le toca elegir (11.ª)
   }
 
   /** Espectador: quién golpea ahora (cargas pendientes primero; luego se alternan). */
   private fighter(s: GameState): Faction {
-    const pending = pendingChargers(s);
-    if (pending.length) return s.units.find((x) => x.id === pending[0])!.faction;
-    const fought = s.turnLog.fought ?? [];
-    const last = fought.length ? s.units.find((u) => u.id === fought[fought.length - 1])?.faction : undefined;
-    const next: Faction = last === "legion" ? "swarm" : last === "swarm" ? "legion" : PLAYERS[s.active];
-    return canFight(s, next) ? next : next === "legion" ? "swarm" : "legion";
+    const p = fightPicker(s);
+    return p === null ? PLAYERS[s.active] : PLAYERS[p];
   }
 
   /** Antes de que el jugador pase de fase: que la IA acabe sus combates pendientes. */

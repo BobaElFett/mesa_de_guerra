@@ -85,7 +85,7 @@ test("niveles: Difícil gana a Fácil con claridad y a Normal más veces que al 
     return [w, l];
   };
   const [w1, l1] = rec("dificil", "facil", 4);
-  assert.ok(w1 >= 18 && l1 <= 3, `Difícil contra Fácil: ${w1}-${l1}`);
+  assert.ok(w1 >= 17 && l1 <= 5, `Difícil contra Fácil: ${w1}-${l1}`);   // (con los bandos de la 11.ª la Legión pesa más)
   const [w2, l2] = rec("dificil", "normal", 6);
   console.log(`# Difícil contra Fácil ${w1}-${l1}; contra Normal ${w2}-${l2}`);
   assert.ok(w2 > l2, `Difícil contra Normal: ${w2}-${l2}`);

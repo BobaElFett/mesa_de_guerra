@@ -3,26 +3,27 @@ import { BASE_RADIUS, Piece, TerrainKind, TerrainPiece, TERRAIN } from "../core/
 // Geometría de las reglas: coherencia, trabamiento, línea de visión y cobertura.
 // Pura y en 2D (planta del tapete). Medidas en pulgadas, de borde de peana a borde de peana.
 
-export const COHERENCY = 2;     // una miniatura debe estar a 2" de otra de su unidad
-export const ENGAGEMENT = 1;    // trabada a 1" o menos de una enemiga
+export const COHERENCY = 2;     // una miniatura debe estar a 2" de otra de su unidad…
+export const COHERENCY_MAX = 9; // …y a 9" o menos de todas las demás (11.ª)
+export const ENGAGEMENT = 2;    // trabada a 2" o menos de una enemiga (alcance de trabamiento, 11.ª)
 
 /** Qué hace cada tipo de escenografía con la visión. */
 // blocks: oculta (no se ve a través); cover: da cobertura; solid: no se puede atravesar ni ocupar
 // (#49); noEnd: se puede cruzar pero no acabar encima (una barricada).
+// 11.ª: las áreas con escenografía ligera o densa ocultan (salvo para quien está dentro); las
+// expuestas (cráter, colina) no. Estar dentro de cualquier área da cobertura a la infantería.
 export const TERRAIN_RULES: Record<TerrainKind, { blocks: boolean; cover: boolean; solid: boolean; noEnd: boolean }> = {
   ruina: { blocks: true, cover: true, solid: true, noEnd: true },          // oculta; sólidos solo los muros: se entra por los huecos
   ruinaGrande: { blocks: true, cover: true, solid: true, noEnd: true },
   cajas: { blocks: true, cover: true, solid: true, noEnd: true },
   bunker: { blocks: true, cover: true, solid: true, noEnd: true },
   crater: { blocks: false, cover: true, solid: false, noEnd: false },      // baja: se ve por encima, pero da cobertura
-  barricada: { blocks: false, cover: true, solid: false, noEnd: true },
-  // Bosque (#84): se atraviesa y se puede acabar dentro; da cobertura dentro o detrás, y tapa la
-  // visión si la línea cruza más de FOREST_DEPTH" de bosque (y ninguna de las dos está dentro)
+  barricada: { blocks: true, cover: true, solid: false, noEnd: true },     // ligera: oculta
+  // Bosque (#84): denso; se atraviesa y se puede acabar dentro; da cobertura y oculta (11.ª)
   bosque: { blocks: true, cover: true, solid: false, noEnd: false },
-  // Colina (#125): no tapa ni cubre; desde arriba se dispara mejor
-  colina: { blocks: false, cover: false, solid: false, noEnd: false },
+  // Colina (#125): expuesta, no tapa; dentro de ella la infantería tiene cobertura
+  colina: { blocks: false, cover: true, solid: false, noEnd: false },
 };
-export const FOREST_DEPTH = 3;
 
 /** ¿Pisa la peana (x, z, r) una parte sólida de la escenografía (muro, contenedor, búnker, barricada)? */
 export function onForbiddenTerrain(terrain: TerrainPiece[], x: number, z: number, r: number): TerrainPiece | null {
@@ -63,18 +64,23 @@ export function gap(a: Disc, b: Disc): number {
  * Miniaturas fuera de coherencia: cada una necesita otra de su unidad a 2" o menos;
  * con 6 o más miniaturas en la unidad, dos.
  */
+/** Coherencia (11.ª): cada miniatura a 2" de otra de su unidad y a 9" o menos de todas las demás. */
 export function outOfCoherency(models: Piece[]): string[] {
   if (models.length < 2) return [];
-  const need = models.length >= 6 ? 2 : 1;
   const ds = models.map(disc);
   return models.filter((_, i) => {
-    let near = 0;
-    for (let j = 0; j < ds.length; j++) if (j !== i && gap(ds[i], ds[j]) <= COHERENCY + 1e-6) near++;
-    return near < need;
+    let near = 0, far = false;
+    for (let j = 0; j < ds.length; j++) {
+      if (j === i) continue;
+      const g = gap(ds[i], ds[j]);
+      if (g <= COHERENCY + 1e-6) near++;
+      if (g > COHERENCY_MAX + 1e-6) far = true;
+    }
+    return near < 1 || far;
   }).map((m) => m.id);
 }
 
-/** ¿Hay alguna miniatura de `a` a 1" o menos de alguna de `b`? */
+/** ¿Hay alguna miniatura de `a` a 2" o menos (trabadas) de alguna de `b`? */
 export function engaged(a: Piece[], b: Piece[]): boolean {
   return a.some((p) => b.some((q) => gap(disc(p), disc(q)) <= ENGAGEMENT + 1e-6));
 }
@@ -197,7 +203,6 @@ function sightLines(a: Disc, b: Disc): [number, number, number, number][] {
 function blocksLine(t: TerrainPiece, a: Disc, b: Disc, l: [number, number, number, number]): boolean {
   if (!TERRAIN_RULES[t.kind].blocks) return false;
   if (insideTerrain(t, a.x, a.z) || insideTerrain(t, b.x, b.z)) return false;
-  if (t.kind === "bosque") return lengthInside(t, ...l) > FOREST_DEPTH;
   return segmentHitsTerrain(t, ...l);
 }
 
@@ -223,14 +228,15 @@ export type Sight = "visible" | "cobertura" | "oculta";
  *  - cobertura: se ve, pero `b` está dentro de escenografía o alguna línea la cruza;
  *  - visible: a la vista y sin cobertura.
  */
-export function sight(a: Disc, b: Disc, terrain: TerrainPiece[]): Sight {
+export function sight(a: Disc, b: Disc, terrain: TerrainPiece[], inside = true): Sight {
   const lines = sightLines(a, b);
   const clear = lines.filter((l) => !terrain.some((t) => blocksLine(t, a, b, l)));
   if (!clear.length) return "oculta";
-  // Cobertura: dentro de escenografía, o cualquier línea de visión la atraviesa (tapada a medias)
+  // Cobertura (11.ª): infantería dentro de un área de escenografía (`inside`), o no del todo a la
+  // vista por escenografía de por medio
   const inCover = terrain.some((t) => TERRAIN_RULES[t.kind].cover && (
-    insideTerrain(t, b.x, b.z, b.r * 0.5) ||
-    (!insideTerrain(t, a.x, a.z) && lines.some((l) => segmentHitsTerrain(t, ...l)))
+    (inside && insideTerrain(t, b.x, b.z, b.r * 0.5)) ||
+    (TERRAIN_RULES[t.kind].blocks && !insideTerrain(t, a.x, a.z) && lines.some((l) => segmentHitsTerrain(t, ...l)))
   ));
   return inCover ? "cobertura" : "visible";
 }

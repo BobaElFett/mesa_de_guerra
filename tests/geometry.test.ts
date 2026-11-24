@@ -8,25 +8,28 @@ const cl = (id: string, x: number, z: number): Piece => ({ id, faction: "swarm",
 const T = (kind: TerrainPiece["kind"], x: number, z: number, rot = 0): TerrainPiece => ({ id: "T", kind, x, z, rot });
 const D = (p: Piece) => ({ x: p.x, z: p.z, r: p.model === "legionario" ? 0.63 : 0.49 });
 
-test("coherencia: a 2\" de otra; con 6 o más, de dos", () => {
-  // legionarios en fila a 3" de centro a centro = 1,74" de borde a borde: en coherencia
-  const row = [0, 3, 6, 9, 12].map((x, i) => leg(`L${i}`, x, 0));
+test("coherencia (11.ª): a 2\" de otra y a 9\" o menos de todas", () => {
+  // legionarios en fila a 2,2" de centro a centro = 0,94" de borde a borde: en coherencia
+  const row = [0, 2.2, 4.4, 6.6, 8.8].map((x, i) => leg(`L${i}`, x, 0));
   assert.deepEqual(outOfCoherency(row), []);
-  // el último a 6" del anterior: fuera
-  row[4] = leg("L4", 15, 0);
-  assert.deepEqual(outOfCoherency(row), ["L4"]);
-  // 6 en fila: los extremos solo tienen una vecina → fuera
-  const six = [0, 2, 4, 6, 8, 10].map((x, i) => cl(`E${i}`, x, 0));
-  assert.deepEqual(outOfCoherency(six), ["E0", "E5"]);
+  // el último a 4" del anterior: fuera
+  row[4] = leg("L4", 10.6, 0);
+  assert.deepEqual(outOfCoherency(row), ["L0", "L4"]);   // L4 sin vecina; L0, a más de 9" de L4
+  // 6 en fila: basta una vecina (ya no hacen falta dos)
+  const six = [0, 1.8, 3.6, 5.4, 7.2, 9].map((x, i) => cl(`E${i}`, x, 0));
+  assert.deepEqual(outOfCoherency(six), []);
+  // una fila larga: las que quedan a más de 9" (borde a borde) de alguna → fuera
+  const long = [0, 2, 4, 6, 8, 10, 12].map((x, i) => cl(`F${i}`, x, 0));
+  assert.deepEqual(outOfCoherency(long), ["F0", "F1", "F5", "F6"]);
   // en dos filas apretadas, todas tienen dos vecinas
   const block = [0, 1, 2].flatMap((c) => [0, 1].map((r) => cl(`B${c}${r}`, c * 1.5, r * 1.5)));
   assert.deepEqual(outOfCoherency(block), []);
   assert.deepEqual(outOfCoherency([leg("solo", 0, 0)]), []);
 });
 
-test("trabada a 1\" de borde a borde", () => {
-  assert.equal(engaged([leg("a", 0, 0)], [cl("b", 2.1, 0)]), true);    // 2,1 − 0,63 − 0,49 = 0,98
-  assert.equal(engaged([leg("a", 0, 0)], [cl("b", 2.2, 0)]), false);   // 1,08
+test("trabada a 2\" de borde a borde (11.ª)", () => {
+  assert.equal(engaged([leg("a", 0, 0)], [cl("b", 3.1, 0)]), true);    // 3,1 − 0,63 − 0,49 = 1,98
+  assert.equal(engaged([leg("a", 0, 0)], [cl("b", 3.2, 0)]), false);   // 2,08
 });
 
 test("huella girada y segmento que la corta", () => {
@@ -38,11 +41,13 @@ test("huella girada y segmento que la corta", () => {
   assert.equal(segmentHitsTerrain(r, -10, 2.5, 10, 2.5), true);
 });
 
-test("visión: libre, tapada por un búnker, a través de un cráter y desde dentro de una ruina", () => {
+test("visión (11.ª): libre, tapada por un búnker, a través de un cráter y desde dentro de una ruina", () => {
   const a = D(leg("a", -10, 0)), b = D(cl("b", 10, 0));
   assert.equal(sight(a, b, []), "visible");
   assert.equal(sight(a, b, [T("bunker", 0, 0)]), "oculta");
-  assert.equal(sight(a, b, [T("crater", 0, 0)]), "cobertura");      // no tapa, pero cubre
+  assert.equal(sight(a, b, [T("crater", 0, 0)]), "visible");        // expuesto: no tapa ni cubre a quien está detrás
+  assert.equal(sight(a, { x: 0, z: 0, r: 0.49 }, [T("crater", 0, 0)]), "cobertura");   // dentro, sí
+  assert.equal(sight(a, b, [T("barricada", 0, 0)]), "oculta");      // ligera: oculta (salvo a quien está dentro)
   // el búnker solo tapa una parte: se ve por un borde, con cobertura
   assert.equal(sight(a, b, [T("bunker", 0, 2.4)]), "cobertura");
   // objetivo dentro de una ruina: se le ve, con cobertura

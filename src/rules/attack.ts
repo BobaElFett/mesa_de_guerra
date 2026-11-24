@@ -90,6 +90,8 @@ export interface AttackInput {
   apMod?: number;
   /** Daño de más por herida (Asalto a todo gas). */
   damageMod?: number;
+  /** Indirecto (11.ª): los dados sin modificar por debajo de este número fallan siempre. */
+  failBelow?: number;
 }
 
 /** Tirada para impactar del arma con la cobertura de la 11.ª: el objetivo en cobertura empeora 1 la HP. */
@@ -161,10 +163,10 @@ export function resolveAttack(input: AttackInput, dice: DiceSource): AttackResul
       if (r === 1 && input.rerollHitOnes) r = dice.d6();
       res.hitRolls.push(r);
       const crit = r === 6;
-      const ok = input.onlySixes ? crit : r !== 1 && (crit || r + mod >= skill);
+      const ok = input.onlySixes ? crit : r !== 1 && r >= (input.failBelow ?? 2) && (crit || r + mod >= skill);
       if (!ok) continue;
       hits++;
-      if (crit) crits++;
+      if (crit && !input.onlySixes) crits++;   // 11.ª: los impactos del disparo rápido no son críticos
     }
   }
   const sustained = hasAbility(weapon, "sostenida") ? crits * abilityX(weapon, "sostenida") : 0;

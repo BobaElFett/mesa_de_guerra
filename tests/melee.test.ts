@@ -24,7 +24,7 @@ test("opciones de carga: a 12\" o menos, con la tirada necesaria", () => {
   const t = o.targets[0];
   assert.ok(t.distance > 6.5 && t.distance < 7.5, String(t.distance));
   assert.equal(t.blocked, undefined);
-  assert.equal(t.need, Math.ceil(t.distance - 1 - 1e-6));
+  assert.equal(t.need, Math.ceil(t.distance - 2 - 1e-6));   // 11.ª: basta quedar a 2"
   const far = setup(1, 20, 3);
   assert.match(chargeOptions(far.state, "U1").targets[0].blocked!, new RegExp(`${CHARGE_RANGE}`));
 });
@@ -66,7 +66,7 @@ test("combate: primero quien cargó; golpean, consolidan y no repiten", () => {
   bus!.dispatch({ type: "nextPhase" });                // combate
   assert.equal(bus!.state.phase, "combate");
   assert.deepEqual(pendingChargers(bus!.state), ["U1"]);
-  assert.match(fightOptions(bus!.state, "U2").blocked!, /cargado/);
+  assert.match(fightOptions(bus!.state, "U2").blocked!, /rival|golpean primero/);   // empieza el activo
   const before = U(bus!, "U2").length;
   bus!.dispatch({ type: "fight", unit: "U1", target: "U2" });
   const log = bus!.state.combatLog.filter((e) => e.kind === "combate");

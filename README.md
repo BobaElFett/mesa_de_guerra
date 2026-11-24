@@ -5,7 +5,7 @@ la **Legión Astral** (super soldados con servoarmadura) contra **El Enjambre** 
 Se juega como en una mesa de verdad (mover, medir y tirar dados) o con el **modo reglas**, que guía las fases y resuelve las tiradas.
 Three.js + TypeScript, compilado con esbuild a un único `dist/index.html`.
 
-Versión **0.49**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
+Versión **0.50**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
 
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor ni conexión.
@@ -22,11 +22,11 @@ Al abrirlo sale el menú:
 ## Cómo se juega (modo reglas)
 Cada bando tiene un ejército de **1.000 puntos** (*Incursión*, como en la 11.ª edición) o **500** (*Escaramuza*). La partida dura **5 rondas**; en cada una juegan los dos bandos su turno, con cinco fases:
 
-1. **Mando:** +1 punto de mando (PM) por bando para estratagemas; las unidades por debajo de la mitad chequean moral (2D6 contra su Liderazgo; 3D6 en sinapsis).
-2. **Movimiento:** mover (hasta M), avanzar (+D6, sin disparar ni cargar después) o retirarse del combate. Desde la ronda 2 llegan las **reservas**, a más de 8" del enemigo.
-3. **Disparo:** elige tu unidad y haz clic en un enemigo (cada uno lleva una etiqueta con las bajas esperadas). El **panel de ataque** muestra todas las armas con lo que necesitan para impactar, herir y salvar, los modificadores y las bajas esperadas; un botón dispara todas las marcadas. Impactar (HP), herir (Fuerza contra Resistencia), salvar (armadura o invulnerable) y daño. La **cobertura** empeora en 1 la HP del que dispara; la infantería dispara o sus armas de **corto alcance** o las demás.
+1. **Mando:** +1 punto de mando (PM) por bando para estratagemas; chequean moral las unidades a la mitad o menos y las desmoralizadas (2D6 contra su Liderazgo; 3D6 en sinapsis; si la superan, se recuperan).
+2. **Movimiento:** mover (hasta M), avanzar (+D6, sin disparar ni cargar después) o retirarse del combate (desmoralizada, con tiradas de peligro). Nadie acaba a 2" o menos de un enemigo si no es cargando. Desde la ronda 2 llegan las **reservas**, a más de 8" del enemigo.
+3. **Disparo:** elige tu unidad y haz clic en un enemigo (cada uno lleva una etiqueta con las bajas esperadas). El **panel de ataque** muestra todas las armas con lo que necesitan para impactar, herir y salvar, los modificadores y las bajas esperadas; un botón dispara todas las marcadas. Impactar (HP), herir (Fuerza contra Resistencia), salvar (armadura o invulnerable) y daño. La **cobertura** empeora en 1 la HP del que dispara; la infantería dispara o sus armas de **corto alcance** o las demás. La escenografía ligera o densa tapa la visión, y la infantería **oculta** dentro de ella solo se ve a 15".
 4. **Carga:** a 12" o menos, 2D6 para llegar (el panel da la probabilidad); el cargado puede hacer fuego defensivo (impacta a 6).
-5. **Combate:** quien cargó (o tiene Golpea primero) golpea primero; una tira muestra el orden. Cada miniatura golpea con su mejor arma de combate y, además, con las de *Ataques extra*.
+5. **Combate:** los dos jugadores se alternan eligiendo unidad, empezando por las que golpean primero (han cargado o tienen Golpea primero); una tira muestra el orden. Cada miniatura golpea con su mejor arma de combate y, además, con las de *Ataques extra*.
 
 **Misiones:** *Toma y mantén*, *Corazón del frente*, *Caza de presas* (PV por puntos destruidos), *Reliquia* (se recoge y se lleva), *Asalto* (asimétrica: uno ataca y otro defiende) y *Cabeza de la serpiente* (PV por cada personaje enemigo destruido). Gana quien tenga más PV tras la ronda 5.
 **Mapas:** de ejemplo, aleatorio, *Ruinas urbanas*, *Llanura* y *Bosque* (los bosques se atraviesan, dan cobertura y tapan la visión si se cruzan más de 3"), todos simétricos.

@@ -803,7 +803,7 @@ function refresh(_s?: unknown, cmd?: Command | null) {
         ? `<li><b>${name}</b>: sinapsis → <b class="ok">supera</b></li>`
         : `<li><b>${name}</b>: ${m.dice.length}D6${m.dice.length > 2 ? " (sinapsis)" : ""} = ${m.dice.join(" + ")} = <b>${m.dice.reduce((a, b) => a + b, 0)}</b> (necesita ${m.need}) → ${m.passed ? `<b class="ok">supera</b>` : `<b class="bad">desmoralizada</b>`}</li>`;
     }).join("");
-    shots.info(`<div><b>Chequeos de moral</b> <span class="dim">· unidades por debajo de la mitad</span></div><ul>${rows}</ul>`);
+    shots.info(`<div><b>Chequeos de moral</b> <span class="dim">· unidades a la mitad o menos y desmoralizadas</span></div><ul>${rows}</ul>`);
   }
   moraleLen = ml.length;
   controls.prune((id) => !!pieces.placedOf(id));

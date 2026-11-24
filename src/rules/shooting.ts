@@ -5,14 +5,14 @@ import { recordDamage } from "./stats";
 import { note } from "./history";
 import { hasStrat } from "./stratagems";
 import { recordCasualties } from "./missions";
-import { isGuarded, ledBy, underCommand } from "./leaders";
+import { formation, isGuarded, ledBy, underCommand } from "./leaders";
 import { inSynapse } from "./morale";
-import { battleShockTest, deadlyDemise, doctrine, hazardRolls, swarmingInstincts } from "./eleventh";
+import { battleShockTest, deadlyDemise, doctrine, hazardRolls, swarmingInstincts, turnIndex } from "./eleventh";
 import { objectiveInRange } from "./missions";
 import { GameState, Piece, PLAYERS } from "../core/state";
 import { DATASHEETS, Weapon, WEAPONS, hasAbility } from "./datasheets";
 import { resolveAttack, SeededDice, woundTarget, AttackResult, AttackInput } from "./attack";
-import { disc, engaged, gap, onHill, sight, Sight } from "./geometry";
+import { disc, engaged, gap, insideTerrain, sight, Sight } from "./geometry";
 import { canShootAfter, movedSoFar, unitModels } from "./movement";
 
 // Fase de disparo del reglamento: cada unidad dispara con sus armas a unidades enemigas
@@ -26,8 +26,11 @@ export interface TargetOption {
   /** Miniaturas que pueden disparar a este objetivo con esta arma. */
   attackers: string[];
   cover: boolean;
-  /** Solo sin línea de visión (Indirecto, #113): −1 para impactar. */
+  /** Solo sin línea de visión (Indirecto, #113, 11.ª): en cobertura y fallan los dados por debajo de `failBelow`. */
   indirect?: boolean;
+  failBelow?: number;
+  /** −1 para impactar por disparar trabado o a un monstruo o vehículo trabado (11.ª). */
+  penalty?: boolean;
   /** Por qué no se puede, si no se puede. */
   blocked?: string;
 }
@@ -80,6 +83,52 @@ function engagedWithAny(s: GameState, unitId: string): boolean {
   return engaged(unitModels(s, unitId), foes);
 }
 
+/** Alcance de detección (11.ª): a una miniatura oculta solo la ven los enemigos a esta distancia. */
+export const DETECTION_RANGE = 15;
+const infantryLike = (t: string) => t === "infanteria" || t === "bestia" || t === "enjambre";
+/** Escenografía ligera o densa (la que oculta); la densa además permite cuerpo a tierra. */
+const LIGHT_OR_DENSE = new Set(["ruina", "ruinaGrande", "cajas", "bunker", "bosque", "barricada"]);
+const DENSE = new Set(["ruina", "ruinaGrande", "cajas", "bunker", "bosque"]);
+
+/**
+ * ¿Está oculta la miniatura (11.ª)? Infantería, bestias o enjambres dentro de un área con
+ * escenografía ligera o densa, si su unidad no ha disparado ni este turno ni el anterior.
+ */
+export function hiddenPiece(s: GameState, unitId: string, p: Piece): boolean {
+  const u = s.units.find((x) => x.id === unitId);
+  if (!u || !infantryLike(DATASHEETS[u.datasheet].type)) return false;
+  if (u.shotAt !== undefined && u.shotAt >= turnIndex(s) - 1) return false;
+  return s.terrain.some((t) => LIGHT_OR_DENSE.has(t.kind) && insideTerrain(t, p.x, p.z));
+}
+
+/** Alcance de detección de una miniatura oculta: 15", −3 cuerpo a tierra (en escenografía densa), −3 capas camaleónicas. */
+export function detectionRange(s: GameState, unitId: string, p: Piece): number {
+  const ds = DATASHEETS[s.units.find((x) => x.id === unitId)!.datasheet];
+  const ground = s.terrain.some((t) => DENSE.has(t.kind) && insideTerrain(t, p.x, p.z));
+  return DETECTION_RANGE - (ground ? 3 : 0) - (ds.abilities.includes("camaleon") ? 3 : 0);
+}
+
+/** Visión de `a` a la miniatura `b` de la unidad `targetId`, con las reglas de oculto (11.ª). */
+export function seen(s: GameState, a: Piece, b: Piece, targetId: string): Sight {
+  const tt = DATASHEETS[s.units.find((x) => x.id === targetId)!.datasheet].type;
+  const sg = sight(disc(a), disc(b), s.terrain, infantryLike(tt));
+  if (sg === "oculta") return sg;
+  if (hiddenPiece(s, targetId, b) && gap(disc(a), disc(b)) > detectionRange(s, targetId, b) + 1e-6) return "oculta";
+  return sg;
+}
+
+/** ¿Ve alguna unidad propia (del bando `f`) a la unidad `targetId`? */
+export function spotted(s: GameState, f: string, targetId: string): boolean {
+  const theirs = unitModels(s, targetId);
+  return s.pieces.some((a) => a.faction === f && a.unit && theirs.some((b) => seen(s, a, b, targetId) !== "oculta"));
+}
+
+/** Pesada (11.ª): la unidad no ha movido más de 3" ni ha llegado este turno. */
+export function heavyStill(s: GameState, unitId: string): boolean {
+  const mv = s.turnLog.moves[unitId];
+  return !mv?.arrived && movedSoFar(s, unitId) <= 3 + 1e-6;
+}
+
 /** Operativo solitario (11.ª): no se le puede disparar desde más lejos. */
 export const LONE_RANGE = 12;
 
@@ -116,17 +165,20 @@ export function shootingOptions(s: GameState, unitId: string): ShootingOptions {
     else if (!bigUnit && [...fired].some((f) => hasAbility(WEAPONS[f], "pistola") !== pistol))
       opt.blocked = pistol ? "Ya ha disparado sus otras armas: no puede usar las de corto alcance." : "Ya ha disparado armas de corto alcance: no puede usar las demás.";
 
+    const blast = hasAbility(weapon, "explosiva");
     for (const e of enemies) {
       const targetModels = unitModels(s, e.id);
-      const t: TargetOption = { unit: e.id, name: DATASHEETS[e.datasheet].name, distance: Infinity, attackers: [], cover: false };
+      const eds = DATASHEETS[e.datasheet];
+      const t: TargetOption = { unit: e.id, name: eds.name, distance: Infinity, attackers: [], cover: false };
       const engagedWithMe = engaged(models, targetModels);
+      const targetBig = eds.type === "vehiculo" || eds.type === "monstruo";
       let anyClear = false, anySeen = false;
       const indirect = hasAbility(weapon, "indirecto");
       for (const id of ids) {
         const a = models.find((p) => p.id === id)!;
         let ok = false;
         for (const b of targetModels) {
-          const sg: Sight = sight(disc(a), disc(b), s.terrain);
+          const sg = seen(s, a, b, e.id);
           if (sg === "oculta" && !indirect) continue;
           if (sg !== "oculta") anySeen = true;
           const d = gap(disc(a), disc(b));
@@ -138,15 +190,27 @@ export function shootingOptions(s: GameState, unitId: string): ShootingOptions {
         }
         if (ok) t.attackers.push(id);
       }
-      t.cover = t.attackers.length > 0 && (!anyClear || DATASHEETS[e.datasheet].abilities.includes("sigilo"))
+      t.cover = t.attackers.length > 0 && (!anyClear || eds.abilities.includes("sigilo"))
         && !hasAbility(weapon, "ignoraCobertura") && !ds.abilities.includes("opticas");
-      if (indirect && t.attackers.length && !anySeen) { t.indirect = true; t.cover = true; }
+      // Disparo indirecto (11.ª): sin visión, el objetivo cuenta en cobertura y fallan los 1–5 sin
+      // modificar (1–3 si la unidad no se ha movido y otra unidad propia lo ve)
+      if (indirect && t.attackers.length && !anySeen) {
+        t.indirect = true; t.cover = true;
+        const still = !s.turnLog.moves[unitId] || movedSoFar(s, unitId) < 0.01;
+        t.failBelow = still && spotted(s, unit.faction, e.id) ? 4 : 6;
+      }
+      // Disparo trabado (11.ª): a monstruos y vehículos trabados con los tuyos, −1 para impactar; un
+      // monstruo o vehículo trabado puede disparar con −1 (salvo corto alcance a quien lo traba)
+      const targetEngaged = engagedWithAny(s, e.id);
+      if (selfEngaged ? !(pistol && engagedWithMe) : targetEngaged && targetBig) t.penalty = true;
       if (opt.blocked) t.blocked = opt.blocked;
       else if (isGuarded(s, e.id) && !hasAbility(weapon, "precision")) t.blocked = "Protegido por su escuadra: primero hay que acabar con ella.";
-      else if (DATASHEETS[e.datasheet].abilities.includes("solitario") && !isGuarded(s, e.id) && t.distance > LONE_RANGE + 1e-6)
+      else if (eds.abilities.includes("solitario") && !isGuarded(s, e.id) && t.distance > LONE_RANGE + 1e-6)
         t.blocked = `Operativo solitario: solo se le puede disparar a ${LONE_RANGE}" o menos.`;
-      else if (selfEngaged && !engagedWithMe) t.blocked = "Trabada: solo puede disparar a quien la traba.";
-      else if (!selfEngaged && engagedWithAny(s, e.id)) t.blocked = "Está trabada con tus tropas.";
+      else if (selfEngaged && !bigUnit && !engagedWithMe) t.blocked = "Trabada: solo puede disparar a quien la traba.";
+      else if (selfEngaged && bigUnit && !engagedWithMe && targetEngaged && !targetBig) t.blocked = "Está trabada con tus tropas.";
+      else if ((engagedWithMe || targetEngaged) && blast) t.blocked = "Las armas explosivas no disparan a unidades trabadas.";
+      else if (!selfEngaged && targetEngaged && !targetBig) t.blocked = "Está trabada con tus tropas.";
       else if (t.distance === Infinity) t.blocked = "Sin visión.";
       else if (!t.attackers.length) t.blocked = `Fuera de alcance (${fmt(t.distance)}; alcance ${reach(s, weapon)}"${reach(s, weapon) < (weapon.range as number) ? ", de noche" : ""}).`;
       opt.targets.push(t);
@@ -168,10 +232,12 @@ export function applyShoot(s: GameState, unitId: string, weaponId: string, targe
   const shooters = unitModels(s, unitId).filter((p) => t.attackers.includes(p.id));
   const entry = performAttack(s, "disparo", unitId, shooters, w.weapon, targetId, {
     distance: t.distance,
-    stationary: !s.turnLog.moves[unitId] || movedSoFar(s, unitId) < 0.01,
+    stationary: heavyStill(s, unitId),
     cover: t.cover,
-    indirect: t.indirect,
+    indirect: t.indirect, failBelow: t.failBelow, penalty: t.penalty,
   });
+  // Ha disparado: no puede estar oculta este turno ni el siguiente (11.ª)
+  for (const id of formation(s, unitId)) { const u = s.units.find((x) => x.id === id); if (u) u.shotAt = turnIndex(s); }
   s.turnLog.shot = s.turnLog.shot ?? {};
   s.turnLog.shot[unitId] = [...(s.turnLog.shot[unitId] ?? []), weaponId];
   return entry;
@@ -184,7 +250,7 @@ export function applyShoot(s: GameState, unitId: string, weaponId: string, targe
 export function shootSteps(s: GameState, unitId: string, targetId: string, weaponIds: string[]) {
   const opts = shootingOptions(s, unitId);
   if (opts.blocked) return [];
-  const stationary = !s.turnLog.moves[unitId] || movedSoFar(s, unitId) < 0.01;
+  const stationary = heavyStill(s, unitId);
   const out: { kind: "disparo"; unit: string; attackers: Piece[]; weapon: Weapon; target: string; extra: AttackExtra }[] = [];
   const ds = DATASHEETS[s.units.find((u) => u.id === unitId)!.datasheet];
   const big = ds.type === "vehiculo" || ds.type === "monstruo";
@@ -201,7 +267,7 @@ export function shootSteps(s: GameState, unitId: string, targetId: string, weapo
     const { w, t } = ok;
     if (!big && hasAbility(w.weapon, "pistola") !== close) continue;
     out.push({ kind: "disparo", unit: unitId, attackers: unitModels(s, unitId).filter((p) => t.attackers.includes(p.id)), weapon: w.weapon, target: targetId,
-      extra: { distance: t.distance, stationary, cover: t.cover, indirect: t.indirect } });
+      extra: { distance: t.distance, stationary, cover: t.cover, indirect: t.indirect, failBelow: t.failBelow, penalty: t.penalty } });
   }
   return out;
 }
@@ -257,8 +323,6 @@ export function attackInput(s: GameState, kind: AttackLogEntry["kind"], unitId: 
   if (synapse) notes.push("+1 Fuerza (sinapsis)");
   const w = gained.length || synapse ? { ...weapon, strength: weapon.strength + (synapse ? 1 : 0), abilities: [...weapon.abilities, ...gained] } : weapon;
 
-  const hill = ranged && attackers.filter((a) => onHill(s.terrain, a.x, a.z)).length * 2 > attackers.length
-    && !unitModels(s, targetId).some((m) => onHill(s.terrain, m.x, m.z));
   const storm = kind === "disparo" && !extra.overwatch && !extra.mortal ? conditionHitMod(s, extra.distance) : 0;
   const nearObj = (id: string) => objectiveInRange(s, id);
   const hammer = w.id === "martilloTrueno";
@@ -272,16 +336,15 @@ export function attackInput(s: GameState, kind: AttackLogEntry["kind"], unitId: 
     && (guarded[targetId] === undefined || guarded[targetId] === unitId);
   const hitMod = add(kind === "combate" && hasStrat(s, "furia", unitId), 1, "+1 impactar (Furia)")
     + add(storm !== 0, storm, `${storm > 0 ? "+" : "−"}1 impactar (${s.conditions === "tormenta" ? "tormenta" : "noche"})`)
-    + add(!!extra.indirect, -1, "−1 impactar (sin visión: Indirecto)")
-    + add(hill, 1, "+1 impactar (desde la colina)")
+    + add(!!extra.penalty, -1, "−1 impactar (disparo trabado)")
     + add(ranged && ads.abilities.includes("disciplina") && (nearObj(unitId) || nearObj(targetId)), 1, "+1 impactar (Disciplina bólter)")
     + add(melee && charged && hammer && ads.abilities.includes("aceleron"), 1, "+1 impactar (Asalto a todo gas)")
     + add(bladeAtk, 1, "+1 impactar (Guardia de la hoja)")
     + add(bladeDef, -1, "−1 impactar (Guardia de la hoja del objetivo)")
     + add(damaged, -1, "−1 impactar (dañado)");
-  if (hasAbility(weapon, "pesada") && extra.stationary) notes.push("+1 impactar (Pesada, sin moverse)");
-  const woundMod = add(kind === "disparo" && !extra.overwatch && hasStrat(s, "punteria", unitId), 1, "+1 herir (Puntería)")
-    + add(hasAbility(weapon, "precision") && !!tds.character && !extra.mortal, 1, "+1 herir (Precisión contra personaje)");
+  if (hasAbility(weapon, "pesada") && extra.stationary) notes.push("+1 impactar (Pesada: no ha movido más de 3\")");
+  const woundMod = add(kind === "disparo" && !extra.overwatch && hasStrat(s, "punteria", unitId), 1, "+1 herir (Puntería)");
+  if (extra.indirect) notes.push(`sin visión (Indirecto): fallan los ${extra.failBelow === 4 ? "1–3" : "1–5"} y no se repite`);
   const apMod = add(ranged && ads.abilities.includes("destructor") && tds.type === "infanteria", 1, "+1 penetración (Destructor)")
     + add(!extra.mortal && ads.abilities.includes("furiaPrimera") && dist <= FURY_RANGE + 1e-6, 1, "+1 penetración (Furia de la Primera, a 9\")");
   const damageMod = add(melee && charged && !hammer && ads.abilities.includes("aceleron"), 1, "+1 daño (Asalto a todo gas)");
@@ -299,7 +362,8 @@ export function attackInput(s: GameState, kind: AttackLogEntry["kind"], unitId: 
       models: targetModels, type: tds.type,
     },
     distance: extra.distance, stationary: extra.stationary, cover: extra.cover,
-    rerollHitOnes: underCommand(s, unitId) && !extra.overwatch,
+    rerollHitOnes: underCommand(s, unitId) && !extra.overwatch && !extra.indirect,
+    failBelow: extra.indirect ? extra.failBelow ?? 6 : undefined,
     rerollWoundOnes: !!attacker.veteran && !extra.mortal,
     onlySixes: extra.overwatch,
     mortal: extra.mortal,
@@ -311,7 +375,13 @@ export function attackInput(s: GameState, kind: AttackLogEntry["kind"], unitId: 
 /** Furia de la Primera (11.ª): alcance en el que mejora la penetración. */
 export const FURY_RANGE = 9;
 
-export interface AttackExtra { distance?: number; stationary?: boolean; cover?: boolean; overwatch?: boolean; mortal?: boolean; indirect?: boolean }
+export interface AttackExtra {
+  distance?: number; stationary?: boolean; cover?: boolean; overwatch?: boolean; mortal?: boolean; indirect?: boolean;
+  /** Indirecto (11.ª): los dados sin modificar por debajo de este número fallan. */
+  failBelow?: number;
+  /** −1 para impactar por disparo trabado (11.ª). */
+  penalty?: boolean;
+}
 
 /**
  * Resuelve un ataque de `attackers` con `weapon` contra la unidad `targetId` y lo aplica a `s`

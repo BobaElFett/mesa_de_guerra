@@ -72,6 +72,8 @@ export interface Unit {
   veteran?: boolean;
   /** Índice de su entrada en la lista de ejército (campaña, #70). */
   entry?: number;
+  /** Último turno (ronda·2 + jugador) en que disparó: no puede estar oculta ese turno ni el siguiente (11.ª). */
+  shotAt?: number;
   /** Habilidades de una vez por partida ya gastadas (Hora gloriosa…). */
   spent?: string[];
   /** Cúpula de fuerza (11.ª): invulnerable 4+ hasta el comienzo del turno indicado (ronda·2 + jugador). */

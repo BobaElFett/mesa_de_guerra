@@ -33,6 +33,8 @@ export interface TurnLog {
   strats?: { id: string; unit: string }[];
   /** Psíquicos que ya han usado su poder (#78), con la tirada. */
   psychic?: { unit: string; roll: [number, number]; target: string }[];
+  /** Combate (11.ª): jugador al que le toca elegir la siguiente unidad que combate. */
+  fightPick?: number;
   /** Guardia de la hoja (11.ª): unidad → la unidad enemiga contra la que ya la ha usado para defenderse. */
   guarded?: Record<string, string>;
 }
@@ -48,7 +50,7 @@ export function enemyModels(s: GameState, unitId: string): Piece[] {
   return u ? s.pieces.filter((p) => p.faction !== u.faction) : [];
 }
 
-/** ¿Está la unidad trabada (a 1" de alguna enemiga)? */
+/** ¿Está la unidad trabada (a 2" de alguna enemiga)? */
 export function isEngaged(s: GameState, unitId: string): boolean {
   return engaged(unitModels(s, unitId), enemyModels(s, unitId));
 }
@@ -87,7 +89,7 @@ export function clampToAllowance(origin: [number, number], x: number, z: number,
 export interface MoveCheck {
   /** Movimientos ya ajustados a lo permitido. */
   moves: PieceMove[];
-  /** Miniaturas que no pueden acabar donde se soltaron (a 1" de un enemigo): vuelven a su sitio. */
+  /** Miniaturas que no pueden acabar donde se soltaron (a 2" de un enemigo): vuelven a su sitio. */
   rejected: string[];
   /** Motivo para enseñar al jugador, si algo se ajustó o rechazó. */
   message: string | null;
@@ -96,7 +98,7 @@ export interface MoveCheck {
 /**
  * Ajusta un movimiento de la fase de movimiento:
  *  - cada miniatura, como mucho a su asignación de su origen;
- *  - ninguna acaba a 1" o menos de un enemigo (si pasa, vuelve a donde estaba).
+ *  - ninguna acaba a 2" o menos de un enemigo (si pasa, vuelve a donde estaba).
  */
 /** Vuelo (#104): la unidad pasa por encima de la escenografía sólida. */
 export function flies(s: GameState, unitId: string | undefined): boolean {
@@ -135,7 +137,7 @@ export function checkMove(s: GameState, unitId: string, moves: PieceMove[], move
   rejected.push(...through);
   let message: string | null = null;
   if (through.length) message = `No se puede atravesar ${wall === "Búnker" ? "el búnker" : `los ${wall!.toLowerCase()}`}: rodéalo (arrastra en dos tramos). ${through.length === 1 ? "1 miniatura vuelve" : `${through.length} vuelven`} a su sitio.`;
-  else if (rejected.length) message = `No se puede acabar a 1" de un enemigo ni encima de otra miniatura (${rejected.length === 1 ? "1 miniatura vuelve" : `${rejected.length} vuelven`} a su sitio).`;
+  else if (rejected.length) message = `No se puede acabar a 2" de un enemigo ni encima de otra miniatura (${rejected.length === 1 ? "1 miniatura vuelve" : `${rejected.length} vuelven`} a su sitio).`;
   else if (clamped) message = `Hasta ${fmt(max)} desde donde empezó la fase.`;
   return { moves: out, rejected, message };
 }

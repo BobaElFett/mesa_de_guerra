@@ -81,7 +81,7 @@ export type UnitAbility =
   // Habilidades de ficha de la 11.ª edición (fase 30)
   | "horaGloriosa" | "destructor" | "guardiaHoja" | "alzarEstandarte" | "opticas" | "disciplina" | "sabiduria"
   | "furiaPrimera" | "cupula" | "aceleron" | "embate" | "voluntadColmena" | "neurocitos" | "solitario" | "tentaculos"
-  | "gritoMortal" | "espectaculo" | "minaFlotante" | "depredadores" | "alfa";
+  | "gritoMortal" | "espectaculo" | "minaFlotante" | "depredadores" | "alfa" | "camaleon";
 
 /**
  * Equipo opcional (#63): cambia un arma por otra en el líder, en una miniatura normal o en todas.
@@ -155,8 +155,8 @@ export const WEAPON_ABILITY_TEXT: Record<WeaponAbility["kind"], { name: string; 
   explosiva: { name: "Explosiva", text: "+1 ataque por cada 5 miniaturas de la unidad objetivo." },
   torrente: { name: "Torrente", text: "Impacta siempre, sin tirar para impactar." },
   veneno: { name: "Veneno", text: "Hiere a 4+ como mucho, aunque la Resistencia del objetivo sea mayor." },
-  indirecto: { name: "Indirecto", text: "Puede disparar a un enemigo que no ve, con −1 para impactar; el objetivo cuenta como en cobertura." },
-  precision: { name: "Precisión", text: "+1 para herir a personajes y puede apuntar a un personaje protegido por su escuadra." },
+  indirecto: { name: "Indirecto", text: "Puede disparar a un enemigo que no ve (si no se ha avanzado): el objetivo cuenta en cobertura, no se repiten las tiradas y fallan los 1–5 sin modificar (1–3 si la unidad no se ha movido y otra unidad tuya ve al objetivo)." },
+  precision: { name: "Precisión", text: "Puede apuntar a un personaje protegido por su escuadra." },
   gemela: { name: "Gemela", text: "Se puede repetir la tirada para herir." },
   fusion: { name: "Fusión X", text: "+X al daño si el objetivo está a la mitad del alcance o menos." },
   peligrosa: { name: "Peligrosa", text: "Después de atacar con ella, tira 1D6: con 1–2 la propia unidad sufre 1 herida mortal (3 si es un vehículo o monstruo)." },
@@ -350,7 +350,7 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
     id: "francotiradores", name: "Francotiradores", faction: "legion", type: "infanteria",
     profile: { M: 8, T: 4, Sv: 3, W: 2, Ld: 6, OC: 1 },
     sizes: [{ models: 3, points: 85 }], weapons: ["pistolaBolter", "rifleFrancotirador", "punosCeramita"],
-    abilities: ["infiltrador", "sigilo", "opticas"], model: "francotirador",
+    abilities: ["infiltrador", "sigilo", "camaleon", "opticas"], model: "francotirador",
     options: [
       { id: "laser", name: "Todos: fusil láser (en vez del rifle de precisión)", who: "todos", replace: "rifleFrancotirador", with: "fusilLaser", points: 0 },
     ],
@@ -648,5 +648,6 @@ export const UNIT_ABILITY_TEXT: Record<UnitAbility, { name: string; text: string
   espectaculo: { name: "Espectáculo horrendo", text: "Si al combatir destruye una unidad, cada unidad enemiga a 6\" o menos chequea moral." },
   minaFlotante: { name: "Muerte flotante", text: "Cuando ella o un enemigo acaban un movimiento, cada mina a 3\" o menos de un enemigo revienta: con 2–5 en 1D6 le hace 1 herida mortal; con un 6, D3." },
   depredadores: { name: "Depredadores adaptables", text: "Puede disparar y cargar aunque se haya retirado este turno." },
+  camaleon: { name: "Capas camaleónicas", text: "Su alcance de detección baja 3\": oculta, solo la ven los enemigos a 12\" (9\" cuerpo a tierra)." },
   alfa: { name: "Guerrero alfa", text: "Mientras lidera una escuadra, las armas de esa escuadra tienen Sostenida 1." },
 };

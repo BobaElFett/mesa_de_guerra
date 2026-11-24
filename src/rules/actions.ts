@@ -3,7 +3,7 @@ import { arrivalBlocked, LAST_ARRIVAL_ROUND, reserveUnits } from "./reserves";
 import type { Command } from "../core/commands";
 import { Faction, GameState, PLAYERS } from "../core/state";
 import { DATASHEETS } from "./datasheets";
-import { shootingOptions } from "./shooting";
+import { heavyStill, shootingOptions } from "./shooting";
 import { chargeOptions, fightOptions } from "./melee";
 import { formation } from "./leaders";
 import { grenadeTargets, hasStrat, stratBlocked, STRATAGEMS } from "./stratagems";
@@ -48,7 +48,7 @@ export function actionsAgainst(s: GameState, actor: string[], target: string): B
     for (const u of actor) {
       const o = shootingOptions(s, u);
       if (o.blocked) { out.push({ label: name(s, u), detail: o.blocked, cmd: null, blocked: o.blocked, value: 0 }); continue; }
-      const stationary = !s.turnLog.moves[u] || movedSoFar(s, u) < 0.01;
+      const stationary = heavyStill(s, u);
       for (const w of o.weapons) {
         const t = w.targets.find((x) => x.unit === target);
         const label = `${w.weapon.name}${actor.length > 1 ? ` (${name(s, u)})` : ""}`;

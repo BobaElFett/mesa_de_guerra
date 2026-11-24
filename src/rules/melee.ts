@@ -3,7 +3,7 @@ import { note, unitName } from "./history";
 import { onForbiddenTerrain } from "./geometry";
 import { hasStrat } from "./stratagems";
 import { formation, formationModels } from "./leaders";
-import { cloneState, GameState, Piece, PLAYERS } from "../core/state";
+import { BASE_RADIUS, cloneState, GameState, Piece, PLAYERS } from "../core/state";
 import { rollDice } from "../core/rng";
 import { resolveOverlaps } from "../core/placement";
 import { DATASHEETS, WEAPONS } from "./datasheets";
@@ -14,14 +14,13 @@ import { applyImpact } from "./special";
 import { battleShockTest, doctrine } from "./eleventh";
 
 // Fases de carga y combate del reglamento.
-//  - Carga: a 12" o menos de un enemigo, 2D6; si alcanza para quedar a 1", la unidad entra en contacto.
-//  - Combate: primero las que cargaron; agruparse 3", golpear con armas CC, consolidar 3".
+//  - Carga: a 12" o menos de un enemigo, 2D6; si alcanza para quedar trabada (a 2"), la unidad entra en contacto.
+//  - Combate (11.ª): se alternan, primero las que golpean primero; agruparse 3", golpear, consolidar 3".
 // Todo se resuelve dentro del estado con el RNG con semilla.
 
 export const CHARGE_RANGE = 12;
 export const PILE_IN = 3;
 const CONTACT = 0.05;          // separación al quedar «en contacto» de peana
-const SECOND_RANK = 0.5;       // segunda fila: a ½" de una amiga que está trabada
 
 export interface ChargeRecord { target: string; roll: number; need: number; success: boolean }
 
@@ -128,16 +127,35 @@ export interface FightOptions {
 
 /** Unidades que deben combatir antes: las que cargaron con éxito este turno y aún no han combatido. */
 export function pendingChargers(s: GameState): string[] {
-  const fought = new Set(s.turnLog.fought ?? []);
-  const chargers = Object.entries(s.turnLog.charges ?? {})
-    .filter(([u, c]) => c.success && !fought.has(u) && unitModels(s, u).length && engaged(unitModels(s, u), foesOf(s, u)))
-    .map(([u]) => u);
-  // Contraataque (#119): también combaten primero, aunque las hayan cargado
-  const counter = s.units
-    .filter((u) => !fought.has(u.id) && !chargers.includes(u.id) && DATASHEETS[u.datasheet].abilities.includes("contraataque")
-      && unitModels(s, u.id).length && engaged(unitModels(s, u.id), foesOf(s, u.id)))
-    .map((u) => u.id);
-  return [...chargers, ...counter];
+  return s.units.filter((u) => fightsFirst(s, u.id) && canStillFight(s, u.id)).map((u) => u.id);
+}
+
+/** Golpea primero (11.ª): ha cargado este turno o tiene la habilidad. */
+export function fightsFirst(s: GameState, unitId: string): boolean {
+  const u = s.units.find((x) => x.id === unitId);
+  return !!u && (!!s.turnLog.charges?.[unitId]?.success || DATASHEETS[u.datasheet].abilities.includes("contraataque"));
+}
+
+/** ¿Puede combatir aún esta fase? (no ha combatido y está trabada) */
+function canStillFight(s: GameState, unitId: string): boolean {
+  if ((s.turnLog.fought ?? []).includes(unitId)) return false;
+  const ms = unitModels(s, unitId);
+  return ms.length > 0 && engaged(ms, foesOf(s, unitId));
+}
+
+/**
+ * A quién le toca elegir la siguiente unidad que combate (11.ª): empieza el jugador activo y se
+ * alternan, primero con las unidades que golpean primero y luego con el resto. Si al que le toca
+ * no le queda ninguna, elige el otro.
+ */
+export function fightPicker(s: GameState): 0 | 1 | null {
+  const p = (s.turnLog.fightPick ?? s.active) as 0 | 1, o = (1 - p) as 0 | 1;
+  const of = (pl: 0 | 1, ff: boolean) => s.units.some((u) => u.faction === PLAYERS[pl] && canStillFight(s, u.id) && (!ff || fightsFirst(s, u.id)));
+  if (of(p, true)) return p;
+  if (of(o, true)) return o;
+  if (of(p, false)) return p;
+  if (of(o, false)) return o;
+  return null;
 }
 
 export function fightOptions(s: GameState, unitId: string): FightOptions {
@@ -153,15 +171,47 @@ export function fightOptions(s: GameState, unitId: string): FightOptions {
   if (fought) blocked = "Ya ha combatido esta fase.";
   else if (!targets.length) blocked = "No está trabada.";
   else {
+    const pick = fightPicker(s);
     const first = pendingChargers(s);
-    if (first.length && !first.includes(unitId)) blocked = "Primero combaten las unidades que han cargado (y las de Contraataque).";
+    if (pick !== null && PLAYERS[pick] !== unit.faction) blocked = "Le toca elegir al rival: se alternan.";
+    else if (first.length && !first.includes(unitId)) blocked = "Primero combaten las unidades que golpean primero (han cargado o tienen Golpea primero).";
   }
   return { blocked, targets, fought };
 }
 
-/** Trabada, o lo bastante cerca como para entrar al agruparse (3" + 1"). */
+/** Trabada, o lo bastante cerca como para entrar al agruparse (3" + 2"). */
 function withinReach(a: Piece[], b: Piece[]): boolean {
   return nearestGap(a, b) <= ENGAGEMENT + 1e-6;
+}
+
+/** Consolidación (11.ª): distancia máxima y alcance para buscar enemigos u objetivos. */
+export const CONSOLIDATE = 3;
+
+/**
+ * Consolidación (11.ª), 3": si sigue trabada, hacia el enemigo más cercano; si no, hacia un enemigo
+ * a 3" (que queda trabado y podrá combatir); si no, hacia un objetivo a 3". Muta `s`.
+ */
+export function consolidate(s: GameState, unitId: string) {
+  const mine = unitModels(s, unitId);
+  if (!mine.length) return;
+  const foes = s.units.filter((u) => u.faction !== s.units.find((x) => x.id === unitId)!.faction && unitModels(s, u.id).length)
+    .map((u) => ({ id: u.id, d: nearestGap(mine, unitModels(s, u.id)) })).sort((a, b) => a.d - b.d);
+  const near = foes[0];
+  if (near && near.d <= CONSOLIDATE + 1e-6) { advanceInto(s, unitId, near.id, CONSOLIDATE, true); return; }
+  // Hacia un objetivo: cada miniatura se acerca al marcador hasta quedar a su alcance
+  const obj = (s.objectives ?? []).filter((o) => !o.relic)
+    .map((o) => ({ o, d: Math.min(...mine.map((p) => Math.hypot(p.x - o.x, p.z - o.z))) }))
+    .filter((x) => x.d <= CONSOLIDATE + 3 + 1) .sort((a, b) => a.d - b.d)[0];
+  if (!obj) return;
+  const moves = mine.map((p) => {
+    const dx = obj.o.x - p.x, dz = obj.o.z - p.z, len = Math.hypot(dx, dz) || 1;
+    const travel = Math.min(CONSOLIDATE, Math.max(0, len - 2.5));
+    return { id: p.id, x: p.x + (dx / len) * travel, z: p.z + (dz / len) * travel };
+  });
+  const enemies = s.pieces.filter((p) => p.faction !== mine[0].faction).map((e) => ({ x: e.x, z: e.z, r: BASE_RADIUS[e.model] + ENGAGEMENT }));
+  const fixed = resolveOverlaps(s.pieces, moves, { avoid: () => enemies, blocked: (x, z, r) => onForbiddenTerrain(s.terrain, x, z, r + 0.05) !== null });
+  const byId = new Map(fixed.map((m) => [m.id, m]));
+  for (const p of s.pieces) { const m = byId.get(p.id); if (m) { p.x = m.x; p.z = m.z; } }
 }
 
 /**
@@ -177,15 +227,15 @@ export function fightSteps(s0: GameState, unitId: string, targetId: string) {
   return { state: s, steps: [...groups].map(([wid, attackers]) => ({ kind: "combate" as const, unit: unitId, attackers, weapon: WEAPONS[wid], target: targetId })) };
 }
 
-/** Miniaturas que golpean (las trabadas y la segunda fila), agrupadas por su arma de combate. */
+/** Miniaturas que golpean (las trabadas con el objetivo), agrupadas por su arma de combate. */
 function fightGroups(s: GameState, unitId: string, targetId: string): Map<string, Piece[]> {
   const ds = DATASHEETS[s.units.find((u) => u.id === unitId)!.datasheet];
   const foes = unitModels(s, targetId);
   const mine = unitModels(s, unitId);
+  // 11.ª: golpea cada miniatura trabada (a 2") con el objetivo
   const front = mine.filter((p) => foes.some((q) => gap(disc(p), disc(q)) <= ENGAGEMENT + 1e-6));
-  const second = mine.filter((p) => !front.includes(p) && front.some((f) => gap(disc(p), disc(f)) <= SECOND_RANK + 1e-6));
   const groups = new Map<string, Piece[]>();
-  for (const p of [...front, ...second]) for (const wid of meleeWeaponIds(ds, p)) {
+  for (const p of front) for (const wid of meleeWeaponIds(ds, p)) {
     if (!groups.has(wid)) groups.set(wid, []);
     groups.get(wid)!.push(p);
   }
@@ -201,8 +251,7 @@ export function applyFight(s: GameState, unitId: string, targetId: string): Atta
   if (o.blocked || !o.targets.some((t) => t.unit === targetId)) return null;
   advanceInto(s, unitId, targetId, PILE_IN, true);                       // agruparse
 
-  // Golpean las trabadas con el objetivo y la segunda fila (a ½" de una amiga trabada),
-  // agrupadas por arma CC (el líder puede llevar otra)
+  // Golpean las trabadas con el objetivo, agrupadas por arma de combate
   const groups = fightGroups(s, unitId, targetId);
   const entries: AttackLogEntry[] = [];
   for (const [wid, group] of groups) {
@@ -226,7 +275,8 @@ export function applyFight(s: GameState, unitId: string, targetId: string): Atta
       battleShockTest(s, e.id, 0, "Espectáculo horrendo");
   }
 
-  if (unitModels(s, targetId).length) advanceInto(s, unitId, targetId, PILE_IN, true);   // consolidar
+  consolidate(s, unitId);
   s.turnLog.fought = [...(s.turnLog.fought ?? []), unitId];
+  s.turnLog.fightPick = (1 - PLAYERS.indexOf(me.faction)) as 0 | 1;   // ahora elige el otro
   return entries;
 }

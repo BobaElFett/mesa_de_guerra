@@ -1,4 +1,4 @@
-import { floatingDeath } from "../rules/eleventh";
+import { desperateEscape, floatingDeath } from "../rules/eleventh";
 import { discardSecondary, SecondaryId, setupSecondaries } from "../rules/secondaries";
 import { applyArrival } from "../rules/reserves";
 import { syncRelic } from "../rules/relic";
@@ -173,6 +173,7 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
         if (s.rulesMode) note(s, "mover", `${unitName(s, cmd.unit)} avanza: D6 = ${d}`);
       }
       for (const u of formation(s, cmd.unit)) s.turnLog.moves[u] = move;   // el líder y su escuadra, juntos
+      if (s.rulesMode && cmd.kind === "retirarse") desperateEscape(s, cmd.unit);   // 11.ª: si está desmoralizada
       break;
     }
     case "shoot": {

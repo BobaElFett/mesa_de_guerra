@@ -2,6 +2,24 @@
 
 Lo nuevo de cada versión de *Mesa de Guerra*, de la más reciente a la primera.
 
+## 0.50 · fase 31, reglas básicas de la 11.ª I (#137–#139)
+- **Distancias y moral (#137):**
+  - Se está **trabado a 2"** (antes 1"). La carga basta con quedar a 2" y golpean todas las miniaturas trabadas (ya no hay «segunda fila»).
+  - **Coherencia:** cada miniatura a 2" de otra de su unidad y a 9" o menos de todas (ya no hacen falta dos vecinas).
+  - **Paso de moral:** en el mando chequean las unidades a la mitad o menos (antes, por debajo) **y las desmoralizadas**, que siguen así hasta superar un chequeo. Una escuadra con sus personajes chequea una sola vez, con el mejor Liderazgo.
+  - **Huida desesperada:** retirarse estando desmoralizada cuesta una tirada de peligro por miniatura.
+- **Visibilidad y disparo (#138):**
+  - **Oculto:** la infantería dentro de escenografía ligera o densa que no ha disparado este turno ni el anterior solo la ven los enemigos a 15" (12" si está cuerpo a tierra en escenografía densa; 3" menos con las capas camaleónicas de los Francotiradores).
+  - Las áreas de escenografía ligera o densa, **también barricadas y bosques**, tapan la visión salvo a quien está dentro. La escenografía expuesta (cráter, colina) solo da cobertura a la infantería que está dentro. La colina ya no da +1 (no llega a 3" de altura).
+  - *Pesada* exige no haber movido más de 3". *Indirecto*, sin visión: el objetivo cuenta en cobertura, no se repite y fallan los 1–5 sin modificar (1–3 si no se ha movido y otra unidad propia ve al objetivo).
+  - Se puede disparar a **monstruos y vehículos trabados** con tus tropas (−1). Los monstruos y vehículos trabados disparan a quien quieran (−1, salvo corto alcance a quien los traba). Las armas explosivas no disparan a unidades trabadas.
+  - *Precisión* ya no suma +1 para herir. Los impactos del disparo con 6 no son críticos.
+- **Combate (#139):**
+  - Los dos jugadores **se alternan** eligiendo la unidad que combate, empezando el activo. Primero van las que golpean primero (han cargado o tienen la habilidad).
+  - Al **consolidar** se va hacia un enemigo a 3" (que queda trabado y podrá combatir) o, si no hay, hacia un objetivo cercano.
+- Equilibrio (160 partidas IA contra IA, 1.000 puntos al azar): Legión 68 % – Enjambre 32 % (antes 79–21). Ahora la escenografía tapa más y la infantería oculta aguanta, así que el Enjambre llega mejor al combate.
+- Pruebas nuevas en `tests/core11.test.ts`.
+
 ## 0.49 · fase 30, reglas y puntos de la 11.ª edición (#133–#136)
 - **Las 28 hojas, con los números de la 11.ª (#134):** cada unidad tiene ahora los atributos, armas, equipo y puntos de su hoja equivalente de la 11.ª edición de Warhammer 40.000 (exportación de datos de Wahapedia del 23-11-2026). Los nombres siguen siendo los de *Mesa de Guerra* y las habilidades están redactadas con palabras propias. La tabla de equivalencias está en el README.
   - Cambian de tamaño: Francotiradores (3), Acechadores (5), Biomorteros (1–3), Aguijones (11 o 22) y Reventadores (3 o 6).

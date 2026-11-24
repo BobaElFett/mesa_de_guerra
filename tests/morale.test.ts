@@ -10,12 +10,12 @@ function kill(s: GameState, unit: string, n: number) {
   s.pieces = s.pieces.filter((p) => !ids.includes(p.id));
 }
 
-test("por debajo de la mitad", () => {
+test("a la mitad o menos (11.ª)", () => {
   const s = cloneState(new CommandBus(1).state);
   assert.equal(belowHalf(s, "U2"), false);
-  kill(s, "U2", 5);                                 // 5 de 10: justo la mitad, no por debajo
+  kill(s, "U2", 4);                                 // 6 de 10
   assert.equal(belowHalf(s, "U2"), false);
-  kill(s, "U2", 1);                                 // 4 de 10
+  kill(s, "U2", 1);                                 // 5 de 10: justo la mitad ya cuenta
   assert.equal(belowHalf(s, "U2"), true);
 });
 

@@ -186,3 +186,24 @@ export function shadowInTheWarp(s: GameState) {
     if (!ok) for (const id of group) s.units.find((x) => x.id === id)!.shocked = true;
   }
 }
+
+/**
+ * Huida desesperada (11.ª): una formación desmoralizada que se retira hace una tirada de peligro
+ * por miniatura (1–2: 1 herida mortal; 3 si es vehículo o monstruo). Devuelve las bajas.
+ */
+export function desperateEscape(s: GameState, unitId: string): number {
+  const group = formation(s, unitId);
+  if (!group.some((id) => s.units.find((u) => u.id === id)?.shocked)) return 0;
+  let dead = 0;
+  note(s, "mover", `${unitName(s, unitId)} huye a la desesperada (desmoralizada): una tirada de peligro por miniatura`);
+  for (const id of group) {
+    const n = unitModels(s, id).length;
+    if (!n) continue;
+    const big = DATASHEETS[s.units.find((u) => u.id === id)!.datasheet].type === "vehiculo" || DATASHEETS[s.units.find((u) => u.id === id)!.datasheet].type === "monstruo";
+    const [dice, rng] = rollDice(s.rng, n, 6);
+    s.rng = rng;
+    const fails = dice.filter((v) => v <= 2).length;
+    if (fails) dead += mortalWounds(s, id, fails * (big ? 3 : 1), "huida desesperada").length;
+  }
+  return dead;
+}

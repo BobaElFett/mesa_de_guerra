@@ -8,14 +8,14 @@ import { CommandBus, PieceMove } from "../core/commands";
 import { BASE_RADIUS, Faction, GameState, Piece, PLAYERS, TERRAIN, TerrainPiece } from "../core/state";
 import { DATASHEETS, hasAbility, WEAPONS } from "../rules/datasheets";
 import { allowance, checkMove, flies, isEngaged, movedSoFar, unitModels } from "../rules/movement";
-import { shootingOptions } from "../rules/shooting";
+import { heavyStill, shootingOptions } from "../rules/shooting";
 import { chargeOptions, fightOptions } from "../rules/melee";
 import { formation, formationModels, partnerOf, underCommand } from "../rules/leaders";
 import { OBJECTIVE_RADIUS, OBJECTIVE_RANGE, objectiveStatus } from "../rules/missions";
 import { canCarry, PICK_RANGE, RELIC_R } from "../rules/relic";
 import { grenadeTargets, hasStrat, stratBlocked } from "../rules/stratagems";
 import { isPsyker, powerOf, psychicBlocked, psychicTargets } from "../rules/psychic";
-import { crossesSolid, disc, gap, onForbiddenTerrain, onHill, sight } from "../rules/geometry";
+import { crossesSolid, disc, gap, onForbiddenTerrain, sight } from "../rules/geometry";
 import {
   attackValue, centroid, expectedAttack, groupGap, meleeExpected, p2D6, pointsPerWound, unitCost,
 } from "./evaluate";
@@ -235,7 +235,7 @@ function scorePosition(s: GameState, unitId: string, dx: number, dz: number, kin
 
   // Ataque que tendrá a su alcance
   if (role !== "melee") {
-    const stationary = dx === 0 && dz === 0;
+    const stationary = Math.hypot(dx, dz) <= 3;   // Pesada (11.ª): hasta 3"
     let best = 0;
     for (const { w, n } of rangedWeapons(s, unitId)) {
       if (kind === "retirarse" || (kind === "avanzar" && !hasAbility(w, "asalto"))) continue;
@@ -249,9 +249,6 @@ function scorePosition(s: GameState, unitId: string, dx: number, dz: number, kin
       }
       best += wb;
     }
-    // Colina (#125): desde arriba se impacta mejor (+1, ~un tercio más de impactos)
-    const high = models.filter((m) => onHill(s.terrain, m.x, m.z)).length * 2 > models.length;
-    if (high && best > 0) { best *= 1.25; if (!why) why = "en alto"; }
     score += best * (role === "heavy" ? W.heavyMult : 1);
     if (best > 0 && !why) why = "dispara";
   }
@@ -485,7 +482,7 @@ function bestShots(s: GameState, f: Faction, W?: Weights): ShotPick[] {
   for (const u of s.units.filter((x) => x.faction === f && alive(s, x.id))) {
     const o = shootingOptions(s, u.id);
     if (o.blocked) continue;
-    const stationary = !s.turnLog.moves[u.id] || movedSoFar(s, u.id) < 0.01;
+    const stationary = heavyStill(s, u.id);
     for (const w of o.weapons) {
       if (w.blocked || w.fired) continue;
       for (const t of w.targets) {
