@@ -1,4 +1,4 @@
-import { nearAura } from "./auras";
+import { ledBy } from "./leaders";
 import { note, unitName } from "./history";
 import { GameState, PLAYERS } from "../core/state";
 import { rollDice } from "../core/rng";
@@ -9,16 +9,17 @@ import { unitModels } from "./movement";
 // Moral y sinapsis del reglamento.
 //  - En la fase de mando, las unidades del jugador activo por debajo de la mitad chequean moral:
 //    2D6 ≥ L. Si fallan quedan desmoralizadas hasta su siguiente fase de mando (CO 0, sin PM).
-//  - Sinapsis: las unidades del Enjambre a 12" de una unidad Sináptica superan el chequeo solas.
+//  - Sinapsis (11.ª): las unidades del Enjambre a 6" de una miniatura sináptica chequean con 3D6
+//    (y suman +1 a la Fuerza en combate, ver shooting.ts).
 
-export const SYNAPSE_RANGE = 12;
+export const SYNAPSE_RANGE = 6;
 
 export interface MoraleEntry {
   turn: number;
   player: number;
   unit: string;
-  /** Tirada de 2D6, o null si superó por sinapsis. */
-  dice: [number, number] | null;
+  /** Dados tirados (2D6, o 3D6 en sinapsis); null en partidas antiguas que superaban por sinapsis. */
+  dice: number[] | null;
   need: number;
   passed: boolean;
 }
@@ -36,14 +37,27 @@ export function belowHalf(s: GameState, unitId: string): boolean {
   return models.length < u.startingModels / 2;
 }
 
-/** ¿Está esta unidad del Enjambre a 12" de una unidad Sináptica viva (que no sea ella misma)? */
-export function inSynapse(s: GameState, unitId: string): boolean {
+/** ¿Tiene la unidad alguna miniatura a 6" (sinapsis) de alguna de las unidades que cumplen `ok`? */
+function within(s: GameState, unitId: string, ok: (id: string) => boolean): boolean {
   const u = s.units.find((x) => x.id === unitId);
   if (!u || u.faction !== "swarm") return false;
   const mine = unitModels(s, unitId);
-  return s.units.some((o) => o.id !== unitId && o.faction === "swarm"
-    && DATASHEETS[o.datasheet].abilities.includes("sinaptico")
+  return s.units.some((o) => o.faction === "swarm" && ok(o.id)
     && unitModels(s, o.id).some((q) => mine.some((p) => gap(disc(p), disc(q)) <= SYNAPSE_RANGE + 1e-6)));
+}
+
+const hasAb = (s: GameState, id: string, a: string) =>
+  (DATASHEETS[s.units.find((x) => x.id === id)!.datasheet].abilities as string[]).includes(a);
+
+/** ¿Es sináptica la unidad? (Sináptico, o Neurocitos en sinapsis de una unidad sináptica de verdad) */
+export function synapticUnit(s: GameState, unitId: string): boolean {
+  if (hasAb(s, unitId, "sinaptico")) return true;
+  return hasAb(s, unitId, "neurocitos") && within(s, unitId, (id) => hasAb(s, id, "sinaptico"));
+}
+
+/** ¿Está esta unidad del Enjambre a 6" de una miniatura sináptica (también ella misma)? */
+export function inSynapse(s: GameState, unitId: string): boolean {
+  return within(s, unitId, (id) => synapticUnit(s, id));
 }
 
 /** Aterrador (#62): ¿hay un enemigo con Aterrador a 6" o menos? Entonces −1 al Liderazgo. */
@@ -51,15 +65,10 @@ export const TERROR_RANGE = 6;
 function nearTerror(s: GameState, unitId: string): boolean {
   const u = s.units.find((x) => x.id === unitId)!;
   const mine = unitModels(s, unitId);
-  return s.units.some((o) => o.faction !== u.faction && DATASHEETS[o.datasheet].abilities.includes("aterrador")
+  return s.units.some((o) => o.faction !== u.faction && (DATASHEETS[o.datasheet].abilities as string[]).includes("aterrador")
     && unitModels(s, o.id).some((q) => mine.some((p) => gap(disc(p), disc(q)) <= TERROR_RANGE + 1e-6)));
 }
 
-/** ¿Es Sináptica la propia unidad? (también supera sus chequeos) */
-function isSynaptic(s: GameState, unitId: string): boolean {
-  const u = s.units.find((x) => x.id === unitId);
-  return !!u && DATASHEETS[u.datasheet].abilities.includes("sinaptico");
-}
 
 /**
  * Al empezar la fase de mando del jugador activo: se recuperan sus desmoralizadas y chequean
@@ -73,24 +82,15 @@ export function runMoraleTests(s: GameState): MoraleEntry[] {
     u.shocked = false;
     if (u.reserve || !belowHalf(s, u.id)) continue;   // en reserva no chequea
     const need = DATASHEETS[u.datasheet].profile.Ld + (nearTerror(s, u.id) ? 1 : 0);
-    if (isSynaptic(s, u.id) || inSynapse(s, u.id)) {
-      out.push({ turn: s.turn, player: s.active, unit: u.id, dice: null, need, passed: true });
-      continue;
-    }
-    let [d, rng] = rollDice(s.rng, 2, 6);
+    // Sinapsis (11.ª): 3D6
+    const [d, rng] = rollDice(s.rng, inSynapse(s, u.id) ? 3 : 2, 6);
     s.rng = rng;
-    // Estandarte (#116): repite el chequeo fallado
-    if (d[0] + d[1] < need && nearAura(s, u.id, "estandarte")) {
-      [d, rng] = rollDice(s.rng, 2, 6);
-      s.rng = rng;
-      note(s, "moral", `${unitName(s, u.id)} repite la moral junto al estandarte`, s.active);
-    }
-    const passed = d[0] + d[1] >= need;
+    const passed = d.reduce((a, b) => a + b, 0) >= need;
     if (!passed) u.shocked = true;
-    out.push({ turn: s.turn, player: s.active, unit: u.id, dice: [d[0], d[1]], need, passed });
+    out.push({ turn: s.turn, player: s.active, unit: u.id, dice: d, need, passed });
   }
   s.moraleLog = [...(s.moraleLog ?? []), ...out];
-  for (const m of out) note(s, "moral", `${unitName(s, m.unit)} ${m.dice === null ? "supera la moral por sinapsis" : `chequea moral: ${m.dice[0] + m.dice[1]} (necesita ${m.need}) — ${m.passed ? "aguanta" : "desmoralizada"}`}`, m.player as 0 | 1);
+  for (const m of out) note(s, "moral", `${unitName(s, m.unit)} ${m.dice === null ? "supera la moral por sinapsis" : `chequea moral con ${m.dice.length}D6: ${m.dice.reduce((a, b) => a + b, 0)} (necesita ${m.need}) — ${m.passed ? "aguanta" : "desmoralizada"}`}`, m.player as 0 | 1);
   return out;
 }
 
@@ -98,5 +98,5 @@ export function runMoraleTests(s: GameState): MoraleEntry[] {
 export function objectiveControl(s: GameState, unitId: string): number {
   const u = s.units.find((x) => x.id === unitId);
   if (!u || u.shocked) return 0;
-  return (DATASHEETS[u.datasheet].profile.OC + (nearAura(s, unitId, "estandarte") ? 1 : 0)) * unitModels(s, unitId).length;
+  return (DATASHEETS[u.datasheet].profile.OC + (ledBy(s, unitId, "estandarte") ? 1 : 0)) * unitModels(s, unitId).length;
 }

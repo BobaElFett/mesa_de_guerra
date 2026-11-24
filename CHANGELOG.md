@@ -2,6 +2,30 @@
 
 Lo nuevo de cada versión de *Mesa de Guerra*, de la más reciente a la primera.
 
+## 0.49 · fase 30, reglas y puntos de la 11.ª edición (#133–#136)
+- **Las 28 hojas, con los números de la 11.ª (#134):** cada unidad tiene ahora los atributos, armas, equipo y puntos de su hoja equivalente de la 11.ª edición de Warhammer 40.000 (exportación de datos de Wahapedia del 23-11-2026). Los nombres siguen siendo los de *Mesa de Guerra* y las habilidades están redactadas con palabras propias. La tabla de equivalencias está en el README.
+  - Cambian de tamaño: Francotiradores (3), Acechadores (5), Biomorteros (1–3), Aguijones (11 o 22) y Reventadores (3 o 6).
+  - Algunas unidades cambian de papel para encajar con su equivalente: la **Mente del Enjambre** es un guerrero alfa que da Sostenida 1 a su escuadra; la **Bestia Guardiana** grita con bioplasma; los **Reventadores** son minas flotantes; los **Aguijones** propagan la sinapsis.
+  - El poder psíquico de 2D6 desaparece: el Psíquico dispara *Golpe mental* (arma psíquica) y levanta la *Cúpula de fuerza*.
+- **Motor de 11.ª (#133):**
+  - Tiradas D3+3, D6+1, 2D6…
+  - La **cobertura** ya no mejora la salvación: empeora en 1 la HP del que dispara.
+  - **Corto alcance:** la infantería dispara o sus pistolas o sus demás armas (los vehículos y monstruos, todas).
+  - Habilidades de arma nuevas: *Gemela*, *Fusión X*, *Peligrosa*, *Ataques extra*, *Anti-X Y+*, *Ignora cobertura* y *Psíquica*. En combate cada miniatura usa su mejor arma más las de Ataques extra.
+- **Habilidades y reglas de ejército (#135):**
+  - Habilidades de ficha nuevas: Hora gloriosa, Destructor, Guardia de la hoja, Honor de la compañía, Alzar el estandarte (objetivos asegurados), Botiquín (D3+1 heridas), Disciplina bólter, Sabiduría de los antiguos, Furia de la Primera, Cúpula de fuerza, Asalto a todo gas, Embate, Voluntad de la colmena (estratagemas 1 PM más baratas), Neurocitos, Operativo solitario, Tentáculos devoradores, Grito de muerte, Espectáculo horrendo, Muerte flotante, Depredadores adaptables y Guerrero alfa.
+  - Vehículos y monstruos pueden estar *Dañados* (−1 para impactar) y estallar al caer (*Muerte explosiva*).
+  - Desaparecen las habilidades que no tienen equivalente: Al mando, Blindado, Turbo, Aterrador, Escudo vivo, Devorar, Estallido y Voluntad (+1 en combate).
+  - **Sinapsis** a 6": moral con 3D6 y +1 a la Fuerza en combate.
+  - Reglas de ejército: **doctrinas de combate** de la Legión (Gladius), **instintos de enjambre** (Sostenida 1 contra infantería) y la **Sombra en la disformidad** del Enjambre. La ficha de cada unidad muestra las que tiene activas.
+- **Listas de 1.000 puntos (#136):**
+  - *Incursión* (1.000 puntos) es el tamaño por defecto; *Escaramuza* (500) sigue disponible.
+  - Como mucho 2 unidades con el mismo nombre (4 de línea de batalla); algunas cuestan más a partir de la 3.ª igual. Se acaba el límite de unidades grandes.
+  - Una escuadra puede llevar un líder y un personaje de apoyo (Médico, Portaestandarte), que despliegan detrás de ella.
+  - Despliegue profundo a más de 8".
+  - Listas al azar, de prueba, desafíos, tutorial, ayuda y Códice actualizados.
+- **Equilibrio:** en 200 partidas IA contra IA con listas al azar de 1.000 puntos, la Legión gana el 79 % (el Enjambre necesita unos 1.200 puntos para igualar). Con los números de la 11.ª tal cual, la IA saca más partido de la Legión. Los puntos no se han tocado: hacen falta más cambios para igualarlo.
+
 ## 0.48 · fase 29, miniaturas mejoradas (#130–#132)
 - **Acabado (#130):** las miniaturas llevan un sombreado horneado: más oscuras abajo, entre las piernas y bajo el cuerpo, y más claras arriba, como una miniatura pintada. Cada pieza tiene una leve variación de tono para que el color plano no parezca plástico. La escenografía recibe el mismo sombreado, más suave. Las peanas tienen ahora un bisel en el borde, manchas de hierba, piedrecitas y un par de matas.
 - **Legión (#131):** casco redondeado con frontal de rejilla, dos lentes que brillan y tomas de aire a los lados. Brazos y piernas son ahora redondeados, con codos. Rodilleras en cúpula, cartucheras en el cinturón y un sello de pureza (lacre y pergamino) en sargentos y capitanes. El Ingeniero va de rojo entero.

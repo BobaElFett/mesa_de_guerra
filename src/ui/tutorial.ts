@@ -99,7 +99,7 @@ const STEPS2: Step[] = [
 // --- Lección 3 (#109): órdenes secundarias, infiltración, precisión y vuelo -------------------
 export const LESSON3_LEGION: ArmyList = { name: "Lección 3", units: [
   { datasheet: "capitan", models: 1, leads: 1 }, { datasheet: "asalto", models: 10 },
-  { datasheet: "francotiradores", models: 5 },
+  { datasheet: "francotiradores", models: 3 },
 ] };
 export const LESSON3_SWARM: ArmyList = { name: "Lección 3", units: [
   { datasheet: "mente", models: 1, leads: 1 }, { datasheet: "garras", models: 20 }, { datasheet: "gargolas", models: 10 },

@@ -11,7 +11,7 @@ import { outcome } from "../src/rules/missions";
 import { invariants } from "./fullgame.test";
 
 const LEG: ArmyList = { units: [{ datasheet: "capitan", models: 1, leads: 1 }, { datasheet: "asalto", models: 10 }, { datasheet: "exterminadores", models: 5, reserve: true }] };
-const SWA: ArmyList = { units: [{ datasheet: "tirano", models: 1 }, { datasheet: "garras", models: 20 }, { datasheet: "acechadores", models: 3, reserve: true }, { datasheet: "escupidores", models: 10 }] };
+const SWA: ArmyList = { units: [{ datasheet: "tirano", models: 1 }, { datasheet: "garras", models: 20 }, { datasheet: "acechadores", models: 5, reserve: true }, { datasheet: "escupidores", models: 10 }] };
 
 function game(mission: "tomar" | "caza" = "tomar", seed = 41) {
   const bus = new CommandBus(seed);

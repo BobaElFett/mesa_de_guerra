@@ -3,15 +3,16 @@ import assert from "node:assert/strict";
 import { CommandBus } from "../src/core/commands";
 import { ArmyList, validateList } from "../src/rules/armies";
 import { cloneState, GameState } from "../src/core/state";
-import { applyShoot } from "../src/rules/shooting";
+import { applyShoot, attackInput, shootingOptions } from "../src/rules/shooting";
+import { inSynapse } from "../src/rules/morale";
+import { WEAPONS } from "../src/rules/datasheets";
 import { applyFight, pendingChargers } from "../src/rules/melee";
 import { repairVehicles } from "../src/rules/special";
-import { woundTarget } from "../src/rules/attack";
 import { aiPlayPhase } from "../src/ai/tactics";
 import { invariants } from "./fullgame.test";
 
 const LEG: ArmyList = { units: [{ datasheet: "capitan", models: 1 }, { datasheet: "ingeniero", models: 1 }, { datasheet: "guardiaHonor", models: 3 }, { datasheet: "tanque", models: 1 }] };
-const SWA: ArmyList = { units: [{ datasheet: "mente", models: 1 }, { datasheet: "lictor", models: 1 }, { datasheet: "aguijones", models: 20 }, { datasheet: "garras", models: 20 }] };
+const SWA: ArmyList = { units: [{ datasheet: "mente", models: 1 }, { datasheet: "lictor", models: 1 }, { datasheet: "aguijones", models: 22 }, { datasheet: "garras", models: 20 }] };
 
 function game(seed = 2, clear = true) {
   const bus = new CommandBus(seed);
@@ -31,45 +32,63 @@ test("listas válidas", () => {
   assert.deepEqual(validateList(SWA, "swarm"), []);
 });
 
-test("Veneno: hiere a 4+ como mucho", () => {
-  assert.equal(woundTarget(3, 10), 6);
+test("Neurocitos: los Aguijones en sinapsis también dan sinapsis", () => {
   const bus = game();
-  while (!(bus.state.active === 1 && bus.state.phase === "combate")) bus.dispatch({ type: "nextPhase" });
   const s = cloneState(bus.state);
-  const a = uid(s, "aguijones"), t = uid(s, "tanque");
-  away(s, [a, t]);
-  place(s, t, 0, 3); place(s, a, -3, 0.6);
-  const out = applyFight(s, a, t);
-  assert.ok(out && out.length);
-  const r = out![0].result;
-  assert.ok(r.woundRolls.length > 0);
-  assert.equal(r.wounds, r.woundRolls.filter((x) => x >= 4).length);
+  const a = uid(s, "aguijones"), g = uid(s, "garras"), m = uid(s, "mente");
+  away(s, [a, g, m]);
+  place(s, a, 0, 0); place(s, g, 0, 6.5); place(s, m, 0, -5);
+  assert.equal(inSynapse(s, a), true);
+  assert.equal(inSynapse(s, g), true);       // por los Aguijones, a 6" de ellas
+  place(s, m, 25, -15);
+  assert.equal(inSynapse(s, a), false);
+  assert.equal(inSynapse(s, g), false);
 });
 
-test("Sigilo: −1 para impactar al Acechador oculto con disparos", () => {
+test("Sigilo: los disparos contra el Acechador oculto lo tratan en cobertura (−1 a la HP); Operativo solitario: solo a 12\"", () => {
   const bus = game();
   while (bus.state.phase !== "disparo") bus.dispatch({ type: "nextPhase" });
   const s = cloneState(bus.state);
   const l = uid(s, "lictor"), g = uid(s, "garras"), tank = uid(s, "tanque");
   away(s, [l, g, tank]);
-  place(s, tank, 0, 10); place(s, l, -2, -4); place(s, g, 8, -4);
-  const vsL = applyShoot(cloneState(s), tank, "canonBatalla", l)!.result;
-  const vsG = applyShoot(cloneState(s), tank, "canonBatalla", g)!.result;
-  // Cañón de batalla a 3+: contra el Acechador hace falta 4+
-  assert.equal(vsL.hits, vsL.hitRolls.filter((x) => x >= 4).length);
-  assert.equal(vsG.hits, vsG.hitRolls.filter((x) => x >= 3).length);
+  place(s, tank, 0, 4); place(s, l, -2, -4); place(s, g, 8, -4);
+  const vsL = applyShoot(cloneState(s), tank, "autocanonTanque", l)!;
+  const vsG = applyShoot(cloneState(s), tank, "autocanonTanque", g)!;
+  assert.equal(vsL.cover, true);
+  assert.equal(vsL.result.hits, vsL.result.hitRolls.filter((x) => x >= 4).length);
+  assert.equal(vsG.result.hits, vsG.result.hitRolls.filter((x) => x >= 3).length);
+  place(s, l, -2, -14);
+  const t = shootingOptions(s, tank).weapons.find((w) => w.weapon.id === "autocanonTanque")!.targets.find((x) => x.unit === l)!;
+  assert.match(t.blocked ?? "", /solitario/);
 });
 
-test("Contraataque: la Guardia de Honor combate primero aunque la hayan cargado", () => {
+test("Golpea primero: el Acechador oculto combate primero aunque lo hayan cargado", () => {
+  const bus = game();
+  while (!(bus.state.active === 0 && bus.state.phase === "combate")) bus.dispatch({ type: "nextPhase" });
+  const s = cloneState(bus.state);
+  const gh = uid(s, "guardiaHonor"), l = uid(s, "lictor");
+  away(s, [gh, l]);
+  place(s, gh, 0, 1.3); place(s, l, 0.6, -0.4);
+  s.turnLog.charges = { [gh]: { success: true, roll: 8, need: 3, target: l } };
+  const first = pendingChargers(s);
+  assert.ok(first.includes(gh) && first.includes(l));
+});
+
+test("Guardia de la hoja: −1 para impactar a quien la ataca antes de que golpee; si golpea primero, +1", () => {
   const bus = game();
   while (!(bus.state.active === 1 && bus.state.phase === "combate")) bus.dispatch({ type: "nextPhase" });
   const s = cloneState(bus.state);
   const gh = uid(s, "guardiaHonor"), g = uid(s, "garras");
   away(s, [gh, g]);
   place(s, gh, 0, 1.3); place(s, g, -3, 0);
-  s.turnLog.charges = { [g]: { success: true, roll: 8, target: gh } } as never;
-  const first = pendingChargers(s);
-  assert.ok(first.includes(g) && first.includes(gh));
+  const atk = attackInput(s, "combate", g, s.pieces.filter((p) => p.unit === g), WEAPONS.garras, gh);
+  assert.ok(atk.notes.some((n) => /Guardia de la hoja/.test(n)));
+  assert.equal(atk.hitMod, -1);
+  applyFight(s, g, gh);
+  assert.equal(s.turnLog.guarded?.[gh], g);
+  // Ya la ha usado para defenderse: al golpear no suma
+  const back = attackInput(s, "combate", gh, s.pieces.filter((p) => p.unit === gh), WEAPONS.espadaMaestra, g);
+  assert.equal(back.hitMod, 0);
 });
 
 test("Reparar: el Ingeniero cura D3 heridas al tanque cercano al empezar el mando", () => {

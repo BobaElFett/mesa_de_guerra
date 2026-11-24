@@ -3,11 +3,11 @@ import assert from "node:assert/strict";
 import { CommandBus } from "../src/core/commands";
 import { cloneState, GameState } from "../src/core/state";
 import { TEST_LEGION, TEST_SWARM, ArmyList } from "../src/rules/armies";
-import { applyShoot, shootingOptions } from "../src/rules/shooting";
+import { applyShoot, attackInput, shootingOptions } from "../src/rules/shooting";
+import { WEAPONS } from "../src/rules/datasheets";
 import { applyCharge, applyFight } from "../src/rules/melee";
 import { applyStratagem, stratBlocked } from "../src/rules/stratagems";
 import { onHill } from "../src/rules/geometry";
-import { nearAura } from "../src/rules/auras";
 import { randomMap } from "../src/rules/maps";
 
 const SWA: ArmyList = { units: [{ datasheet: "mente", models: 1 }, { datasheet: "garras", models: 20 }, { datasheet: "garras", models: 10 }, { datasheet: "escupidores", models: 10 }] };
@@ -40,6 +40,7 @@ test("Fuego sostenido: cada 6 para impactar da un impacto más", () => {
   const bus = game();
   while (bus.state.phase !== "disparo") bus.dispatch({ type: "nextPhase" });
   const s = cloneState(bus.state);
+  s.objectives = [];   // sin objetivos: que no cuente la Disciplina bólter
   const fp = units(s, "asalto")[1], g = units(s, "garras")[0];
   away(s, [fp, g]); place(s, fp, 0, 10); place(s, g, -6, -4);
   const plain = cloneState(s);
@@ -82,6 +83,7 @@ test("Colina: la miniatura en alto suma +1 al disparar a quien no lo está", () 
   bus.dispatch({ type: "addTerrain", kind: "colina", x: 0, z: 12, rot: 0 } as never);
   while (bus.state.phase !== "disparo") bus.dispatch({ type: "nextPhase" });
   const s = cloneState(bus.state);
+  s.objectives = [];   // sin objetivos: que no cuente la Disciplina bólter
   const fp = units(s, "asalto")[1], g = units(s, "garras")[0];
   away(s, [fp, g]);
   place(s, fp, -2.5, 12); place(s, g, -6, -4);
@@ -97,14 +99,19 @@ test("Colina: la miniatura en alto suma +1 al disparar a quien no lo está", () 
   assert.ok(!s.pieces.filter((p) => p.unit === fp).some((p) => onHill(s.terrain, p.x, p.z)));
 });
 
-test("Voluntad de la colmena: +1 para impactar en combate cerca de la Mente", () => {
-  const bus = game(SWA);
+test("Guerrero alfa: la escuadra que lidera la Mente tiene Sostenida 1; la sinapsis da +1 a la Fuerza en combate", () => {
+  const led: ArmyList = { units: [{ datasheet: "mente", models: 1, leads: 1 }, { datasheet: "garras", models: 20 }, { datasheet: "garras", models: 10 }] };
+  const bus = game(led);
   const s = cloneState(bus.state);
-  const g = units(s, "garras")[0], m = units(s, "mente")[0];
-  place(s, g, 0, 0); place(s, m, 20, 0);
-  assert.equal(nearAura(s, g, "voluntad"), false);
-  place(s, m, -3, 0);
-  assert.equal(nearAura(s, g, "voluntad"), true);
+  const [g, other] = units(s, "garras"), a = units(s, "asalto")[0];
+  const inp = attackInput(s, "combate", g, s.pieces.filter((p) => p.unit === g), WEAPONS.garras, a);
+  assert.ok(inp.weapon.abilities.some((x) => x.kind === "sostenida"));
+  assert.equal(inp.weapon.strength, WEAPONS.garras.strength + 1);   // en sinapsis (la Mente va con ellas)
+  place(s, other, 25, 0);
+  const far = attackInput(s, "combate", other, s.pieces.filter((p) => p.unit === other), WEAPONS.garras, a);
+  assert.ok(inp.notes.some((n) => /Guerrero alfa/.test(n)));
+  assert.ok(!far.notes.some((n) => /Guerrero alfa/.test(n)));   // (Sostenida sí, por Instintos de enjambre)
+  assert.equal(far.weapon.strength, WEAPONS.garras.strength);
 });
 
 test("los mapas al azar pueden tener colinas", () => {

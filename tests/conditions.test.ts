@@ -30,7 +30,7 @@ function at(dist: number, conditions?: "noche" | "tormenta") {
 
 test("noche: no se dispara a más de 24\"", () => {
   const day = at(28), night = at(28, "noche"), close = at(22, "noche");
-  const target = (x: ReturnType<typeof at>) => shootingOptions(x.bus.state, x.fp).weapons[0].targets.find((t) => t.unit === x.gr)!;
+  const target = (x: ReturnType<typeof at>) => shootingOptions(x.bus.state, x.fp).weapons.find((w) => w.weapon.id === "cohetesFrag")!.targets.find((t) => t.unit === x.gr)!;
   assert.equal(day.bus.state.phase, "disparo");
   assert.ok(!target(day).blocked, target(day).blocked);
   assert.match(target(night).blocked ?? "", /noche/);
@@ -40,13 +40,11 @@ test("noche: no se dispara a más de 24\"", () => {
 test("tormenta: −1 a impactar a más de 12\" (se ve en la tirada)", () => {
   const far = at(20, "tormenta"), near = at(8, "tormenta");
   for (const [x, mod] of [[far, -1], [near, 0]] as const) {
-    const w = shootingOptions(x.bus.state, x.fp).weapons[0];
-    x.bus.dispatch({ type: "shoot", unit: x.fp, weapon: w.weapon.id, target: x.gr });
+    x.bus.dispatch({ type: "shoot", unit: x.fp, weapon: "cohetesFrag", target: x.gr });
     const e = x.bus.state.combatLog.at(-1)!;
-    // Cañón pesado HP3 y Pesada (+1 sin moverse): 2+ normalmente, 3+ con tormenta a más de 12".
-    // Sostenida 1: cada 6 da un impacto más. (Sin repetir unos: no hay Capitán al mando.)
+    // Lanzacohetes de fragmentación HP3 y Pesada (+1 sin moverse): 2+ normalmente, 3+ con tormenta a más de 12".
     const need = mod ? 3 : 2;
-    const expect = e.result.hitRolls.filter((r) => r >= need).length + e.result.hitRolls.filter((r) => r === 6).length;
+    const expect = e.result.hitRolls.filter((r) => r >= need).length;
     assert.equal(e.result.hits, expect, `tormenta ${mod}: ${e.result.hitRolls}`);
   }
 });

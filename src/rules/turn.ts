@@ -2,7 +2,8 @@ import { LAST_ARRIVAL_ROUND, loseLateReserves } from "./reserves";
 import { note } from "./history";
 import type { GameState } from "../core/state";
 import { runMoraleTests } from "./morale";
-import { scoreObjectives } from "./missions";
+import { scoreObjectives, updateSecured } from "./missions";
+import { forceDomes, selectDoctrine, shadowInTheWarp } from "./eleventh";
 import { drawSecondaries, scoreSecondaries } from "./secondaries";
 import { healLedSquads, repairVehicles } from "./special";
 
@@ -16,7 +17,7 @@ export const MAX_ROUNDS = 5;
 
 export const PHASE_INFO: Record<Phase, { name: string; hint: string }> = {
   despliegue: { name: "Despliegue", hint: "Coloca tus unidades dentro de tu zona (la franja de tu color). Los dos bandos pueden recolocar; Empezar partida pasa al mando de la ronda 1." },
-  mando: { name: "Mando", hint: "Los dos bandos ganan 1 PM. Las unidades por debajo de la mitad chequean moral (2D6 ≥ L); la sinapsis las salva." },
+  mando: { name: "Mando", hint: "Los dos bandos ganan 1 PM. Las unidades por debajo de la mitad chequean moral (2D6 ≥ L; 3D6 en sinapsis)." },
   movimiento: { name: "Movimiento", hint: "Mueve cada unidad hasta su M, avanza (M + D6) o retírate del combate." },
   disparo: { name: "Disparo", hint: "Cada unidad no trabada elige objetivos visibles al alcance y dispara." },
   carga: { name: "Carga", hint: "Una unidad a 12\" de un enemigo puede cargar: 2D6 para llegar a 1\"." },
@@ -30,6 +31,7 @@ function enterCommand(s: GameState) {
   if (s.rulesMode) note(s, "turno", `Ronda ${s.turn}: turno ${s.active === 0 ? "de la Legión Astral" : "del Enjambre"} (PM ${s.cp[s.active]})`);
   if (s.rulesMode) { healLedSquads(s); repairVehicles(s); }
   if (s.rulesMode) runMoraleTests(s);
+  if (s.rulesMode) { selectDoctrine(s); shadowInTheWarp(s); }
   scoreObjectives(s, "inicio");
   drawSecondaries(s);
 }
@@ -38,6 +40,7 @@ function enterCommand(s: GameState) {
 function enterMovement(s: GameState) {
   const f = s.active === 0 ? "legion" : "swarm";
   s.turnLog.origins = Object.fromEntries(s.pieces.filter((p) => p.faction === f).map((p) => [p.id, [p.x, p.z]]));
+  if (s.rulesMode) forceDomes(s);
 }
 
 /** Pasa a la fase siguiente (muta `s`, que ya es una copia). */
@@ -45,6 +48,7 @@ export function advancePhase(s: GameState) {
   if (s.gameOver) return;
   if (s.phase === "despliegue") { startBattle(s); return; }
   const i = PHASES.indexOf(s.phase);
+  if (s.rulesMode) updateSecured(s, s.phase === "movimiento");   // Alzar el estandarte, al acabar el movimiento
   if (i < PHASES.length - 1) {
     s.phase = PHASES[i + 1];
     if (s.phase === "movimiento") enterMovement(s);
@@ -67,6 +71,7 @@ function startBattle(s: GameState) {
   s.phase = "mando";
   s.turnLog = { moves: {}, origins: {} };
   drawSecondaries(s);
+  if (s.rulesMode) selectDoctrine(s);
 }
 
 /** Salta al turno del otro jugador, a su fase de mando. En mesa libre no hay límite de rondas. */

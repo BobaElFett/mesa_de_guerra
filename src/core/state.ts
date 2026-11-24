@@ -72,6 +72,10 @@ export interface Unit {
   veteran?: boolean;
   /** Índice de su entrada en la lista de ejército (campaña, #70). */
   entry?: number;
+  /** Habilidades de una vez por partida ya gastadas (Hora gloriosa…). */
+  spent?: string[];
+  /** Cúpula de fuerza (11.ª): invulnerable 4+ hasta el comienzo del turno indicado (ronda·2 + jugador). */
+  domeUntil?: number;
 }
 
 export type TerrainKind = "ruina" | "ruinaGrande" | "cajas" | "crater" | "bunker" | "barricada" | "bosque" | "colina";
@@ -138,6 +142,12 @@ export interface GameState {
   /** Estadísticas por unidad (#65). */
   stats?: Record<string, { dmg: number; kills: number; pts: number; taken: number; lost: number }>;
   killPts?: [number, number];
+  /** Ronda en la que el Enjambre ya usó la Voluntad de la colmena (11.ª). */
+  hiveWillRound?: number;
+  /** Doctrina de combate activa de la Legión (11.ª, Fuerza de tarea Gladius). */
+  doctrine?: "devastador" | "tactica" | "asalto" | null;
+  /** El Enjambre ya ha desatado la Sombra en la disformidad. */
+  shadowUsed?: boolean;
   /** Objetivos secundarios (#97). */
   secondaries?: import("../rules/secondaries").SecondaryState;
   /** Miniaturas de las unidades en reserva, fuera de la mesa (#56). */

@@ -49,6 +49,23 @@ export const GRENADE_RANGE = 8;
 
 export const STRAT_IDS = Object.keys(STRATAGEMS) as StratId[];
 
+/** Voluntad de la colmena (11.ª): alcance desde el Tirano. */
+export const HIVE_WILL_RANGE = 12;
+
+/** ¿Abarata la Voluntad de la colmena esta estratagema? (una vez por ronda, a 12" de un Tirano) */
+function hiveWill(s: GameState, unitId: string): boolean {
+  const u = s.units.find((x) => x.id === unitId);
+  if (!u || s.hiveWillRound === s.turn) return false;
+  const mine = unitModels(s, unitId);
+  return s.units.some((t) => t.faction === u.faction && DATASHEETS[t.datasheet].abilities.includes("voluntadColmena")
+    && unitModels(s, t.id).some((q) => mine.some((p) => gap(disc(p), disc(q)) <= HIVE_WILL_RANGE + 1e-6)));
+}
+
+/** Lo que cuesta ahora la estratagema en esta unidad. */
+export function stratCost(s: GameState, id: StratId, unitId: string): number {
+  return Math.max(0, STRATAGEMS[id].cost - (hiveWill(s, unitId) ? 1 : 0));
+}
+
 /** ¿Por qué no se puede usar? (null = se puede) */
 export function stratBlocked(s: GameState, id: StratId, unitId: string): string | null {
   const st = STRATAGEMS[id];
@@ -59,11 +76,12 @@ export function stratBlocked(s: GameState, id: StratId, unitId: string): string 
   if (st.faction && u.faction !== st.faction) return "No es de tu bando.";
   if (s.phase !== st.phase) return `Solo en la fase de ${st.phase}.`;
   if ((s.turnLog.strats ?? []).some((x) => x.id === id)) return "Ya usada este turno.";
-  if (s.cp[s.active] < st.cost) return "No quedan PM.";
+  if (s.cp[s.active] < stratCost(s, id, unitId)) return "No quedan PM.";
   if (id === "reagrupar") return u.shocked ? null : "No está desmoralizada.";
   if (u.shocked) return "Desmoralizada: no recibe estratagemas.";
   const ds = DATASHEETS[u.datasheet];
   if (id === "punteria" && !ds.weapons.concat(ds.leaderWeapons ?? []).some((w) => WEAPONS[w].range !== "CC")) return "No tiene armas a distancia.";
+  if (id === "granadas" && ds.type !== "infanteria") return "Solo infantería.";
   if (id === "impetu" && s.turnLog.charges?.[unitId]) return "Ya ha cargado.";
   if ((id === "furia" || id === "frenesi") && (s.turnLog.fought ?? []).includes(unitId)) return "Ya ha combatido.";
   if (id === "hambre" && s.turnLog.charges?.[unitId]) return "Ya ha cargado.";
@@ -100,10 +118,13 @@ export function grenadeTargets(s: GameState, unitId: string): string[] {
 export function applyStratagem(s: GameState, id: StratId, unitId: string, target?: string): boolean {
   if (stratBlocked(s, id, unitId)) return false;
   if (id === "granadas" && (!target || !grenadeTargets(s, unitId).includes(target))) return false;
+  const cost = stratCost(s, id, unitId);
+  const will = cost < STRATAGEMS[id].cost;
+  if (will) s.hiveWillRound = s.turn;
   s.cp = [...s.cp] as [number, number];
-  s.cp[s.active] -= STRATAGEMS[id].cost;
+  s.cp[s.active] -= cost;
   s.turnLog.strats = [...(s.turnLog.strats ?? []), { id, unit: unitId }];
-  note(s, "estratagema", `Estratagema ${STRATAGEMS[id].name} (${STRATAGEMS[id].cost} PM) en ${unitName(s, unitId)}${target ? ` contra ${unitName(s, target)}` : ""}`);
+  note(s, "estratagema", `Estratagema ${STRATAGEMS[id].name} (${cost} PM${will ? ", Voluntad de la colmena" : ""}) en ${unitName(s, unitId)}${target ? ` contra ${unitName(s, target)}` : ""}`);
   if (id === "reagrupar") s.units.find((x) => x.id === unitId)!.shocked = false;
   if (id === "granadas") throwGrenades(s, unitId, target!);
   if (id === "oleada") endlessWave(s, unitId);

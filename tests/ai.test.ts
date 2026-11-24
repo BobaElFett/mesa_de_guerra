@@ -30,9 +30,9 @@ test("cuentas: 2D6 y valor esperado de un disparo", () => {
   const bus = new CommandBus(1);
   bus.dispatch({ type: "setArmies", legion: TEST_LEGION, swarm: TEST_SWARM });
   const garras = bus.state.units.find((u) => u.datasheet === "garras")!.id;
-  // 10 rifles: 20 ataques, 2/3 impactan, F4 vs R4 hiere a 4+, Sv 5+ con FP −1 → 6+: 5/6 fallan
+  // 10 rifles: 20 ataques, 2/3 impactan, F5 vs R3 hiere a 3+, Sv 5+ con FP −1 → 6+: 5/6 fallan
   const e = expectedAttack(bus.state, WEAPONS.rifleBolter, 10, garras);
-  assert.ok(Math.abs(e.damage - 20 * (4 / 6) * 0.5 * (5 / 6)) < 1e-6, String(e.damage));
+  assert.ok(Math.abs(e.damage - 20 * (4 / 6) * (4 / 6) * (5 / 6)) < 1e-6, String(e.damage));
 });
 
 test("papeles: Garras de cuerpo a cuerpo, Fuego Pesado pesada, Asalto de disparo", () => {

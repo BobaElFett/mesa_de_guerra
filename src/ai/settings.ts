@@ -28,7 +28,7 @@ export interface GameSettings {
 
 const KEY = "mesa-de-guerra.ajustes";
 const DEFAULTS: GameSettings = { aiSide: "swarm", aiLevel: "normal", mission: "tomar", map: "actual", diceSpeed: "normal",
-  volume: 0.55, followAi: true, guideRings: true, confirmAdvance: true, hoverTips: true, showMenu: true, animations: true, statusIcons: true, secondaries: true, turnRecap: true, graphics: "alta", conditions: "", uiScale: 1, palette: "normal", legionScheme: "azul", swarmScheme: "morado", ambient: 0.35, gameSize: 500 };
+  volume: 0.55, followAi: true, guideRings: true, confirmAdvance: true, hoverTips: true, showMenu: true, animations: true, statusIcons: true, secondaries: true, turnRecap: true, graphics: "alta", conditions: "", uiScale: 1, palette: "normal", legionScheme: "azul", swarmScheme: "morado", ambient: 0.35, gameSize: 1000 };
 
 export const AI_LEVEL_NAME: Record<AiLevel, string> = { facil: "Fácil", normal: "Normal", dificil: "Difícil" };
 

@@ -30,11 +30,12 @@ test("control: suma CO a 3\"; empate = nadie; desmoralizadas no cuentan", () => 
   const gar = bus.state.pieces.filter((p) => p.model === "garra").slice(0, 2);
   bus.dispatch({ type: "moveMany", moves: [{ id: leg.id, x: o.x, z: o.z + 2 }, { id: gar[0].id, x: o.x, z: o.z - 2 }] });
   let st = objectiveStatus(bus.state, o);
-  assert.deepEqual(st.oc, [2, 1]);       // Asalto CO 2, Garra CO 1
-  assert.equal(st.holder, 0);
+  assert.deepEqual(st.oc, [2, 2]);       // Asalto CO 2, Garra CO 2 (11.ª)
+  assert.equal(st.holder, null);
   bus.dispatch({ type: "moveMany", moves: [{ id: gar[1].id, x: o.x + 2, z: o.z - 1 }] });
   st = objectiveStatus(bus.state, o);
-  assert.equal(st.holder, null);
+  assert.deepEqual(st.oc, [2, 4]);
+  assert.equal(st.holder, 1);
 });
 
 test("Toma y mantén puntúa al empezar el turno desde la ronda 2, con tope", () => {
@@ -54,13 +55,13 @@ test("Toma y mantén puntúa al empezar el turno desde la ronda 2, con tope", ()
 
 test("Caza de presas: PV por los puntos de las miniaturas eliminadas", () => {
   const bus = game("caza");
-  const g = bus.state.units.find((u) => u.datasheet === "garras" && u.startingModels === 20)!.id;   // 110 pts / 20 = 5,5 cada una
+  const g = bus.state.units.find((u) => u.datasheet === "garras" && u.startingModels === 20)!.id;   // 120 pts / 20 = 6 cada una
   const s = structuredClone(bus.state);
-  recordCasualties(s, 0, g, 3);                        // 16,5 pts: aún 0 PV
+  recordCasualties(s, 0, g, 3);                        // 18 pts: aún 0 PV
   assert.deepEqual(s.vp, [0, 0]);
-  recordCasualties(s, 0, g, 1);                        // 22 pts: 1 PV
+  recordCasualties(s, 0, g, 1);                        // 24 pts: 1 PV
   assert.deepEqual(s.vp, [1, 0]);
-  assert.ok(Math.abs(s.killPts![0] - 22) < 1e-9);
+  assert.ok(Math.abs(s.killPts![0] - 24) < 1e-9);
 });
 
 test("Caza de presas: PV por unidad destruida", () => {

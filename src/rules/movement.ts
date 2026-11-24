@@ -33,6 +33,8 @@ export interface TurnLog {
   strats?: { id: string; unit: string }[];
   /** Psíquicos que ya han usado su poder (#78), con la tirada. */
   psychic?: { unit: string; roll: [number, number]; target: string }[];
+  /** Guardia de la hoja (11.ª): unidad → la unidad enemiga contra la que ya la ha usado para defenderse. */
+  guarded?: Record<string, string>;
 }
 
 export const emptyTurnLog = (): TurnLog => ({ moves: {}, origins: {} });

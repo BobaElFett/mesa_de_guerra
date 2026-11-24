@@ -61,7 +61,7 @@ export const CHALLENGES: Challenge[] = [
     id: "decapitacion", name: "Decapitación", side: "legion", mission: "caza",
     brief: "El Tirano Sináptico dirige el ataque desde detrás de sus garras. Mátalo: sin él, el Enjambre se descontrola. Cuanto antes, mejor.",
     stars: ["Antes de acabar la ronda 3", "Antes de acabar la ronda 2", "En la ronda 1"],
-    legion: { units: [{ datasheet: "capitan", models: 1, leads: 1 }, { datasheet: "asalto", models: 10 }, { datasheet: "fuegoPesado", models: 5, options: ["laser"] }] },
+    legion: { units: [{ datasheet: "capitan", models: 1, leads: 1 }, { datasheet: "asalto", models: 10 }, { datasheet: "fuegoPesado", models: 5, options: ["perf"] }] },
     swarm: { units: [{ datasheet: "tirano", models: 1 }, { datasheet: "garras", models: 20 }, { datasheet: "escupidores", models: 10 }] },
     terrain: [T(1, "ruina", -10, 0, 0), T(2, "ruina", 10, 0, 0), T(3, "barricada", 0, 6)],
     place: [
@@ -83,7 +83,7 @@ export const CHALLENGES: Challenge[] = [
     brief: "Juegas con el Enjambre. La Legión defiende su base. Hazte con ella (controla el objetivo «Base Legión») al acabar uno de tus turnos.",
     stars: ["En la ronda 3", "En la ronda 2", "En la ronda 1"],
     legion: { units: [{ datasheet: "capitan", models: 1, leads: 1 }, { datasheet: "asalto", models: 10 }, { datasheet: "fuegoPesado", models: 5 }] },
-    swarm: { units: [{ datasheet: "tirano", models: 1 }, { datasheet: "garras", models: 20 }, { datasheet: "garras", models: 20 }, { datasheet: "acechadores", models: 6 }] },
+    swarm: { units: [{ datasheet: "tirano", models: 1 }, { datasheet: "garras", models: 20 }, { datasheet: "garras", models: 20 }, { datasheet: "acechadores", models: 5 }] },
     terrain: [T(1, "bosque", -16, 4), T(2, "ruina", 4, 2, 0.3), T(3, "crater", -4, -6)],
     place: [
       { faction: "legion", entry: 0, x: -6, z: 12, cols: 1, gap: 1.6 }, { faction: "legion", entry: 1, x: -13, z: 13.5, cols: 5, gap: 1.6 },
@@ -108,7 +108,7 @@ export const CHALLENGES: Challenge[] = [
     id: "cazacarros", name: "Cazabestias", side: "legion", mission: "caza",
     brief: "Un Carnífice y el Tirano avanzan juntos. Acaba con las dos bestias antes del final de la ronda 4.",
     stars: ["Antes de acabar la ronda 4", "Antes de acabar la ronda 3", "Antes de acabar la ronda 2"],
-    legion: { units: [{ datasheet: "capitan", models: 1, leads: 2 }, { datasheet: "fuegoPesado", models: 5, options: ["laser"] }, { datasheet: "asalto", models: 5, options: ["misiles", "sgtPlasma"] }, { datasheet: "fuegoPesado", models: 5, options: ["misiles"] }] },
+    legion: { units: [{ datasheet: "capitan", models: 1, leads: 2 }, { datasheet: "fuegoPesado", models: 5, options: ["perf"] }, { datasheet: "asalto", models: 5, options: ["granadas", "sgtPlasma"] }, { datasheet: "fuegoPesado", models: 5 }] },
     swarm: { units: [{ datasheet: "tirano", models: 1 }, { datasheet: "carnifice", models: 1 }, { datasheet: "garras", models: 10 }] },
     terrain: [T(1, "ruinaGrande", 0, 0, 0), T(2, "crater", -14, 6), T(3, "crater", 14, -6)],
     place: [
@@ -130,7 +130,7 @@ export const CHALLENGES: Challenge[] = [
     brief: "Tienes el centro del campo. Contrólalo al acabar el turno del Enjambre en las rondas 1, 2 y 3: cada vez que lo conserves, una estrella.",
     stars: ["Lo conservas una ronda", "Dos rondas", "Las tres"],
     legion: { units: [{ datasheet: "capitan", models: 1, leads: 1 }, { datasheet: "asalto", models: 10 }, { datasheet: "exterminadores", models: 5 }] },
-    swarm: { units: [{ datasheet: "tirano", models: 1 }, { datasheet: "garras", models: 20 }, { datasheet: "acechadores", models: 6 }, { datasheet: "escupidores", models: 10 }] },
+    swarm: { units: [{ datasheet: "tirano", models: 1 }, { datasheet: "garras", models: 20 }, { datasheet: "acechadores", models: 5 }, { datasheet: "escupidores", models: 10 }] },
     terrain: [T(1, "barricada", -4, -3, 0), T(2, "barricada", 4, -3, 0), T(3, "ruina", -15, -4, 0.5), T(4, "ruina", 15, 4, 0.5)],
     place: [
       { faction: "legion", entry: 0, x: 3.5, z: 0, cols: 1, gap: 1.6 }, { faction: "legion", entry: 1, x: -2, z: 2, cols: 5, gap: 1.6 },

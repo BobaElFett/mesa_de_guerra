@@ -18,17 +18,17 @@ function setup(opts: { clear?: boolean; gapZ?: number } = {}) {
   return bus;
 }
 
-test("opciones: rifle al alcance y pistola del sargento fuera de alcance", () => {
+test("opciones: rifle al alcance y pistolas fuera de alcance", () => {
   const bus = setup({ clear: true, gapZ: 20 });
   const o = shootingOptions(bus.state, "U1");
   assert.equal(o.blocked, undefined);
   const rifle = o.weapons.find((w) => w.weapon.id === "rifleBolter")!;
   const pistol = o.weapons.find((w) => w.weapon.id === "pistolaBolter")!;
-  assert.equal(rifle.carriers.length, 4);
-  assert.equal(pistol.carriers.length, 1);
+  assert.equal(rifle.carriers.length, 5);   // 11.ª: todos llevan pistola y rifle
+  assert.equal(pistol.carriers.length, 5);
   const tr = rifle.targets.find((t) => t.unit === "U2")!;
   assert.equal(tr.blocked, undefined);
-  assert.equal(tr.attackers.length, 4);
+  assert.equal(tr.attackers.length, 5);
   assert.equal(tr.cover, false);
   assert.match(pistol.targets[0].blocked!, /Fuera de alcance/);
 });
@@ -38,11 +38,11 @@ test("disparo: aplica daño, quita bajas, gasta el arma y es determinista", () =
   const before = bus.state.pieces.filter((p) => p.unit === "U2").length;
   bus.dispatch({ type: "shoot", unit: "U1", weapon: "rifleBolter", target: "U2" });
   const e = bus.state.combatLog.at(-1)!;
-  assert.equal(e.attackers, 4);
-  assert.equal(e.result.attacks, 8);
-  assert.equal(e.result.hitRolls.length, 8);
+  assert.equal(e.attackers, 5);
+  assert.equal(e.result.attacks, 15);  // Ráfaga 1 a media distancia
+  assert.equal(e.result.hitRolls.length, 15);
   assert.equal(e.hitOn, 3);
-  assert.equal(e.woundOn, 4);          // F4 contra R4
+  assert.equal(e.woundOn, 3);          // F5 contra R3
   assert.equal(e.result.saveTarget, 6); // 5+ con FP −1
   const after = bus.state.pieces.filter((p) => p.unit === "U2").length;
   assert.equal(before - after, e.result.slain.length);

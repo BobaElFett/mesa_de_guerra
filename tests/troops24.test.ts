@@ -6,11 +6,12 @@ import { cloneState, GameState } from "../src/core/state";
 import { shootingOptions, applyShoot } from "../src/rules/shooting";
 import { applyCharge, applyFight } from "../src/rules/melee";
 import { healLedSquads } from "../src/rules/special";
+import { floatingDeath } from "../src/rules/eleventh";
 import { aiPlayPhase } from "../src/ai/tactics";
 import { invariants } from "./fullgame.test";
 
 const LEG: ArmyList = { units: [{ datasheet: "medico", models: 1, leads: 1 }, { datasheet: "asalto", models: 10 }, { datasheet: "saltadores", models: 5 }, { datasheet: "fuegoPesado", models: 5 }] };
-const SWA: ArmyList = { units: [{ datasheet: "tirano", models: 1 }, { datasheet: "reventadores", models: 20 }, { datasheet: "biomorteros", models: 2 }, { datasheet: "garras", models: 10 }] };
+const SWA: ArmyList = { units: [{ datasheet: "tirano", models: 1 }, { datasheet: "reventadores", models: 6 }, { datasheet: "biomorteros", models: 2 }, { datasheet: "garras", models: 10 }] };
 
 function game(seed = 2, clear = true) {
   const bus = new CommandBus(seed);
@@ -30,22 +31,25 @@ test("las listas con las cuatro tropas nuevas son válidas", () => {
   assert.deepEqual(validateList(SWA, "swarm"), []);
 });
 
-test("Sanador: al empezar el mando vuelve una miniatura de la escuadra que lidera", () => {
+test("Botiquín (11.ª): la escuadra del médico recupera D3+1 heridas; lo que sobra devuelve miniaturas", () => {
   const bus = game();
   bus.dispatch({ type: "nextPhase" });
-  const s = cloneState(bus.state);
-  const sq = uid(s, "asalto");
-  const victims = s.pieces.filter((p) => p.unit === sq && !p.leader).slice(0, 3).map((p) => p.id);
-  s.pieces = s.pieces.filter((p) => !victims.includes(p.id));
-  healLedSquads(s);
-  assert.equal(s.pieces.filter((p) => p.unit === sq).length, 8);
-  healLedSquads(s);
-  assert.equal(s.pieces.filter((p) => p.unit === sq).length, 9);
-  // Ids únicos
-  assert.equal(new Set(s.pieces.map((p) => p.id)).size, s.pieces.length);
-  // Al completo no añade más
-  healLedSquads(s); healLedSquads(s);
-  assert.equal(s.pieces.filter((p) => p.unit === sq).length, 10);
+  for (let k = 0; k < 12; k++) {
+    const s = cloneState(bus.state);
+    s.rng = 1000 + k * 77;
+    const sq = uid(s, "asalto");
+    const victims = s.pieces.filter((p) => p.unit === sq && !p.leader).slice(0, 3).map((p) => p.id);
+    s.pieces = s.pieces.filter((p) => !victims.includes(p.id));
+    const hurt = s.pieces.find((p) => p.unit === sq)!;
+    hurt.damage = 1;
+    healLedSquads(s);
+    const n = s.pieces.filter((p) => p.unit === sq).length;
+    assert.equal(hurt.damage, 0, "primero cura la herida");
+    assert.ok(n >= 7 && n <= 8, `vuelven ${n - 7}`);   // D3+1 = 2–4: 1 para la herida, el resto de 2 en 2
+    assert.equal(new Set(s.pieces.map((p) => p.id)).size, s.pieces.length);
+    for (let i = 0; i < 6; i++) healLedSquads(s);
+    assert.equal(s.pieces.filter((p) => p.unit === sq).length, 10);   // nunca más de las que empezaron
+  }
 });
 
 test("Impacto: tras cargar, los Saltadores hacen dados de heridas mortales", () => {
@@ -72,22 +76,24 @@ test("Impacto: tras cargar, los Saltadores hacen dados de heridas mortales", () 
   assert.ok(found, "alguna carga llega");
 });
 
-test("Estallido: los Reventadores que caen en combate hieren a quien los mata", () => {
-  const bus = game();
-  bus.dispatch({ type: "nextPhase" });
-  const s = cloneState(bus.state);
-  const sq = uid(s, "asalto"), r = uid(s, "reventadores");
-  // Separa al médico de la formación para que no estorbe: combate solo la escuadra
-  place(s, sq, 0, 1.2); place(s, r, 0, 0);
-  s.pieces.filter((p) => p.unit === uid(s, "medico")).forEach((p) => { p.x = 20; p.z = 20; });
-  s.phase = "combate"; s.turnLog.fought = [];
-  const out = applyFight(s, sq, r);
-  assert.ok(out);
-  const bursts = s.combatLog.filter((e) => e.weapon === "estallidoBio");
-  const killed = out!.reduce((n, e) => n + e.result.slain.length, 0);
-  assert.ok(killed > 0);
-  assert.ok(bursts.every((b) => b.target === sq && b.mortal));
-  assert.equal(bursts.reduce((n, b) => n + b.attackers, 0), killed);
+test("Muerte flotante: las minas a 3\" de un enemigo revientan contra él", () => {
+  let hits = 0;
+  for (let k = 0; k < 20; k++) {
+    const bus = game();
+    bus.dispatch({ type: "nextPhase" });
+    const s = cloneState(bus.state);
+    s.rng = 31 + k * 101;
+    const sq = uid(s, "asalto"), r = uid(s, "reventadores");
+    place(s, sq, 0, 6); place(s, r, 0, 3.4);
+    s.pieces.filter((p) => p.unit === r).forEach((p, i) => { p.x = -4 + i * 1.6; p.z = 4.2; });
+    const before = s.pieces.filter((p) => p.unit === sq).reduce((n, p) => n + 2 - (p.damage ?? 0), 0);
+    floatingDeath(s);
+    assert.equal(s.pieces.filter((p) => p.unit === r).length, 0, "todas revientan");
+    const after = s.pieces.filter((p) => p.unit === sq).reduce((n, p) => n + 2 - (p.damage ?? 0), 0);
+    hits += before - after;
+    assert.ok(before - after <= 18);
+  }
+  assert.ok(hits > 40, `heridas: ${hits}`);   // ~6 minas × 20 × (4/6·1 + 1/6·2)
 });
 
 test("Indirecto: los Biomorteros disparan sin ver, con −1 y el objetivo en cobertura", () => {
@@ -101,11 +107,11 @@ test("Indirecto: los Biomorteros disparan sin ver, con −1 y el objetivo en cob
   s.pieces.filter((p) => p.unit === m).forEach((p, i) => { p.x = -1.1 + i * 2.2; p.z = -6; });
   s.pieces.filter((p) => p.unit !== m && p.faction === "legion").forEach((p, i) => { p.x = -22 + (i % 8) * 1.4; p.z = 18 + Math.floor(i / 8) * 1.4; });
   s.pieces.filter((p) => p.unit === a).forEach((p, i) => { p.x = -1.3 + (i % 3) * 1.3; p.z = 6 + Math.floor(i / 3) * 1.3; });
-  const w = shootingOptions(s, m).weapons.find((x) => x.weapon.id === "morteroBio")!;
+  const w = shootingOptions(s, m).weapons.find((x) => x.weapon.id === "lanzaMinas")!;
   const t = w.targets.find((x) => x.unit === a)!;
   assert.equal(t.blocked, undefined, String(t.blocked));
   assert.ok(t.indirect && t.cover);
-  const e = applyShoot(s, m, "morteroBio", a);
+  const e = applyShoot(s, m, "lanzaMinas", a);
   assert.ok(e && e.cover);
 });
 

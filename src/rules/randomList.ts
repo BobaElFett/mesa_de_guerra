@@ -1,10 +1,10 @@
 import { Faction } from "../core/state";
 import { nextRandom } from "../core/rng";
-import { ArmyEntry, ArmyList, listPoints, MAX_BIG, POINTS_LIMIT, validateList } from "./armies";
-import { DATASHEETS, Datasheet, DatasheetId, optionPoints, unitPoints } from "./datasheets";
+import { ArmyEntry, ArmyList, listPoints, POINTS_LIMIT, unitLimit, validateList } from "./armies";
+import { DATASHEETS, Datasheet, DatasheetId } from "./datasheets";
 import { canReserve } from "./reserves";
 
-// Listas al azar (#82): una lista válida de hasta 500 puntos, con un personaje (que lidera si
+// Listas al azar (#82): una lista válida de hasta 1.000 puntos (o los que se pidan), con un personaje (que lidera si
 // puede), equipo opcional y, a veces, reservas. Con semilla, para repetirla y para las pruebas.
 
 export function randomList(faction: Faction, seed: number, limit = POINTS_LIMIT): ArmyList {
@@ -16,14 +16,15 @@ export function randomList(faction: Faction, seed: number, limit = POINTS_LIMIT)
 
   for (let attempt = 0; attempt < 60; attempt++) {
     const units: ArmyEntry[] = [];
-    const cost = (e: ArmyEntry) => (unitPoints(DATASHEETS[e.datasheet], e.models) ?? 0) + optionPoints(DATASHEETS[e.datasheet], e.models, e.options);
+    const cost = (e: ArmyEntry) => listPoints({ units: [...units, e] }) - listPoints({ units });
     const add = (ds: Datasheet): ArmyEntry | null => {
       const size = rnd() < 0.6 ? ds.sizes[0] : pick(ds.sizes);   // más unidades, más pequeñas
       const e: ArmyEntry = { datasheet: ds.id as DatasheetId, models: size.models };
       // Equipo: cada opción con un 40 %; las que se excluyen, una sola
       const taken = new Set<string>();
       for (const o of ds.options ?? []) {
-        const k = `${o.who}|${o.replace}`;
+        const k = `${o.who}|${[o.replace].flat().join(",")}`;
+        if (o.minModels && e.models < o.minModels) continue;
         if (rnd() < 0.4 && (o.who === "uno" || !taken.has(k))) { (e.options ??= []).push(o.id); taken.add(k); }
       }
       if (listPoints({ units }) + cost(e) > limit) { delete e.options; if (listPoints({ units }) + cost(e) > limit) return null; }
@@ -32,19 +33,20 @@ export function randomList(faction: Faction, seed: number, limit = POINTS_LIMIT)
     };
     const leader = add(pick(chars));
     if (!leader) continue;
-    // Tropas hasta acercarse al límite (como mucho 3 iguales y 1 grande)
-    for (let tries = 0; tries < 40 && listPoints({ units }) < limit - 40; tries++) {
-      const ds = pick(troops);
-      if (units.filter((u) => u.datasheet === ds.id).length >= 3) continue;
-      if (ds.big && units.filter((u) => DATASHEETS[u.datasheet].big).length >= MAX_BIG * Math.max(1, Math.round(limit / 500))) continue;
+    // Tropas hasta acercarse al límite (respetando cuántas iguales se pueden llevar)
+    for (let tries = 0; tries < 60 && listPoints({ units }) < limit - 40; tries++) {
+      const ds = pick(rnd() < 0.15 ? chars : troops);
+      if (units.filter((u) => u.datasheet === ds.id).length >= unitLimit(ds)) continue;
       add(ds);
     }
-    // El personaje lidera una escuadra que pueda
-    const lead = DATASHEETS[leader.datasheet].leads;
-    if (lead) {
-      const i = units.findIndex((u, k) => k > 0 && lead.includes(u.datasheet));
-      if (i > 0) leader.leads = i;
-    }
+    // Cada personaje lidera (o acompaña) una escuadra que pueda
+    units.forEach((c) => {
+      const cd = DATASHEETS[c.datasheet];
+      if (!cd.character || !cd.leads) return;
+      const i = units.findIndex((u) => cd.leads!.includes(u.datasheet)
+        && !units.some((o) => o !== c && o.leads === units.indexOf(u) && !!DATASHEETS[o.datasheet].support === !!cd.support));
+      if (i >= 0) c.leads = i;
+    });
     // Reservas (a veces), sin pasar de la mitad de los puntos
     for (const u of units) {
       if (!canReserve(DATASHEETS[u.datasheet]) || rnd() < 0.5) continue;
@@ -52,7 +54,7 @@ export function randomList(faction: Faction, seed: number, limit = POINTS_LIMIT)
       if (validateList({ units }, faction, limit).length) delete u.reserve;
     }
     const list: ArmyList = { name: "Al azar", units };
-    if (!validateList(list, faction, limit).length && listPoints(list) >= limit - 120) return list;
+    if (!validateList(list, faction, limit).length && listPoints(list) >= limit - Math.max(120, limit * 0.1)) return list;
   }
   throw new Error("No se pudo hacer una lista al azar válida");
 }

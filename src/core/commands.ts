@@ -1,3 +1,4 @@
+import { floatingDeath } from "../rules/eleventh";
 import { discardSecondary, SecondaryId, setupSecondaries } from "../rules/secondaries";
 import { applyArrival } from "../rules/reserves";
 import { syncRelic } from "../rules/relic";
@@ -160,7 +161,7 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
       if (!s.units.some((u) => u.id === cmd.unit)) break;
       if (s.rulesMode && cmd.kind === "retirarse") note(s, "mover", `${unitName(s, cmd.unit)} se retira del combate`);
       const move: { kind: MoveKind; advance?: number } = { kind: cmd.kind };
-      const turbo = cmd.kind === "avanzar" && DATASHEETS[s.units.find((u) => u.id === cmd.unit)!.datasheet].abilities.includes("turbo");
+      const turbo = cmd.kind === "avanzar" && (DATASHEETS[s.units.find((u) => u.id === cmd.unit)!.datasheet].abilities as string[]).includes("turbo");
       if (turbo) {
         move.advance = 6;
         if (s.rulesMode) note(s, "mover", `${unitName(s, cmd.unit)} acelera: +6"`);
@@ -217,6 +218,7 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
     }
   }
   syncRelic(s);
+  if (s.rulesMode && s.phase !== "despliegue" && !s.gameOver) floatingDeath(s);   // Muerte flotante (11.ª)
   return s;
 }
 

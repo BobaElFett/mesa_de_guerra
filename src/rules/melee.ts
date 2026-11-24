@@ -1,4 +1,4 @@
-import { pieceWeaponIds } from "./datasheets";
+import { meleeWeaponIds, pieceWeaponIds } from "./datasheets";
 import { note, unitName } from "./history";
 import { onForbiddenTerrain } from "./geometry";
 import { hasStrat } from "./stratagems";
@@ -10,7 +10,8 @@ import { DATASHEETS, WEAPONS } from "./datasheets";
 import { disc, engaged, gap, ENGAGEMENT } from "./geometry";
 import { canChargeAfter, unitModels } from "./movement";
 import { performAttack, AttackLogEntry } from "./shooting";
-import { applyBurst, applyImpact, devour } from "./special";
+import { applyImpact } from "./special";
+import { battleShockTest, doctrine } from "./eleventh";
 
 // Fases de carga y combate del reglamento.
 //  - Carga: a 12" o menos de un enemigo, 2D6; si alcanza para quedar a 1", la unidad entra en contacto.
@@ -48,7 +49,8 @@ export function chargeOptions(s: GameState, unitId: string): ChargeOptions {
   const move = s.turnLog.moves[unitId];
   let blocked: string | undefined;
   if (engaged(models, foesOf(s, unitId))) blocked = "Ya está trabada.";
-  else if (!canChargeAfter(move, ds.abilities.includes("rapidez")))
+  else if (!canChargeAfter(move, ds.abilities.includes("rapidez") || doctrine(s, unitId, "asalto"))
+    && !(move?.kind === "retirarse" && (ds.abilities.includes("depredadores") || doctrine(s, unitId, "tactica"))))
     blocked = move?.kind === "retirarse" ? "Se ha retirado este turno." : "Ha avanzado: no puede cargar.";
   const targets: ChargeTarget[] = s.units
     .filter((u) => u.faction !== unit.faction && unitModels(s, u.id).length)
@@ -183,11 +185,9 @@ function fightGroups(s: GameState, unitId: string, targetId: string): Map<string
   const front = mine.filter((p) => foes.some((q) => gap(disc(p), disc(q)) <= ENGAGEMENT + 1e-6));
   const second = mine.filter((p) => !front.includes(p) && front.some((f) => gap(disc(p), disc(f)) <= SECOND_RANK + 1e-6));
   const groups = new Map<string, Piece[]>();
-  for (const p of [...front, ...second]) {
-    const w = pieceWeaponIds(ds, p).map((id) => WEAPONS[id]).find((x) => x.range === "CC");
-    if (!w) continue;
-    if (!groups.has(w.id)) groups.set(w.id, []);
-    groups.get(w.id)!.push(p);
+  for (const p of [...front, ...second]) for (const wid of meleeWeaponIds(ds, p)) {
+    if (!groups.has(wid)) groups.set(wid, []);
+    groups.get(wid)!.push(p);
   }
   return groups;
 }
@@ -209,12 +209,21 @@ export function applyFight(s: GameState, unitId: string, targetId: string): Atta
     if (!unitModels(s, targetId).length) break;                         // el objetivo ya cayó
     const alive = group.filter((p) => s.pieces.includes(p));
     if (!alive.length) continue;
-    const before = unitModels(s, targetId);
     const hit = performAttack(s, "combate", unitId, alive, WEAPONS[wid], targetId);
     entries.push(hit);
-    devour(s, unitId, hit.result.slain.length);
-    applyBurst(s, targetId, unitId, before.filter((p) => !s.pieces.includes(p)));
-    if (!unitModels(s, unitId).length) break;                           // los reventones acabaron con ella
+    if (!unitModels(s, unitId).length) break;                           // una explosión acabó con ella
+  }
+  // Hora gloriosa: una vez por partida, se gasta la primera vez que combate
+  const me = s.units.find((u) => u.id === unitId)!;
+  if (DATASHEETS[me.datasheet].abilities.includes("horaGloriosa") && !(me.spent ?? []).includes("horaGloriosa")) {
+    me.spent = [...(me.spent ?? []), "horaGloriosa"];
+    note(s, "combate", `${unitName(s, unitId)} vive su hora gloriosa`);
+  }
+  // Espectáculo horrendo: si destruye la unidad, los enemigos a 6" chequean moral
+  if (!unitModels(s, targetId).length && DATASHEETS[me.datasheet].abilities.includes("espectaculo")) {
+    const mine = unitModels(s, unitId);
+    for (const e of s.units.filter((u) => u.faction !== me.faction && unitModels(s, u.id).some((p) => mine.some((q) => gap(disc(p), disc(q)) <= 6 + 1e-6))))
+      battleShockTest(s, e.id, 0, "Espectáculo horrendo");
   }
 
   if (unitModels(s, targetId).length) advanceInto(s, unitId, targetId, PILE_IN, true);   // consolidar

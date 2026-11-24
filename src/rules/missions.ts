@@ -1,4 +1,4 @@
-import { nearAura } from "./auras";
+import { ledBy } from "./leaders";
 import { unitCost } from "./datasheets";
 import { note } from "./history";
 import { BASE_RADIUS, Faction, GameState, PLAYERS } from "../core/state";
@@ -28,6 +28,8 @@ export interface Objective {
   relic?: boolean;
   /** Unidad que la lleva. */
   carrier?: string | null;
+  /** Asegurado por este jugador (Alzar el estandarte, 11.ª). */
+  secured?: 0 | 1;
 }
 
 export interface VpEntry {
@@ -165,11 +167,39 @@ export function objectiveStatus(s: GameState, o: Objective): { oc: [number, numb
     const u = s.units.find((x) => x.id === p.unit);
     if (!u || u.shocked) continue;
     if (gap({ x: p.x, z: p.z, r: BASE_RADIUS[p.model] }, marker) > OBJECTIVE_RANGE + 1e-6) continue;
-    if (!banner.has(u.id)) banner.set(u.id, nearAura(s, u.id, "estandarte"));
+    if (!banner.has(u.id)) banner.set(u.id, ledBy(s, u.id, "estandarte"));   // Honor de la compañía (11.ª)
     oc[PLAYERS.indexOf(p.faction)] += DATASHEETS[u.datasheet].profile.OC + (banner.get(u.id) ? 1 : 0);
   }
-  const holder = oc[0] > oc[1] ? 0 : oc[1] > oc[0] ? 1 : null;
+  let holder: 0 | 1 | null = oc[0] > oc[1] ? 0 : oc[1] > oc[0] ? 1 : null;
+  if (holder === null && o.secured !== undefined) holder = o.secured;   // asegurado (Alzar el estandarte)
   return { oc, holder };
+}
+
+/** ¿Tiene la unidad alguna miniatura a alcance de un marcador de objetivo? */
+export function objectiveInRange(s: GameState, unitId: string): boolean {
+  const ms = s.pieces.filter((p) => p.unit === unitId);
+  return (s.objectives ?? []).some((o) => !o.relic && ms.some((p) => gap({ x: p.x, z: p.z, r: BASE_RADIUS[p.model] }, { x: o.x, z: o.z, r: OBJECTIVE_RADIUS }) <= OBJECTIVE_RANGE + 1e-6));
+}
+
+/**
+ * Alzar el estandarte (11.ª): al acabar el movimiento del jugador activo, los objetivos que controla
+ * una formación con portaestandarte quedan asegurados. Un objetivo asegurado deja de estarlo en
+ * cuanto el rival lo controla. Muta `s`.
+ */
+export function updateSecured(s: GameState, raise: boolean) {
+  for (const o of s.objectives ?? []) {
+    if (o.relic) continue;
+    const st = objectiveStatus(s, o);
+    if (o.secured !== undefined && st.oc[1 - o.secured] > st.oc[o.secured]) delete o.secured;
+    if (!raise) continue;
+    const marker = { x: o.x, z: o.z, r: OBJECTIVE_RADIUS };
+    const banner = s.units.some((u) => u.faction === PLAYERS[s.active] && ledBy(s, u.id, "alzarEstandarte")
+      && s.pieces.some((p) => p.unit === u.id && gap({ x: p.x, z: p.z, r: BASE_RADIUS[p.model] }, marker) <= OBJECTIVE_RANGE + 1e-6));
+    if (banner && st.holder === s.active && o.secured !== s.active) {
+      o.secured = s.active;
+      note(s, "pv", `${o.name} queda asegurado (Alzar el estandarte)`, s.active);
+    }
+  }
 }
 
 export function controlledBy(s: GameState, player: 0 | 1): Objective[] {

@@ -73,7 +73,7 @@ test("combate: primero quien cargó; golpean, consolidan y no repiten", () => {
   assert.ok(log.length >= 1);
   assert.ok(log.every((e) => e.attacker === "U1" && e.target === "U2"));
   const weapons = new Set(log.map((e) => e.weapon));
-  assert.ok(weapons.has("cuchillo"));
+  assert.ok(weapons.has("punos"));   // los legionarios golpean con puños y cuchillo
   const slain = log.reduce((n, e) => n + e.result.slain.length, 0);
   assert.equal(before - U(bus!, "U2").length, slain);
   assert.equal(fightOptions(bus!.state, "U1").fought, true);

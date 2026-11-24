@@ -40,19 +40,22 @@ export function playGame(seed: number, check = false) {
   return bus;
 }
 
-test("las listas de prueba son válidas: 490 y 495 puntos", () => {
+test("las listas de prueba son válidas: 485 y 500 puntos (con los puntos de la 11.ª)", () => {
   assert.deepEqual(validateList(LEGION, "legion"), []);
   assert.deepEqual(validateList(SWARM, "swarm"), []);
-  assert.equal(listPoints(LEGION), 490);
-  assert.equal(listPoints(SWARM), 495);
+  assert.equal(listPoints(LEGION), 485);
+  assert.equal(listPoints(SWARM), 500);
 });
 
 test("validación de listas", () => {
   assert.match(validateList({ units: [{ datasheet: "asalto", models: 5 }] }, "legion").join(" "), /personaje/);
   assert.match(validateList({ units: [{ datasheet: "capitan", models: 1 }, { datasheet: "asalto", models: 7 }] }, "legion").join(" "), /tamaño/);
   assert.match(validateList({ units: [{ datasheet: "tirano", models: 1 }] }, "legion").join(" "), /bando/);
-  const many = { units: [{ datasheet: "capitan" as const, models: 1 }, ...Array(4).fill({ datasheet: "asalto", models: 5 })] };
-  assert.match(validateList(many, "legion").join(" "), /Como mucho 3/);
+  // 11.ª: 2 unidades iguales, 4 de línea de batalla
+  const many = { units: [{ datasheet: "capitan" as const, models: 1 }, ...Array(5).fill({ datasheet: "asalto", models: 5 })] };
+  assert.match(validateList(many, "legion").join(" "), /Como mucho 4/);
+  const three = { units: [{ datasheet: "capitan" as const, models: 1 }, ...Array(3).fill({ datasheet: "fuegoPesado", models: 5 })] };
+  assert.match(validateList(three, "legion", 1000).join(" "), /Como mucho 2/);
 });
 
 test("despliegue: cada bando en su zona, sin solapes", () => {

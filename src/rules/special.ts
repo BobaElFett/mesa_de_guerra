@@ -7,7 +7,8 @@ import { note, unitName } from "./history";
 import { enemyModels, unitModels } from "./movement";
 import { performAttack } from "./shooting";
 
-// Reglas especiales de las tropas de la fase 24 (#111–#114): Impacto, Sanador y Estallido.
+// Reglas especiales de las tropas de la fase 24 (#111–#114), adaptadas a la 11.ª en la fase 30:
+// Martillo de ira, Botiquín y Bendición de la máquina.
 // (Indirecto vive en shooting.ts, junto a la línea de visión.)
 
 const has = (s: GameState, unitId: string, a: string) => {
@@ -48,11 +49,12 @@ export function respawn(s: GameState, unitId: string, n: number, proto?: Piece):
   return k;
 }
 
-/** Impacto (#111): tras una carga con éxito, un dado por miniatura; cada 5+, una herida mortal. */
+/** Martillo de ira (#111, 11.ª): tras una carga, un dado por miniatura trabada con el objetivo; cada 4+, una herida mortal. */
 export function applyImpact(s: GameState, unitId: string, targetId: string) {
   if (!has(s, unitId, "impacto")) return;
-  const mine = unitModels(s, unitId);
-  if (!mine.length || !unitModels(s, targetId).length) return;
+  const theirs = unitModels(s, targetId);
+  const mine = unitModels(s, unitId).filter((p) => theirs.some((q) => Math.hypot(p.x - q.x, p.z - q.z) - BASE_RADIUS[p.model] - BASE_RADIUS[q.model] <= ENGAGEMENT + 1e-6));
+  if (!mine.length || !theirs.length) return;
   note(s, "carga", `${unitName(s, unitId)} aterriza con los retrorreactores: ${mine.length} dados de Impacto`);
   performAttack(s, "combate", unitId, mine, WEAPONS.aterrizaje, targetId, { mortal: true });
 }
@@ -64,16 +66,26 @@ export function applyBurst(s: GameState, burstUnit: string, killer: string, fall
   performAttack(s, "combate", burstUnit, fallen, WEAPONS.estallidoBio, killer, { mortal: true });
 }
 
-/** Sanador (#112): al empezar el mando del jugador activo, cada médico devuelve una miniatura a su escuadra. */
+/**
+ * Botiquín (#112, 11.ª): al empezar el mando del jugador activo, la escuadra de cada médico recupera
+ * D3+1 heridas: primero las de las miniaturas heridas y, con lo que sobre, vuelven las caídas.
+ */
 export function healLedSquads(s: GameState) {
   for (const u of s.units) {
     if (u.faction !== PLAYERS[s.active] || !u.attachedTo || !has(s, u.id, "sanador")) continue;
     if (!unitModels(s, u.id).length) continue;
     const squad = s.units.find((x) => x.id === u.attachedTo);
-    if (!squad) continue;
-    const alive = unitModels(s, squad.id).length;
-    if (!alive || alive >= squad.startingModels) continue;
-    if (respawn(s, squad.id, 1)) note(s, "turno", `${unitName(s, u.id)} devuelve una miniatura a ${unitName(s, squad.id)}`);
+    if (!squad || !unitModels(s, squad.id).length) continue;
+    const W = DATASHEETS[squad.datasheet].profile.W;
+    const hurt = unitModels(s, squad.id).filter((p) => p.damage);
+    const missing = squad.startingModels - unitModels(s, squad.id).length;
+    if (!hurt.length && !missing) continue;
+    const [[d], rng] = rollDice(s.rng, 1, 3);
+    s.rng = rng;
+    let left = d + 1, healed = 0, back = 0;
+    for (const p of hurt) { const h = Math.min(p.damage!, left); p.damage! -= h; left -= h; healed += h; if (!left) break; }
+    while (left >= W && back < missing) { if (!respawn(s, squad.id, 1)) break; back++; left -= W; }
+    if (healed || back) note(s, "turno", `${unitName(s, u.id)} atiende a ${unitName(s, squad.id)} (D3+1 = ${d + 1}): ${[healed ? `${healed} herida${healed === 1 ? "" : "s"} curada${healed === 1 ? "" : "s"}` : "", back ? `${back} miniatura${back === 1 ? "" : "s"} de vuelta` : ""].filter(Boolean).join(", ")}`);
   }
 }
 
@@ -97,7 +109,7 @@ export function repairVehicles(s: GameState) {
     const eng = unitModels(s, u.id)[0];
     if (!eng) continue;
     const near = s.pieces
-      .filter((p) => p.faction === u.faction && p.damage && p.unit && has(s, p.unit, "blindado")
+      .filter((p) => p.faction === u.faction && p.damage && p.unit && DATASHEETS[s.units.find((x) => x.id === p.unit)!.datasheet].type === "vehiculo"
         && Math.hypot(p.x - eng.x, p.z - eng.z) - BASE_RADIUS[p.model] - BASE_RADIUS[eng.model] <= 3)
       .sort((a, b) => (b.damage ?? 0) - (a.damage ?? 0))[0];
     if (!near) continue;

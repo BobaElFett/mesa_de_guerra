@@ -9,7 +9,7 @@ import { aiPlayPhase } from "../src/ai/tactics";
 import { invariants } from "./fullgame.test";
 
 const SWA: ArmyList = { units: [{ datasheet: "mente", models: 1, leads: 1 }, { datasheet: "garras", models: 20 }, { datasheet: "nodo", models: 3 }, { datasheet: "escupidores", models: 10 }, { datasheet: "garras", models: 10 }] };
-const LEG: ArmyList = { units: [...TEST_LEGION.units.slice(0, 2), { datasheet: "francotiradores", models: 5 }, TEST_LEGION.units[3]] };
+const LEG: ArmyList = { units: [...TEST_LEGION.units.slice(0, 2), { datasheet: "francotiradores", models: 3 }, TEST_LEGION.units[3]] };
 
 test("la Mente del Enjambre lidera Garras y la escuadra la protege, salvo de la Precisión", () => {
   assert.deepEqual(validateList(SWA, "swarm"), []);

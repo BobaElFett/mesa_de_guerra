@@ -42,18 +42,19 @@ test("chequeo: 2D6 contra L; si falla, desmoralizada y CO 0; se recupera en su s
   assert.ok(failed && passed);
 });
 
-test("sinapsis: a 12\" de una unidad Sináptica supera sola", () => {
+test("sinapsis (11.ª): a 6\" de una miniatura sináptica, la moral se chequea con 3D6", () => {
   const s = cloneState(new CommandBus(2).state);
   s.rulesMode = true; s.active = 1;
-  // Un Guerrero Nodo (Sináptico) a 6" de las Garras
+  // Un Guerrero Nodo (Sináptico) a 4" de las Garras
   s.units.push({ id: "U9", datasheet: "nodo", faction: "swarm", startingModels: 1 });
-  const g = s.pieces.find((p) => p.unit === "U2")!;
-  s.pieces.push({ id: "N1", faction: "swarm", model: "garra", x: g.x + 6, z: g.z, rot: 0, unit: "U9" });
-  assert.equal(inSynapse(s, "U2"), true);
   kill(s, "U2", 8);
+  const g = s.pieces.find((p) => p.unit === "U2")!;
+  s.pieces.push({ id: "N1", faction: "swarm", model: "garra", x: g.x + 4, z: g.z, rot: 0, unit: "U9" });
+  assert.equal(inSynapse(s, "U2"), true);
+  assert.equal(inSynapse(s, "U9"), true);   // la sináptica también está en sinapsis
   const [e] = runMoraleTests(s);
-  assert.equal(e.dice, null);
-  assert.equal(e.passed, true);
+  assert.equal(e.dice!.length, 3);
+  assert.equal(e.passed, e.dice!.reduce((a, b) => a + b, 0) >= e.need);
   // lejos, ya no
   s.pieces.find((p) => p.id === "N1")!.x += 30;
   assert.equal(inSynapse(s, "U2"), false);

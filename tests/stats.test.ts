@@ -15,9 +15,11 @@ test("estadísticas: el daño hecho por un bando es el recibido por el otro, y l
     while (!bus.state.gameOver && g++ < 200) aiPlayPhase(bus, "normal");
     const s = bus.state;
     const sum = (f: string, k: "dmg" | "taken" | "kills" | "lost") => s.units.filter((u) => u.faction === f).reduce((a, u) => a + statsOf(s, u.id)[k], 0);
+    // (11.ª: las explosiones y el peligro también hieren a los propios, sin que nadie se lo apunte)
     for (const [a, b] of [["legion", "swarm"], ["swarm", "legion"]]) {
-      assert.equal(sum(a, "dmg"), sum(b, "taken"));
-      assert.equal(sum(a, "kills"), sum(b, "lost"));
+      assert.ok(sum(a, "dmg") <= sum(b, "taken"));
+      assert.ok(sum(a, "kills") <= sum(b, "lost"));
+      assert.ok(sum(a, "dmg") >= sum(b, "taken") * 0.8);
     }
     for (const u of s.units) {
       const alive = s.pieces.filter((p) => p.unit === u.id).length;

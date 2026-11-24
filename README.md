@@ -5,7 +5,7 @@ la **Legión Astral** (super soldados con servoarmadura) contra **El Enjambre** 
 Se juega como en una mesa de verdad (mover, medir y tirar dados) o con el **modo reglas**, que guía las fases y resuelve las tiradas.
 Three.js + TypeScript, compilado con esbuild a un único `dist/index.html`.
 
-Versión **0.48**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
+Versión **0.49**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
 
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor ni conexión.
@@ -20,54 +20,58 @@ Al abrirlo sale el menú:
 - **Ejércitos**, **Historial** (con logros), **En línea** (dos ordenadores) y **Ajustes**.
 
 ## Cómo se juega (modo reglas)
-Cada bando tiene un ejército de **500 puntos** (*Escaramuza*) o **1.000** (*Batalla*). La partida dura **5 rondas**; en cada una juegan los dos bandos su turno, con cinco fases:
+Cada bando tiene un ejército de **1.000 puntos** (*Incursión*, como en la 11.ª edición) o **500** (*Escaramuza*). La partida dura **5 rondas**; en cada una juegan los dos bandos su turno, con cinco fases:
 
-1. **Mando:** +1 punto de mando (PM) por bando para estratagemas; las unidades por debajo de la mitad chequean moral (2D6 contra su Liderazgo).
-2. **Movimiento:** mover (hasta M), avanzar (+D6, sin disparar ni cargar después) o retirarse del combate. Desde la ronda 2 llegan las **reservas**, a más de 9" del enemigo.
-3. **Disparo:** elige tu unidad y haz clic en un enemigo (cada uno lleva una etiqueta con las bajas esperadas). El **panel de ataque** muestra todas las armas con lo que necesitan para impactar, herir y salvar, los modificadores y las bajas esperadas; un botón dispara todas las marcadas. Impactar (HP), herir (Fuerza contra Resistencia), salvar (armadura o invulnerable) y daño. Las líneas de visión dicen quién ve y quién tiene cobertura; los psíquicos usan aquí su poder.
+1. **Mando:** +1 punto de mando (PM) por bando para estratagemas; las unidades por debajo de la mitad chequean moral (2D6 contra su Liderazgo; 3D6 en sinapsis).
+2. **Movimiento:** mover (hasta M), avanzar (+D6, sin disparar ni cargar después) o retirarse del combate. Desde la ronda 2 llegan las **reservas**, a más de 8" del enemigo.
+3. **Disparo:** elige tu unidad y haz clic en un enemigo (cada uno lleva una etiqueta con las bajas esperadas). El **panel de ataque** muestra todas las armas con lo que necesitan para impactar, herir y salvar, los modificadores y las bajas esperadas; un botón dispara todas las marcadas. Impactar (HP), herir (Fuerza contra Resistencia), salvar (armadura o invulnerable) y daño. La **cobertura** empeora en 1 la HP del que dispara; la infantería dispara o sus armas de **corto alcance** o las demás.
 4. **Carga:** a 12" o menos, 2D6 para llegar (el panel da la probabilidad); el cargado puede hacer fuego defensivo (impacta a 6).
-5. **Combate:** quien cargó (o tiene Contraataque) golpea primero; una tira muestra el orden. El panel de ataque da los golpes y las bajas esperadas de cada arma.
+5. **Combate:** quien cargó (o tiene Golpea primero) golpea primero; una tira muestra el orden. Cada miniatura golpea con su mejor arma de combate y, además, con las de *Ataques extra*.
 
 **Misiones:** *Toma y mantén*, *Corazón del frente*, *Caza de presas* (PV por puntos destruidos), *Reliquia* (se recoge y se lleva), *Asalto* (asimétrica: uno ataca y otro defiende) y *Cabeza de la serpiente* (PV por cada personaje enemigo destruido). Gana quien tenga más PV tras la ronda 5.
 **Mapas:** de ejemplo, aleatorio, *Ruinas urbanas*, *Llanura* y *Bosque* (los bosques se atraviesan, dan cobertura y tapan la visión si se cruzan más de 3"), todos simétricos.
 **Condiciones:** *Noche* (nada dispara a más de 24") y *Tormenta* (−1 a impactar a más de 12").
 
 ## Ejércitos
-Máximo 3 unidades iguales y 2 unidades grandes —Andador, Tanque, Tirano, Bestia Guardiana o Devorador— (el doble a 1.000 puntos); al menos un personaje. Varias unidades tienen **equipo opcional** (casillas en Ejércitos) y las de Despliegue profundo o Túneles pueden empezar **en reserva** (hasta la mitad de los puntos).
+Desde la versión 0.49 los perfiles, las armas y los puntos de cada unidad son los de su hoja **equivalente de la 11.ª edición de Warhammer 40.000** (sacados de la exportación de datos de Wahapedia del 23-11-2026). Los nombres y los textos de las habilidades son de *Mesa de Guerra*: cada habilidad está redactada con sus propias palabras, con el mismo efecto.
 
-| Legión Astral | M | R | Sv | H | Puntos | Armas | Habilidades |
-|---|---|---|---|---|---|---|---|
-| **Capitán** (personaje) | 6" | 4 | 3+/4++ | 5 | 1: 80 | Pistola de plasma, Espada de energía | Al mando |
-| **Escuadra de Asalto Táctico** | 6" | 4 | 3+ | 2 | 5: 90 · 10: 170 | Rifle bólter, Cuchillo de combate, Pistola bólter, Espada sierra | Sargento |
-| **Escuadra de Fuego Pesado** | 5" | 4 | 3+ | 2 | 5: 150 | Cañón pesado, Cuchillo de combate | — |
-| **Andador de Combate** | 8" | 9 | 2+ | 12 | 1: 190 | Cañón de asalto, Puño de combate | Blindado |
-| **Exterminadores** | 5" | 5 | 2+/4++ | 3 | 5: 175 | Bólter de asalto, Puño de energía | Despliegue profundo |
-| **Psíquico de la Legión** (personaje) | 6" | 4 | 3+/5++ | 4 | 1: 70 | Pistola bólter, Báculo psíquico | Psíquico |
-| **Motoristas de Asalto** | 12" | 5 | 3+ | 2 | 3: 90 · 6: 180 | Bólter gemelo, Cuchillo de combate | Turbo |
-| **Francotiradores** | 6" | 4 | 3+ | 2 | 5: 110 | Rifle de precisión, Cuchillo de combate | Infiltrador |
-| **Saltadores de Asalto** | 12" | 4 | 3+ | 2 | 5: 100 · 10: 200 | Pistola bólter, Espada sierra | Vuelo, Impacto |
-| **Guardia de Honor** | 6" | 4 | 2+/4++ | 3 | 3: 110 · 6: 220 | Pistola bólter, Hacha de energía | Contraataque |
-| **Ingeniero de Combate** (personaje) | 6" | 4 | 2+ | 4 | 1: 65 | Pistola bólter, Servobrazo | Reparar |
-| **Tanque Martillo** | 10" | 10 | 2+ | 12 | 1: 175 | Cañón de batalla, Bólter gemelo, Orugas | Blindado |
-| **Portaestandarte** (personaje) | 6" | 4 | 3+ | 4 | 1: 45 | Pistola bólter, Espada sierra | Estandarte; lidera como el Médico |
-| **Médico de Campaña** (personaje) | 6" | 4 | 3+ | 4 | 1: 55 | Pistola bólter, Cuchillo de combate | Sanador; lidera Asalto, Fuego Pesado, Exterminadores, Francotiradores o Saltadores |
+Listas de **1.000 puntos** (*Incursión*, por defecto) o **500** (*Escaramuza*): como mucho **2 unidades con el mismo nombre** (4 de **línea de batalla**); algunas cuestan más a partir de la 3.ª igual. Al menos un personaje. Cada escuadra puede llevar **un líder y un personaje de apoyo** (Médico o Portaestandarte). El **equipo opcional** se elige con casillas en Ejércitos (casi todo es gratis, como en la 11.ª) y las unidades con Despliegue profundo o Túneles pueden empezar **en reserva** (hasta la mitad de los puntos).
 
-| El Enjambre | M | R | Sv | H | Puntos | Armas | Habilidades |
-|---|---|---|---|---|---|---|---|
-| **Acechadores** | 8" | 5 | 4+ | 3 | 3: 75 · 6: 150 | Cuchillas dobles | Túneles, Rapidez |
-| **Mente del Enjambre** (personaje) | 6" | 5 | 4+/5++ | 5 | 1: 55 | Garras afiladas | Psíquico, Sináptico, Voluntad de la colmena; lidera Garras, Escupidores o Nodo |
-| **Carnífice** | 8" | 9 | 2+ | 10 | 1: 190 | Lanzapinchos, Guadañas monstruosas | Aterrador |
-| **Tirano Sináptico** (personaje) | 8" | 9 | 2+/5++ | 11 | 1: 195 | Garras monstruosas, Escupe-bilis | Sináptico |
-| **Garras Menores** | 8" | 4 | 5+ | 1 | 10: 55 · 20: 110 | Garras | Rapidez |
-| **Escupidores** | 6" | 3 | 4+ | 1 | 10: 55 · 20: 110 | Escupidor, Mordiscos | — |
-| **Gárgolas** | 12" | 3 | 6+ | 1 | 10: 70 · 20: 140 | Escupe-púas, Garras aladas | Vuelo |
-| **Aguijones** | 7" | 3 | 5+ | 1 | 10: 60 · 20: 120 | Aguijón venenoso (Veneno) | — |
-| **Acechador Oculto** | 8" | 6 | 4+ | 6 | 1: 90 | Ganchos de carne, Garras de acechador | Infiltrador, Sigilo |
-| **Bestia Guardiana** | 7" | 8 | 3+ | 8 | 1: 135 | Garras monstruosas | Escudo vivo |
-| **Devorador** | 8" | 8 | 3+ | 9 | 1: 120 | Fauces devoradoras, Escupidor | Devorar |
-| **Biomorteros** | 5" | 5 | 4+ | 3 | 2: 75 · 4: 150 | Biomortero (Indirecto, Explosiva), Garras | — |
-| **Reventadores** | 8" | 3 | 6+ | 1 | 10: 45 · 20: 90 | Mordiscos | Estallido |
-| **Guerreros Nodo** | 6" | 5 | 4+ | 3 | 3: 80 · 6: 160 | Cañón bio, Garras afiladas | Sináptico |
+**Reglas de ejército:** la Legión activa una **doctrina de combate** en cada mando (devastadora, de asalto, táctica y otra vez devastadora: Fuerza de tarea Gladius). El Enjambre tiene **sinapsis** (a 6" de una miniatura sináptica: moral con 3D6 y +1 F en combate), los **instintos de enjambre** (Sostenida 1 contra infantería, Flota de invasión) y, una vez por partida en la ronda 2, la **Sombra en la disformidad** (toda la Legión chequea moral).
+
+| Legión Astral | Equivale a (11.ª) | M | R | Sv | H | CO | Puntos | Armas | Habilidades |
+|---|---|---|---|---|---|---|---|---|---|
+| **Capitán** (personaje) | Captain | 6" | 5 | 3+/4++ | 5 | 1 | 1: 90 | Pistola bólter pesada, Bólter de maestro, Arma de energía de maestro | Hora gloriosa |
+| **Tanque Martillo** | Predator Destructor | 10" | 10 | 3+ | 11 | 3 | 1: 140 (3.ª+: 150) | Autocañón de tanque, Cañones láser (×2), Orugas | Destructor, Dañado 4, Muerte explosiva D3 |
+| **Guardia de Honor** | Bladeguard Veteran Squad | 6" | 5 | 3+/4++ | 3 | 1 | 3: 90 (3.ª+: 110) · 6: 180 (3.ª+: 200) | Pistola bólter pesada, Espada de energía de maestro | Guardia de la hoja |
+| **Ingeniero de Combate** (personaje) | Techmarine | 6" | 5 | 2+ | 4 | 1 | 1: 55 | Bólter de forja, Pistola gravitatoria, Hacha y servobrazo | Bendición de la máquina |
+| **Portaestandarte** (personaje, apoyo) | Ancient | 6" | 5 | 3+ | 4 | 2 | 1: 40 | Pistola bólter, Rifle bólter, Puños de ceramita | Honor de la compañía, Alzar el estandarte |
+| **Saltadores de Asalto** | Assault Intercessors with Jump Packs | 12" | 5 | 3+ | 2 | 1 | 5: 95 (3.ª+: 105) · 10: 190 (3.ª+: 200) | Pistola bólter pesada, Espada sierra | Vuelo, Despliegue profundo, Martillo de ira |
+| **Médico de Campaña** (personaje, apoyo) | Apothecary | 6" | 5 | 3+ | 4 | 1 | 1: 45 | Pistola absolvedora, Servoarmadura, Pistola reductora | Botiquín |
+| **Francotiradores** | Eliminator Squad | 8" | 4 | 3+ | 2 | 1 | 3: 85 | Pistola bólter, Rifle de precisión, Puños de ceramita | Infiltrador, Sigilo, Ópticas de puntería |
+| **Escuadra de Asalto Táctico** (línea de batalla) | Intercessor Squad | 6" | 5 | 3+ | 2 | 2 | 5: 85 · 10: 170 | Pistola bólter, Rifle bólter, Puños y cuchillo | Disciplina bólter |
+| **Escuadra de Fuego Pesado** | Desolation Squad | 6" | 5 | 3+ | 2 | 1 | 5: 140 (3.ª+: 150) | Pistola bólter, Lanzadera de minas, Lanzacohetes de fragmentación, Puños de ceramita | Ópticas de puntería |
+| **Andador de Combate** | Dreadnought | 6" | 9 | 2+ | 8 | 3 | 1: 135 | Cañón de asalto, Bólter de asalto, Puño de andador | Sabiduría de los antiguos, Muerte explosiva 1 |
+| **Exterminadores** | Terminator Squad | 5" | 6 | 2+/4++ | 3 | 1 | 5: 190 (3.ª+: 230) · 10: 380 (3.ª+: 420) | Bólter de asalto, Puño de energía | Despliegue profundo, Furia de la Primera |
+| **Psíquico de la Legión** (personaje) | Librarian | 6" | 5 | 3+ | 4 | 1 | 1: 75 | Pistola bólter, Golpe mental, Arma psíquica | Cúpula de fuerza |
+| **Motoristas de Asalto** | Outrider Squad | 12" | 6 | 3+ | 4 | 2 | 3: 80 · 6: 160 | Pistola bólter pesada, Rifle bólter gemelo, Espada sierra | Asalto a todo gas |
+
+| El Enjambre | Equivale a (11.ª) | M | R | Sv | H | CO | Puntos | Armas | Habilidades |
+|---|---|---|---|---|---|---|---|---|---|
+| **Acechadores** | Raveners | 10" | 5 | 4+ | 3 | 1 | 5: 125 (3.ª+: 135) | Garras de acechador | Túneles |
+| **Mente del Enjambre** (personaje) | Tyranid Prime with Lash Whip | 10" | 5 | 3+ | 6 | 1 | 1: 75 | Garra desgarradora, Guadañas, Látigo | Sináptico, Guerrero alfa |
+| **Carnífice** | Carnifexes | 8" | 9 | 2+ | 8 | 3 | 1: 90 · 2: 180 | Guadañas monstruosas, Guadañas de más | Muerte explosiva 1 |
+| **Tirano Sináptico** (personaje) | Hive Tyrant | 8" | 10 | 2+/4++ | 10 | 3 | 1: 195 | Espada ósea y látigo, Guadañas monstruosas | Sináptico, Embate, Voluntad de la colmena, Muerte explosiva D3 |
+| **Garras Menores** (línea de batalla) | Hormagaunts | 10" | 3 | 5+ | 1 | 2 | 10: 70 · 20: 120 | Garras | Salto feroz |
+| **Escupidores** (línea de batalla) | Termagants | 6" | 3 | 5+ | 1 | 2 | 10: 55 · 20: 110 | Escupidor, Garras y dientes | — |
+| **Aguijones** | Neurogaunts | 6" | 3 | 6+ | 1 | 1 | 11: 45 · 22: 90 | Garras y dientes | Neurocitos |
+| **Acechador Oculto** | Lictor | 8" | 6 | 4+ | 6 | 1 | 1: 60 | Garras de acechador oculto | Golpea primero, Infiltrador, Sigilo, Operativo solitario, Tentáculos devoradores |
+| **Bestia Guardiana** | Screamer-Killer | 8" | 9 | 2+ | 10 | 3 | 1: 125 (3.ª+: 135) | Grito bioplásmico, Garras de la bestia | Grito de muerte, Muerte explosiva 1 |
+| **Devorador** | Haruspex | 8" | 11 | 3+ | 14 | 4 | 1: 125 (3.ª+: 135) | Lengua garfio, Fauces voraces, Garras excavadoras | Espectáculo horrendo, Muerte explosiva D3 |
+| **Biomorteros** | Biovores | 5" | 6 | 3+ | 5 | 1 | 1: 60 · 2: 100 · 3: 140 | Lanzaesporas, Patas punzantes | Muerte explosiva 1 |
+| **Reventadores** | Spore Mines | 4" | 1 | — | 1 | 0 | 3: 55 · 6: 110 | — | Muerte flotante, Vuelo, Despliegue profundo |
+| **Gárgolas** (línea de batalla) | Gargoyles | 12" | 3 | 6+ | 1 | 2 | 10: 75 · 20: 150 | Escupidor, Veneno cegador | Vuelo, Despliegue profundo |
+| **Guerreros Nodo** | Tyranid Warriors with Ranged Bio-weapons | 6" | 5 | 4+ | 3 | 2 | 3: 60 · 6: 120 | Devorador, Garras de guerrero | Sináptico, Depredadores adaptables |
 
 ## Ayudas
 - **Sugerir** (**H**): lo que haría la IA Difícil, en dorado, sin hacerlo.

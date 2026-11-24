@@ -17,7 +17,7 @@ export const PSYCHIC_NEED = 7;
 
 export function isPsyker(s: GameState, unitId: string): boolean {
   const u = s.units.find((x) => x.id === unitId);
-  return !!u && DATASHEETS[u.datasheet].abilities.includes("psiquico");
+  return !!u && (DATASHEETS[u.datasheet].abilities as string[]).includes("psiquico");
 }
 
 /** El poder de cada psíquico (un arma «de mentira» que se resuelve como heridas mortales). */

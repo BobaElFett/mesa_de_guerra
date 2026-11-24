@@ -41,7 +41,8 @@ test("fuego defensivo: la carga espera; disparar gasta 1 PM, impacta con 6 y lue
   const e = bus.state.combatLog.slice(n);
   assert.ok(e.length >= 1);
   assert.ok(e.every((x) => x.overwatch && x.hitOn === 6 && x.result.hitRolls.every((r) => (r === 6) === undefined || true)));
-  assert.ok(e.every((x) => x.result.hits === x.result.hitRolls.filter((r) => r === 6).length || x.hitOn === null));
+  // Solo impactan los 6 (con Sostenida, cada 6 puede dar algún impacto más)
+  assert.ok(e.every((x) => x.hitOn === null || (x.result.hits >= x.result.hitRolls.filter((r) => r === 6).length && x.result.hits <= 2 * x.result.hitRolls.filter((r) => r === 6).length)));
   if (bus.state.pieces.some((p) => p.unit === asl)) assert.ok(bus.state.turnLog.charges?.[asl]);
   // Una vez por turno
   assert.match(overwatchBlocked(bus.state, asl, esc) ?? "", /Ya se ha usado|Trabada|Sin PM/);

@@ -1,5 +1,5 @@
 import { GameState, Piece } from "../core/state";
-import { AttackInput, resolveAttack, saveTarget, SeededDice, woundTarget } from "./attack";
+import { AttackInput, effectiveAp, hitSkill, resolveAttack, saveTarget, SeededDice, woundTarget } from "./attack";
 import { hasAbility, Weapon } from "./datasheets";
 import { AttackExtra, AttackLogEntry, attackInput } from "./shooting";
 
@@ -46,11 +46,12 @@ const clamp1 = (v: number | undefined) => Math.max(-1, Math.min(1, v ?? 0));
 /** Tiradas que hacen falta, a partir de la entrada del ataque. */
 export function rollsNeeded(input: AttackInput): Pick<StepPreview, "hitOn" | "woundOn" | "saveOn"> {
   const w = input.weapon;
-  const hitOn: number | "auto" = hasAbility(w, "torrente") || w.skill === null ? "auto" : input.onlySixes ? 6
-    : Math.max(2, Math.min(6, w.skill - clamp1((input.hitMod ?? 0) + (hasAbility(w, "pesada") && input.stationary ? 1 : 0))));
+  const skill = hitSkill(w, input.cover);
+  const hitOn: number | "auto" = hasAbility(w, "torrente") || skill === null ? "auto" : input.onlySixes ? 6
+    : Math.max(2, Math.min(6, skill - clamp1((input.hitMod ?? 0) + (hasAbility(w, "pesada") && input.stationary ? 1 : 0))));
   const woundOn = input.mortal ? null
     : Math.max(2, Math.min(6, Math.min(woundTarget(w.strength, input.target.profile.T), hasAbility(w, "veneno") ? 4 : 6) - clamp1(input.woundMod)));
-  const saveOn = input.mortal ? null : saveTarget(input.target.profile, w.ap, !!input.cover);
+  const saveOn = input.mortal ? null : saveTarget(input.target.profile, effectiveAp(w, input.apMod));
   return { hitOn, woundOn, saveOn };
 }
 

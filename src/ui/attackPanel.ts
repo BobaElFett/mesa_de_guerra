@@ -5,7 +5,7 @@ import { chargeOptions, fightOptions, fightSteps } from "../rules/melee";
 import { overwatchWeapons } from "../rules/reactions";
 import { chance2d6, previewAttacks, StepPreview } from "../rules/preview";
 import { shootingOptions, shootSteps } from "../rules/shooting";
-import { hasStrat, STRAT_IDS, STRATAGEMS, stratBlocked } from "../rules/stratagems";
+import { hasStrat, STRAT_IDS, StratId, STRATAGEMS, stratBlocked, stratCost } from "../rules/stratagems";
 import { actionsAgainst } from "../rules/actions";
 import { expectedAttack } from "../ai/evaluate";
 import { weaponLine } from "./hud";
@@ -143,7 +143,7 @@ export class AttackPanel {
         if (skip.has(id) || st.phase !== s.phase || (st.faction && st.faction !== fac)) continue;
         if (hasStrat(s, id, u)) { bs.push(`<span class="badge lead">${esc(st.name)} activa</span>`); continue; }
         if (stratBlocked(s, id, u)) continue;
-        bs.push(`<button data-act="impetu" data-id="${id}" data-unit="${u}" title="${esc(st.text)}">${esc(st.name)} · ${st.cost} PM${units.length > 1 ? ` <span class="dim">(${esc(nm(s, u))})</span>` : ""}</button>`);
+        bs.push(`<button data-act="impetu" data-id="${id}" data-unit="${u}" title="${esc(st.text)}">${esc(st.name)} · ${stratCost(s, id as StratId, u)} PM${units.length > 1 ? ` <span class="dim">(${esc(nm(s, u))})</span>` : ""}</button>`);
       }
     }
     return bs.length ? `<div class="ap-other"><span class="dim">Estratagemas:</span>${bs.join("")}</div>` : "";

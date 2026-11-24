@@ -41,12 +41,13 @@ test("vista previa del disparo: tiradas, medias deterministas y sin tocar el est
   const a = previewAttacks(s, steps, 200), b = previewAttacks(s, steps, 200);
   assert.deepEqual(a, b);
   assert.equal(stateHash(s), h0);
-  // Rifle bólter (3+, F4, FP−1) contra Garras (R4, Sv5+): 3+, 4+ y salvan a 6+
+  // Rifle bólter (3+, F5, FP−1) contra Garras (R3, Sv5+): 3+, 3+ y salvan a 6+
   const rifle = steps.find((x) => x.weapon.id === "rifleBolter")!;
+  assert.ok(!steps.some((x) => x.weapon.id === "pistolaBolter"), "la infantería no dispara pistola y rifle a la vez");
   const r = rollsNeeded(attackInput(s, "disparo", sq, rifle.attackers, rifle.weapon, g, rifle.extra));
-  assert.deepEqual(r, { hitOn: 3, woundOn: 4, saveOn: 6 });
-  // Las medias tienen sentido: 5 rifles × 2 a 3+, 4+ y 6+ ≈ 2,8 bajas, como mucho las que hay
-  assert.ok(a.kills > 2 && a.kills < 3.6, String(a.kills));
+  assert.deepEqual(r, { hitOn: 3, woundOn: 3, saveOn: 6 });
+  // Las medias tienen sentido: 5 rifles × 3 (Ráfaga a media distancia) a 3+, 3+ y 6+ ≈ 5,6 bajas
+  assert.ok(a.kills > 4.5 && a.kills < 6.5, String(a.kills));
 });
 
 test("Disparar con todas las armas: una orden, varias tiradas, hasta que cae", () => {

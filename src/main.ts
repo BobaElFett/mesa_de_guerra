@@ -674,7 +674,7 @@ hud.beforeAdvance = () => {
   ai.flushFights();
   return true;
 };
-// Ejércitos: listas de 500 puntos y despliegue
+// Ejércitos: listas de 1.000 puntos (o 500) y despliegue
 const armies = new ArmyDialog(bus, toast);
 armies.onDeployed = () => { runtime.spectate = false; cam.reset(); controls.selected.clear(); controls.onSelectionChange(); ai.paused = false; };
 armies.onSettings = () => refresh();
@@ -730,11 +730,12 @@ document.addEventListener("visibilitychange", () => net.refresh());
 // Partida de prueba: despliega las dos listas de prueba (se puede deshacer)
 document.getElementById("test-armies")!.addEventListener("click", () => {
   applyMap(bus);
-  bus.dispatch({ type: "setArmies", legion: TEST_LEGION, swarm: TEST_SWARM, mission: settings.mission });
+  const t = testLists(settings.gameSize);
+  bus.dispatch({ type: "setArmies", legion: t.legion, swarm: t.swarm, mission: settings.mission });
   if (!bus.state.rulesMode) bus.dispatch({ type: "setRulesMode", on: true });
   tables.hide();
   cam.reset();
-  toast(`Ejércitos de prueba desplegados (${listPoints(TEST_LEGION)} y ${listPoints(TEST_SWARM)} puntos) · ${MISSIONS[settings.mission].name}`);
+  toast(`Ejércitos de prueba desplegados (${listPoints(t.legion)} y ${listPoints(t.swarm)} puntos) · ${MISSIONS[settings.mission].name}`);
 });
 missionPanel.onShowSummary = () => endDialog.show(bus.state);
 missionPanel.onDiscard = (id) => bus.dispatch({ type: "discardSecondary", id });
@@ -800,7 +801,7 @@ function refresh(_s?: unknown, cmd?: Command | null) {
       const name = DATASHEETS[u.datasheet].name;
       return m.dice === null
         ? `<li><b>${name}</b>: sinapsis → <b class="ok">supera</b></li>`
-        : `<li><b>${name}</b>: 2D6 = ${m.dice[0]} + ${m.dice[1]} = <b>${m.dice[0] + m.dice[1]}</b> (necesita ${m.need}) → ${m.passed ? `<b class="ok">supera</b>` : `<b class="bad">desmoralizada</b>`}</li>`;
+        : `<li><b>${name}</b>: ${m.dice.length}D6${m.dice.length > 2 ? " (sinapsis)" : ""} = ${m.dice.join(" + ")} = <b>${m.dice.reduce((a, b) => a + b, 0)}</b> (necesita ${m.need}) → ${m.passed ? `<b class="ok">supera</b>` : `<b class="bad">desmoralizada</b>`}</li>`;
     }).join("");
     shots.info(`<div><b>Chequeos de moral</b> <span class="dim">· unidades por debajo de la mitad</span></div><ul>${rows}</ul>`);
   }
@@ -971,7 +972,7 @@ menu.onQuick = (q) => {
   settings.aiSide = q.side === "legion" ? "swarm" : "legion";
   settings.aiLevel = q.level; settings.mission = q.mission; settings.map = q.map;
   saveSettings();
-  settings.gameSize = q.size ?? 500; saveSettings();
+  settings.gameSize = q.size ?? 1000; saveSettings();
   const size = settings.gameSize;
   let lists = testLists(size);
   if (q.lists === "azar") {
@@ -996,7 +997,7 @@ menu.onQuick = (q) => {
 };
 // Campaña (#70)
 const campaign = new CampaignDialog();
-campaign.lists = (which, size = 500) => {
+campaign.lists = (which, size = 1000) => {
   if (which === "prueba") return testLists(size);
   if (which === "azar") { const seed = Math.floor(Math.random() * 2 ** 30); return { legion: randomList("legion", seed, size), swarm: randomList("swarm", seed + 1, size) }; }
   const l = armies.current();
@@ -1087,4 +1088,4 @@ function recordCampaign() {
 if (settings.showMenu) menu.show();
 
 // Para pruebas desde la consola
-(window as unknown as { mesa: unknown }).mesa = { aim: (t: string) => aim(t), attackPanel, bus, renderer, scene, replay, los, suggestView, showSuggestion, hoverTarget: (u: string | null) => { targetHover = u; }, cam, pieces, controls, tape, ranges, tray, tables, shots, armies, ai, endDialog, fightOptions, net, tactics: { aiStep, fightStep, canFight, aiPlayPhase }, stateHash };
+(window as unknown as { mesa: unknown }).mesa = { aim: (t: string) => aim(t), attackPanel, bus, renderer, scene, replay, los, suggestView, showSuggestion, hoverTarget: (u: string | null) => { targetHover = u; }, cam, pieces, controls, tape, ranges, tray, tables, shots, armies, ai, endDialog, codex, fightOptions, net, tactics: { aiStep, fightStep, canFight, aiPlayPhase }, stateHash };

@@ -1,10 +1,10 @@
 import { SECONDARIES } from "../rules/secondaries";
 import { unitCost as costOf } from "../rules/datasheets";
 import { conditionHitMod } from "../rules/conditions";
-import { pieceWeaponIds } from "../rules/datasheets";
+import { meleeWeaponIds, pieceWeaponIds } from "../rules/datasheets";
 import { BASE_RADIUS, GameState, Piece, PLAYERS } from "../core/state";
-import { abilityX, DATASHEETS, Dice, hasAbility, unitPoints, Weapon, WEAPONS } from "../rules/datasheets";
-import { saveTarget, woundTarget } from "../rules/attack";
+import { abilityX, avgDice as avgOf, DATASHEETS, Dice, hasAbility, unitPoints, Weapon, WEAPONS } from "../rules/datasheets";
+import { critWoundOn, effectiveAp, hitSkill, saveTarget, woundTarget } from "../rules/attack";
 import { disc, gap } from "../rules/geometry";
 import { OBJECTIVE_RADIUS, OBJECTIVE_RANGE, objectiveStatus } from "../rules/missions";
 import { underCommand } from "../rules/leaders";
@@ -12,7 +12,7 @@ import { underCommand } from "../rules/leaders";
 // Cuentas de la IA (#37): valor esperado de un ataque, valor de una unidad y amenazas.
 // Todo es determinista y no toca el estado.
 
-export const avgDice = (d: Dice): number => (typeof d === "number" ? d : d === "D3" ? 2 : 3.5);
+export const avgDice = (d: Dice): number => avgOf(d);
 
 const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
 const clamp1 = (v: number) => clamp(v, -1, 1);
@@ -41,6 +41,9 @@ export interface AttackContext {
   onlySixes?: boolean;
   /** Heridas mortales: sin tirada para herir ni salvación. */
   mortal?: boolean;
+  /** Mejora de la penetración y daño de más (habilidades de 11.ª). */
+  apMod?: number;
+  damageMod?: number;
 }
 
 /**
@@ -59,26 +62,30 @@ export function expectedAttack(s: GameState, weapon: Weapon, attackers: number, 
   const attacks = perModel * attackers;
 
   let hits: number, crits: number;
-  if (hasAbility(weapon, "torrente") || weapon.skill === null) { hits = attacks; crits = 0; }
+  const skill = hitSkill(weapon, ctx.cover);
+  if (hasAbility(weapon, "torrente") || skill === null) { hits = attacks; crits = 0; }
   else {
     const storm = !ctx.onlySixes && !ctx.mortal && range > 0 ? conditionHitMod(s, ctx.distance) : 0;
     const mod = clamp1((ctx.hitMod ?? 0) + storm + (hasAbility(weapon, "pesada") && ctx.stationary ? 1 : 0));
-    let p = ctx.onlySixes ? 1 / 6 : pD6(weapon.skill - mod);
+    let p = ctx.onlySixes ? 1 / 6 : pD6(skill - mod);
     if (ctx.rerollHitOnes && !ctx.onlySixes) p += p / 6;
     hits = attacks * p;
     crits = attacks * (1 / 6) * (ctx.rerollHitOnes ? 7 / 6 : 1);
     if (hasAbility(weapon, "sostenida")) hits += crits * abilityX(weapon, "sostenida");
   }
   const lethal = hasAbility(weapon, "letal") ? crits : 0;
-  let pw = pD6(woundTarget(weapon.strength, P.T) - clamp1(ctx.woundMod ?? 0));
-  if (ctx.rerollWoundOnes) pw += pw / 6;
+  const critOn = critWoundOn(weapon, ds.type);
+  const need = Math.min(Math.min(woundTarget(weapon.strength, P.T), hasAbility(weapon, "veneno") ? 4 : 6) - clamp1(ctx.woundMod ?? 0), critOn);
+  let pw = pD6(need);
+  if (hasAbility(weapon, "gemela")) pw += (1 - pw) * pw;
+  else if (ctx.rerollWoundOnes) pw += pw / 6;
   const wounds = ctx.mortal ? hits : lethal + (hits - lethal) * pw;
-  const sv = ctx.mortal ? null : saveTarget(P, weapon.ap, !!ctx.cover);
+  const sv = ctx.mortal ? null : saveTarget(P, effectiveAp(weapon, ctx.apMod));
   const pFail = sv === null ? 1 : (clamp(sv, 2, 7) - 1) / 6;
-  const devastating = hasAbility(weapon, "devastadora") ? (hits - lethal) * (1 / 6) : 0;
+  const devastating = hasAbility(weapon, "devastadora") ? (hits - lethal) * ((7 - critOn) / 6) : 0;
   const unsaved = devastating + (wounds - devastating) * pFail;
-  let dmg = avgDice(weapon.damage);
-  if (ds.abilities.includes("blindado")) dmg = Math.max(1, dmg - 1);
+  let dmg = avgDice(weapon.damage) + (ctx.mortal ? 0 : ctx.damageMod ?? 0);
+  if (hasAbility(weapon, "fusion") && ctx.distance !== undefined && range > 0 && ctx.distance <= range / 2) dmg += abilityX(weapon, "fusion");
   const perWound = Math.min(dmg, P.W);
   const left = models.reduce((n, p) => n + P.W - (p.damage ?? 0), 0);
   const damage = Math.min(left, unsaved * perWound);
@@ -160,9 +167,7 @@ export function meleeExpected(s: GameState, unitId: string, targetId: string, fr
   const models = s.pieces.filter((p) => p.unit === unitId);
   const byWeapon = new Map<string, number>();
   for (const p of models) {
-    const ids = pieceWeaponIds(ds, p);
-    const w = ids.map((id) => WEAPONS[id]).find((x) => x.range === "CC");
-    if (w) byWeapon.set(w.id, (byWeapon.get(w.id) ?? 0) + 1);
+    for (const wid of meleeWeaponIds(ds, p)) byWeapon.set(wid, (byWeapon.get(wid) ?? 0) + 1);
   }
   let damage = 0, kills = 0;
   const reroll = underCommand(s, unitId);

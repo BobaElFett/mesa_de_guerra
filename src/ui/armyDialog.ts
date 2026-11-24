@@ -6,7 +6,7 @@ import { AiLevel, saveSettings, settings } from "../ai/settings";
 import { CommandBus } from "../core/commands";
 import { Faction, FACTIONS } from "../core/state";
 import { DATASHEETS, DatasheetId, optionPoints, unitPoints } from "../rules/datasheets";
-import { ArmyList, listPoints, validateList, POINTS_LIMIT, TEST_LEGION, TEST_SWARM } from "../rules/armies";
+import { ArmyList, entryPoints, listPoints, validateList, POINTS_LIMIT, TEST_LEGION, TEST_SWARM, testLists } from "../rules/armies";
 import { modal } from "./modal";
 
 // Diálogo «Ejércitos»: una lista por bando con las hojas de datos de ese bando, puntos,
@@ -38,7 +38,7 @@ export function applyMap(bus: CommandBus) {
 }
 
 export class ArmyDialog {
-  private lists: Record<Faction, ArmyList> = { legion: clone(TEST_LEGION), swarm: clone(TEST_SWARM) };
+  private lists: Record<Faction, ArmyList> = { legion: clone(testLists(settings.gameSize).legion), swarm: clone(testLists(settings.gameSize).swarm) };
   onDeployed: () => void = () => {};
   onClosed: () => void = () => {};
   /** Cambió la misión o la IA. */
@@ -76,7 +76,7 @@ export class ArmyDialog {
       settings.map = $<HTMLSelectElement>("map-pick").value as typeof settings.map;
       settings.conditions = $<HTMLSelectElement>("cond-pick").value as typeof settings.conditions;
       settings.secondaries = $<HTMLInputElement>("sec-pick").checked;
-      settings.gameSize = Number($<HTMLSelectElement>("size-pick").value) === 1000 ? 1000 : 500;
+      settings.gameSize = Number($<HTMLSelectElement>("size-pick").value) === 500 ? 500 : 1000;
       this.render();
       saveSettings();
       desc();
@@ -220,7 +220,7 @@ export class ArmyDialog {
   }
 
   private render() {
-    { const k = settings.gameSize / 500; $("armies-rules").textContent = `${settings.gameSize} puntos por bando · máx. ${3 * k} unidades iguales · máx. ${2 * k} unidades grandes · al menos un personaje`; }
+    $("armies-rules").textContent = `${settings.gameSize} puntos por bando · como mucho 2 unidades iguales (4 de línea de batalla; la 3.ª y siguientes pueden costar más) · al menos un personaje`;
     const saved = readSaved();
     let allOk = true;
     $("armies-cols").innerHTML = SIDES.map((f) => {
@@ -232,16 +232,16 @@ export class ArmyDialog {
         const sizes = ds.sizes.map((s) => `<option value="${s.models}"${s.models === u.models ? " selected" : ""}>${s.models}</option>`).join("");
         // Personaje que puede liderar: a qué escuadra de la lista se une
         const squads = ds.leads ? list.units.map((x, j) => ({ x, j })).filter(({ x }) => ds.leads!.includes(x.datasheet)) : [];
-        const leads = ds.leads ? `<div class="lead-pick">Lidera a <select data-leads="${f}|${i}"><option value="">— nadie —</option>`
+        const leads = ds.leads ? `<div class="lead-pick">${ds.support ? "Acompaña a" : "Lidera a"} <select data-leads="${f}|${i}"><option value="">— nadie —</option>`
           + squads.map(({ x, j }) => `<option value="${j}"${u.leads === j ? " selected" : ""}>${j + 1}. ${DATASHEETS[x.datasheet].name} (${x.models})</option>`).join("")
           + `</select></div>` : "";
-        return `<tr><td><span class="dim">${i + 1}.</span> ${ds.name}${ds.character ? ' <span class="dim">(personaje)</span>' : ""}${leads}${(canReserve(ds) ? `<label class="reserve-pick" title="Empieza fuera de la mesa y llega desde la ronda 2 a más de 9&quot; de los enemigos. Si al acabar la ronda 3 no ha llegado, se pierde."><input type="checkbox" data-reserve="${f}|${i}"${u.reserve ? " checked" : ""}> En reserva (llega desde la ronda 2)</label>` : "")}${(ds.options ?? []).map((o) => `<label class="reserve-pick"><input type="checkbox" data-option="${f}|${i}|${o.id}"${u.options?.includes(o.id) ? " checked" : ""}> ${o.name}${o.points ? ` <span class="dim">+${o.perModel ? o.points * u.models : o.points}</span>` : ""}</label>`).join("")}</td>`
+        return `<tr><td><span class="dim">${i + 1}.</span> ${ds.name}${ds.character ? ' <span class="dim">(personaje)</span>' : ""}${leads}${(canReserve(ds) ? `<label class="reserve-pick" title="Empieza fuera de la mesa y llega desde la ronda 2 a más de 8&quot; de los enemigos. Si al acabar la ronda 3 no ha llegado, se pierde."><input type="checkbox" data-reserve="${f}|${i}"${u.reserve ? " checked" : ""}> En reserva (llega desde la ronda 2)</label>` : "")}${(ds.options ?? []).map((o) => `<label class="reserve-pick"><input type="checkbox" data-option="${f}|${i}|${o.id}"${u.options?.includes(o.id) ? " checked" : ""}> ${o.name}${o.points ? ` <span class="dim">+${o.perModel ? o.points * u.models : o.points}</span>` : ""}</label>`).join("")}</td>`
           + `<td>${ds.sizes.length > 1 ? `<select data-size="${f}|${i}">${sizes}</select>` : u.models}</td>`
-          + `<td class="pts">${unitPoints(ds, u.models) === null ? "—" : unitPoints(ds, u.models)! + optionPoints(ds, u.models, u.options)}</td>`
+          + `<td class="pts">${unitPoints(ds, u.models) === null ? "—" : entryPoints(list, i)}</td>`
           + `<td><button data-side="${f}" data-act="remove" data-i="${i}" title="Quitar">×</button></td></tr>`;
       }).join("");
       const options = Object.values(DATASHEETS).filter((d) => d.faction === f)
-        .map((d) => `<option value="${d.id}">${d.name} — ${d.sizes.map((s) => `${s.models}: ${s.points}`).join(" / ")} pts</option>`).join("");
+        .map((d) => `<option value="${d.id}">${d.name} — ${d.sizes.map((s) => `${s.models}: ${s.points}${s.points3 ? ` (3.ª+: ${s.points3})` : ""}`).join(" / ")} pts</option>`).join("");
       const loads = saved[f].map((l) => `<option value="${l.name}">${l.name} (${listPoints(l)} pts)</option>`).join("");
       // En línea: la columna del rival es suya (el invitado no la toca; el anfitrión ve si ha llegado)
       const theirs = this.online && f !== this.online.side;
@@ -260,7 +260,7 @@ export class ArmyDialog {
           <button data-side="${f}" data-act="save">Guardar</button>
           <button data-side="${f}" data-act="delete-saved" title="Borra la lista elegida en el desplegable">Borrar</button>
           <button data-side="${f}" data-act="clear" title="Vaciar">Vaciar</button>
-          <button data-side="${f}" data-act="random" title="Una lista válida de 500 puntos, con equipo y reservas al azar">Al azar</button>
+          <button data-side="${f}" data-act="random" title="Una lista válida para el tamaño de partida, con equipo y reservas al azar">Al azar</button>
         </div>
       </div>`;
     }).join("");

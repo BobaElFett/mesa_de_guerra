@@ -43,7 +43,22 @@ test("declarar el movimiento vale para los dos; mueven lo que la más lenta", ()
   const m = bus.state.turnLog.moves;
   assert.ok(m[cap] && m[squad]);
   assert.deepEqual(m[cap], m[squad]);
-  assert.equal(allowance(bus.state, cap, undefined), 5);   // Fuego Pesado M5, Capitán M6
+  assert.equal(allowance(bus.state, cap, undefined), 6);   // los dos M6 en la 11.ª
+});
+
+test("11.ª: una escuadra lleva un líder y un personaje de apoyo a la vez", () => {
+  const list: ArmyList = { units: [{ datasheet: "capitan", models: 1, leads: 2 }, { datasheet: "medico", models: 1, leads: 2 }, { datasheet: "asalto", models: 5 }] };
+  assert.deepEqual(validateList(list, "legion"), []);
+  const two: ArmyList = { units: [{ datasheet: "capitan", models: 1, leads: 2 }, { datasheet: "psiquico", models: 1, leads: 2 }, { datasheet: "asalto", models: 5 }] };
+  assert.match(validateList(two, "legion").join(" "), /dos líderes/);
+  const bus = game(list);
+  const s = bus.state;
+  const cap = s.units.find((u) => u.datasheet === "capitan")!.id, med = s.units.find((u) => u.datasheet === "medico")!.id;
+  const squad = s.units.find((u) => u.datasheet === "asalto")!.id;
+  assert.deepEqual(formation(s, med), [squad, cap, med]);
+  assert.equal(formationModels(s, squad).length, 7);
+  assert.equal(isGuarded(s, med), true);
+  assert.deepEqual(outOfCoherency(formationModels(s, squad)), []);
 });
 
 test("no se puede disparar al líder mientras quede alguien de su escuadra", () => {
@@ -62,15 +77,16 @@ test("no se puede disparar al líder mientras quede alguien de su escuadra", () 
   assert.doesNotMatch(t2.blocked ?? "", /Protegido/);
 });
 
-test("Al mando: la escuadra y el líder repiten los 1 solo mientras van juntos", () => {
-  const bus = game();
-  const { cap, squad } = ids(bus);
-  const other = bus.state.units.find((u) => u.datasheet === "asalto" && u.id !== squad)!.id;
-  assert.equal(underCommand(bus.state, squad), true);
-  assert.equal(underCommand(bus.state, cap), true);
-  assert.equal(underCommand(bus.state, other), false);
-  bus.dispatch({ type: "removePieces", ids: bus.state.pieces.filter((p) => p.unit === squad).map((p) => p.id) });
-  assert.equal(underCommand(bus.state, cap), false);
+test("Sabiduría de los antiguos: la infantería a 6\" del Andador repite los 1 al impactar", () => {
+  const bus = game({ units: [{ datasheet: "capitan", models: 1 }, { datasheet: "asalto", models: 5 }, { datasheet: "andador", models: 1 }] });
+  const s = bus.state;
+  const sq = s.units.find((u) => u.datasheet === "asalto")!.id, dread = s.units.find((u) => u.datasheet === "andador")!.id;
+  const d = s.pieces.find((p) => p.unit === dread)!;
+  bus.dispatch({ type: "moveMany", moves: s.pieces.filter((p) => p.unit === sq).map((p, i) => ({ id: p.id, x: d.x + 4 + i * 1.3, z: d.z })) });
+  assert.equal(underCommand(bus.state, sq), true);
+  assert.equal(underCommand(bus.state, dread), false);   // no es infantería
+  bus.dispatch({ type: "moveMany", moves: bus.state.pieces.filter((p) => p.unit === sq).map((p, i) => ({ id: p.id, x: d.x + 12 + i * 1.3, z: d.z })) });
+  assert.equal(underCommand(bus.state, sq), false);
 });
 
 test("cargan juntos: una tirada y registro para los dos", () => {

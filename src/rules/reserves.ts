@@ -10,10 +10,10 @@ import type { ArmyList } from "./armies";
 
 // Reservas (#56): unidades con Despliegue profundo (Legión) o Túneles (Enjambre) que empiezan
 // fuera de la mesa. En la fase de movimiento de su bando, desde la ronda 2, llegan a cualquier
-// punto a más de 9" de todos los enemigos (cuenta como su movimiento normal: ese turno ya no
+// punto a más de 8" de todos los enemigos (cuenta como su movimiento normal: ese turno ya no
 // mueven, pero disparan y pueden cargar). Si al acabar la ronda 3 siguen fuera, se pierden.
 
-export const ARRIVE_GAP = 9;
+export const ARRIVE_GAP = 8;
 export const FIRST_ARRIVAL_ROUND = 2;
 export const LAST_ARRIVAL_ROUND = 3;
 
@@ -61,7 +61,7 @@ export function arrivalBlocked(s: GameState, unitId: string): string | null {
 
 /**
  * Dónde caerían las miniaturas si la unidad llega con centro en (x, z): en filas de 5, cada
- * una a más de 9" de cualquier enemigo, sin solapes ni encima de escenografía, y todas a 5"
+ * una a más de 8" de cualquier enemigo, sin solapes ni encima de escenografía, y todas a 5"
  * o menos del punto. null si no caben todas.
  */
 export function arrivalPlacement(s: GameState, unitId: string, x: number, z: number): PieceMove[] | null {

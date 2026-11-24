@@ -53,7 +53,7 @@ export class StartMenu {
           map: $<HTMLSelectElement>("q-map").value as QuickGame["map"],
           lists: $<HTMLSelectElement>("q-lists").value as QuickGame["lists"],
           conditions: $<HTMLSelectElement>("q-cond").value as QuickGame["conditions"],
-          size: Number($<HTMLSelectElement>("q-size").value) === 1000 ? 1000 : 500,
+          size: Number($<HTMLSelectElement>("q-size").value) === 500 ? 500 : 1000,
           secondaries: $<HTMLInputElement>("q-sec").checked,
         };
         try { localStorage.setItem("mesa-de-guerra.rapida", JSON.stringify(q)); } catch { /* nada */ }
@@ -67,7 +67,7 @@ export class StartMenu {
       const q = JSON.parse(localStorage.getItem("mesa-de-guerra.rapida") ?? "null") as QuickGame | null;
       if (q) {
         $<HTMLSelectElement>("q-side").value = q.side; $<HTMLSelectElement>("q-level").value = q.level;
-        $<HTMLSelectElement>("q-mission").value = q.mission; $<HTMLSelectElement>("q-map").value = q.map; $<HTMLSelectElement>("q-lists").value = q.lists; $<HTMLSelectElement>("q-cond").value = q.conditions ?? ""; $<HTMLSelectElement>("q-size").value = String(q.size ?? 500); $<HTMLInputElement>("q-sec").checked = q.secondaries ?? true;
+        $<HTMLSelectElement>("q-mission").value = q.mission; $<HTMLSelectElement>("q-map").value = q.map; $<HTMLSelectElement>("q-lists").value = q.lists; $<HTMLSelectElement>("q-cond").value = q.conditions ?? ""; $<HTMLSelectElement>("q-size").value = String(q.size ?? 1000); $<HTMLInputElement>("q-sec").checked = q.secondaries ?? true;
       } else $<HTMLSelectElement>("q-level").value = "normal";
     } catch { /* nada */ }
     desc();

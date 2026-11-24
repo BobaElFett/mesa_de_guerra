@@ -1,10 +1,11 @@
 import { previewAttacks, chance2d6, expectText } from "../rules/preview";
 import { outcome } from "../rules/missions";
 import { arrivalBlocked, reserveUnits, LAST_ARRIVAL_ROUND } from "../rules/reserves";
-import { pieceWeaponIds, unitCost } from "../rules/datasheets";
+import { pieceWeaponIds, unitCost, abilityLabel } from "../rules/datasheets";
 import { isPsyker, powerOf, psychicBlocked } from "../rules/psychic";
-import { hasStrat, STRAT_IDS, StratId, STRATAGEMS, stratBlocked } from "../rules/stratagems";
-import { formation, partnerOf, underCommand } from "../rules/leaders";
+import { hasStrat, STRAT_IDS, StratId, STRATAGEMS, stratBlocked, stratCost } from "../rules/stratagems";
+import { formation, underCommand } from "../rules/leaders";
+import { DOCTRINES } from "../rules/eleventh";
 import { CommandBus } from "../core/commands";
 import { FACTIONS, GameState, PLAYERS, RollRecord, TERRAIN } from "../core/state";
 import { PHASES, PHASE_INFO, MAX_ROUNDS, Phase } from "../rules/turn";
@@ -58,7 +59,10 @@ function singleCard(s: GameState, uid: string, inFormation = false): string {
   const badges = [
     unit.shocked ? `<span class="badge bad">Desmoralizada</span>` : "",
     belowHalf(s, uid) && !unit.shocked ? `<span class="badge warnb">Por debajo de la mitad</span>` : "",
-    unit.faction === "swarm" && inSynapse(s, uid) ? `<span class="badge syn">En sinapsis</span>` : "",
+    unit.faction === "swarm" && inSynapse(s, uid) ? `<span class="badge syn" title="${UNIT_ABILITY_TEXT.sinaptico.text}">En sinapsis</span>` : "",
+    unit.faction === "legion" && s.rulesMode && s.doctrine ? `<span class="badge" title="${DOCTRINES[s.doctrine].text}">${DOCTRINES[s.doctrine].name}</span>` : "",
+    unit.faction === "swarm" && s.rulesMode ? `<span class="badge" title="Flota de invasión: Sostenida 1 contra infantería">Instintos de enjambre</span>` : "",
+    (unit.domeUntil ?? 0) > s.turn * 2 + s.active ? `<span class="badge lead" title="${UNIT_ABILITY_TEXT.cupula.text}">Cúpula 4+</span>` : "",
     leaderBadge(s, uid),
   ].join("");
   const F = FACTIONS[unit.faction];
@@ -123,14 +127,15 @@ function sheetDetails(s: GameState, uid: string): string {
 /** Botones y estado de la fase en curso (modo reglas). */
 /** Líder unido a escuadra: con quién va y qué gana. */
 function leaderBadge(s: GameState, uid: string): string {
-  const other = partnerOf(s, uid);
-  if (!other) return "";
-  const u = s.units.find((x) => x.id === uid)!, o = s.units.find((x) => x.id === other)!;
-  const name = DATASHEETS[o.datasheet].name;
-  const cmd = underCommand(s, uid) ? " · repite 1 al impactar" : "";
-  return u.attachedTo
-    ? `<span class="badge lead" title="Se mueve y carga con su escuadra; no se le puede disparar mientras quede alguien en ella">Lidera: ${name}${cmd}</span>`
-    : `<span class="badge lead" title="El líder se mueve y carga con la escuadra">Con ${name}${cmd}</span>`;
+  const cmd = underCommand(s, uid) ? `<span class="badge" title="${UNIT_ABILITY_TEXT.sabiduria.text}">Repite 1 al impactar</span>` : "";
+  const f = formation(s, uid);
+  if (f.length < 2) return cmd;
+  const u = s.units.find((x) => x.id === uid)!;
+  const names = f.filter((id) => id !== uid).map((id) => DATASHEETS[s.units.find((x) => x.id === id)!.datasheet].name).join(" y ");
+  const sup = DATASHEETS[u.datasheet].support;
+  return (u.attachedTo
+    ? `<span class="badge lead" title="Se mueve y carga con su escuadra; no se le puede disparar mientras quede alguien en ella">${sup ? "Acompaña" : "Lidera"}: ${names}</span>`
+    : `<span class="badge lead" title="Los personajes se mueven y cargan con la escuadra">Con ${names}</span>`) + cmd;
 }
 
 function phaseActions(s: GameState, uid: string, inFormation = false): string {
@@ -204,7 +209,7 @@ function phaseActions(s: GameState, uid: string, inFormation = false): string {
   }
   if (s.phase === "disparo" && isPsyker(s, uid) && unit.faction === PLAYERS[s.active] && !s.gameOver) {
     const why = psychicBlocked(s, uid);
-    html += `<div class="strats"><span class="badge${why ? "" : " lead"}" title="${UNIT_ABILITY_TEXT.psiquico.text}">${powerOf(s, uid).name}: ${why ?? "haz clic en el enemigo"}</span></div>`;
+    html += `<div class="strats"><span class="badge${why ? "" : " lead"}" title="${"Poder psíquico"}">${powerOf(s, uid).name}: ${why ?? "haz clic en el enemigo"}</span></div>`;
   }
   html += stratButtons(s, uid);
   return html;
@@ -220,18 +225,17 @@ function stratButtons(s: GameState, uid: string): string {
     const st = STRATAGEMS[id];
     if (hasStrat(s, id, uid)) return `<span class="badge lead" title="${st.text}">${st.name} activa</span>`;
     const why = stratBlocked(s, id, uid);
-    if (st.needsTarget) return `<span class="badge" title="${st.text}${why ? ` — ${why}` : ""}">${st.name} · ${st.cost} PM: ${why ?? "haz clic en el enemigo"}</span>`;
-    return `<button data-strat="${id}|${uid}"${why ? " disabled" : ""} title="${st.text}${why ? ` — ${why}` : ""}">${st.name} · ${st.cost} PM</button>`;
+    if (st.needsTarget) return `<span class="badge" title="${st.text}${why ? ` — ${why}` : ""}">${st.name} · ${stratCost(s, id, uid)} PM: ${why ?? "haz clic en el enemigo"}</span>`;
+    return `<button data-strat="${id}|${uid}"${why ? " disabled" : ""} title="${st.text}${why ? ` — ${why}` : ""}">${st.name} · ${stratCost(s, id, uid)} PM</button>`;
   }).join(" ") + `</div>`;
 }
 
 const fmtIn = (v: number) => `${v.toFixed(1).replace(".", ",")}"`;
 
-/** Perfil corto de un arma: 24" A2 3+ F4 FP−1 D1 (Asalto). */
+/** Perfil corto de un arma: 24" A2 3+ F5 FP−1 Daño 1 (Ráfaga 1, Asalto). */
 export function weaponLine(w: Weapon): string {
-  const ab = w.abilities.map((a) => ({ asalto: "Asalto", pesada: "Pesada", pistola: "Pistola", rafaga: `Ráfaga ${"x" in a ? a.x : ""}`,
-    sostenida: `Sostenida ${"x" in a ? a.x : ""}`, letal: "Letal", devastadora: "Devastadora", explosiva: "Explosiva", torrente: "Torrente", precision: "Precisión", indirecto: "Indirecto", veneno: "Veneno" })[a.kind]);
-  return `${w.range === "CC" ? "CC" : `${w.range}"`} A${w.attacks} ${w.skill ? `${w.skill}+` : "—"} F${w.strength} FP${w.ap === 0 ? "0" : `−${-w.ap}`} D${w.damage}${ab.length ? ` (${ab.join(", ")})` : ""}`;
+  const ab = w.abilities.map(abilityLabel);
+  return `${w.range === "CC" ? "CC" : `${w.range}"`} A${typeof w.attacks === "number" ? w.attacks : ` ${w.attacks}`} ${w.skill ? `${w.skill}+` : "—"} F${w.strength} FP${w.ap === 0 ? "0" : `−${-w.ap}`} Daño ${w.damage}${ab.length ? ` (${ab.join(", ")})` : ""}`;
 }
 
 export interface HudActions {
