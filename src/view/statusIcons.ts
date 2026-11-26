@@ -128,7 +128,7 @@ export class StatusIcons {
           sp.material = this.mat(icon);
           sp.visible = true;
           sp.scale.setScalar(size);
-          sp.position.set(x0 + i * gap, top + 0.75 * scale + 0.2, z);
+          sp.position.set(x0 + i * gap, top + 1.4 * scale + 0.2, z);   // encima de la barra de vida
           sp.userData.label = ICON_LABEL[icon];
           n++;
         });

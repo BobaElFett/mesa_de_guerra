@@ -1,3 +1,4 @@
+import { adjustingArrival, checkArrivalAdjust } from "../rules/reserves";
 import { runtime, settings } from "../ai/settings";
 import { formation, formationModels } from "../rules/leaders";
 import { CommandBus, PieceMove } from "../core/commands";
@@ -64,6 +65,7 @@ export function createRulesGate(bus: CommandBus, view: PiecesView, notify: (msg:
       if (!inMovement()) return [x, z];
       const p = view.pieceOf(id), u = p?.unit;
       if (!p || !u) return [x, z];
+      if (adjustingArrival(bus.state, u)) return [x, z];          // recién llegada: se coloca libre
       return clampToAllowance(originOf(bus.state, p), x, z, allowance(bus.state, u, bus.state.turnLog.moves[u]));
     },
 
@@ -73,6 +75,7 @@ export function createRulesGate(bus: CommandBus, view: PiecesView, notify: (msg:
       const minis = minisOf(ids);
       const u = minis.length ? unitOf(minis[0]) : null;
       if (!u) return null;
+      if (adjustingArrival(bus.state, u)) return `<span class="dim">Colocando la llegada</span>`;
       let used = 0;
       for (const id of minis) {
         const p = view.pieceOf(id)!, g = view.groupOf(id)!;
@@ -95,6 +98,11 @@ export function createRulesGate(bus: CommandBus, view: PiecesView, notify: (msg:
       const rest = moves.filter((m) => !view.pieceOf(m.id));
       const u = minis.length ? unitOf(minis[0].id) : null;
       if (!u) return moves;
+      if (adjustingArrival(bus.state, u)) {
+        const r = checkArrivalAdjust(bus.state, u, minis);
+        if (r.message) notify(r.message);
+        return [...r.moves, ...rest] as PieceMove[];
+      }
       const move = bus.state.turnLog.moves[u] ?? { kind: "normal" as const };
       const r = checkMove(bus.state, u, minis, move);
       if (r.message) notify(r.message);

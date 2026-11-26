@@ -2,6 +2,10 @@
 
 Lo nuevo de cada versión de *Mesa de Guerra*, de la más reciente a la primera.
 
+## 0.52.1 · llegadas al detalle y vida a la vista (#147–#148)
+- **Colocar la llegada al detalle (#147):** tras llegar desde la reserva (con Despliegue profundo, Túneles o por un borde), hasta acabar esa fase de movimiento se pueden arrastrar sus miniaturas una a una a donde quieras. Cada una tiene que seguir cumpliendo las condiciones de llegada; si no, va al sitio válido más cercano o vuelve. La ficha lo recuerda y ya no deja declarar otro movimiento para la unidad recién llegada.
+- **Vida de las miniaturas dañadas (#148):** encima de cada miniatura que ha perdido heridas flota una barra con las que le quedan («3/8»), un tramo por herida, en verde, ámbar o rojo. Se apaga en Ajustes. Los iconos de estado suben un poco para no taparla.
+
 ## 0.52 · fase 33, reservas, vuelo y oleadas de la 11.ª (#143–#146)
 - **Reservas estratégicas (#143):** cualquier unidad puede empezar en reserva (hasta la mitad de los puntos); los personajes van con la escuadra a la que se unen y llegan con ella.
   - Desde la ronda 2 llegan **por un borde**: enteras a 6" o menos de él, a más de 8" de los enemigos y, hasta la ronda 3, fuera de la zona de despliegue rival. Las filas se colocan pegadas al borde.

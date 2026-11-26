@@ -5,6 +5,7 @@ import { DATASHEETS, Datasheet, optionPoints, unitPoints } from "./datasheets";
 import { resolveOverlaps } from "../core/placement";
 import { onForbiddenTerrain, disc, gap } from "./geometry";
 import { recordCasualties } from "./missions";
+import { formation } from "./leaders";
 import { note, unitName } from "./history";
 import type { ArmyList } from "./armies";
 
@@ -110,13 +111,13 @@ export function inEnemyZone(faction: "legion" | "swarm", z: number, r: number): 
 }
 
 /** ¿Por qué no vale este sitio para una miniatura que llega? (null = vale) */
-export function arrivalSpotError(s: GameState, unitId: string, x: number, z: number, r: number): string | null {
+export function arrivalSpotError(s: GameState, unitId: string, x: number, z: number, r: number, deep = groupDeepStrikes(s, unitId)): string | null {
   const u = s.units.find((q) => q.id === unitId)!;
   const d = { x, z, r };
   if (s.pieces.some((e) => e.faction !== u.faction && gap(d, disc(e)) <= ARRIVE_GAP)) return `A más de ${ARRIVE_GAP}" de los enemigos.`;
   if (onForbiddenTerrain(s.terrain, x, z, r)) return "No encima de la escenografía.";
   if (Math.abs(x) > BOARD.w / 2 - r + 1e-6 || Math.abs(z) > BOARD.d / 2 - r + 1e-6) return "Dentro de la mesa.";
-  if (groupDeepStrikes(s, unitId)) return null;
+  if (deep) return null;
   if (!nearEdge(x, z, r)) return `Entera a ${EDGE_BAND}" o menos de un borde de la mesa.`;
   if (s.turn < ENEMY_ZONE_ROUND && inEnemyZone(u.faction, z, r)) return `Hasta la ronda ${ENEMY_ZONE_ROUND}, fuera de la zona de despliegue rival.`;
   return null;
@@ -204,4 +205,43 @@ export function loseLateReserves(s: GameState) {
     recordCasualties(s, opp, u.id, n);
     recordDamage(s, null, u.id, 0, n);
   }
+}
+
+// --- Recolocar tras llegar ----------------------------------------------------------
+// La llegada pone la unidad de golpe (en filas). Hasta que acabe esa fase de movimiento, el jugador
+// puede arrastrar sus miniaturas a otro sitio: cada una tiene que seguir cumpliendo las condiciones
+// de llegada (más de 8" de los enemigos y, si no es Despliegue profundo, a 6" de un borde y fuera
+// de la zona rival hasta la ronda 3). No cuenta como movimiento: es colocarla con más detalle.
+
+/** ¿Puede recolocar ahora las miniaturas de esta unidad recién llegada? */
+export function adjustingArrival(s: GameState, unitId: string): boolean {
+  const u = s.units.find((x) => x.id === unitId);
+  return !!u && s.rulesMode && !s.gameOver && s.phase === "movimiento" && u.faction === PLAYERS[s.active]
+    && formation(s, unitId).every((id) => !!s.turnLog.moves[id]?.arrived);
+}
+
+/** Recolocación de una unidad recién llegada: lo que no cumple las condiciones vuelve a su sitio. */
+export function checkArrivalAdjust(s: GameState, unitId: string, moves: PieceMove[]): { moves: PieceMove[]; rejected: string[]; message: string | null } {
+  const ids = formation(s, unitId);
+  const deep = ids.every((id) => deepStrikes(DATASHEETS[s.units.find((u) => u.id === id)!.datasheet]));
+  const u = s.units.find((q) => q.id === unitId)!;
+  const enemies = s.pieces.filter((p) => p.faction !== u.faction).map((p) => ({ x: p.x, z: p.z, r: BASE_RADIUS[p.model] + ARRIVE_GAP }));
+  const rejected: string[] = [];
+  const placed = resolveOverlaps(s.pieces, moves, {
+    avoid: () => enemies,
+    blocked: (px, pz, rr) => onForbiddenTerrain(s.terrain, px, pz, rr + 0.05) !== null,
+    rejected,
+  });
+  let why: string | null = null;
+  const out = placed.filter((m) => {
+    if (rejected.includes(m.id)) return false;
+    const p = s.pieces.find((q) => q.id === m.id);
+    if (!p) return false;
+    const err = arrivalSpotError(s, unitId, m.x, m.z, BASE_RADIUS[p.model], deep);
+    if (err) { why = err; rejected.push(m.id); return false; }
+    return true;
+  });
+  const n = rejected.length;
+  const message = n ? `${why ?? "No cabe ahí."} ${n === 1 ? "1 miniatura vuelve" : `${n} vuelven`} a su sitio.` : null;
+  return { moves: out, rejected, message };
 }

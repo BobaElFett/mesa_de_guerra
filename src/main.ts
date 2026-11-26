@@ -1,4 +1,5 @@
 import { StatusIcons } from "./view/statusIcons";
+import { WoundBars } from "./view/woundBars";
 import { createRoom } from "./app/room";
 import { TurnRecapBox } from "./ui/turnRecap";
 import { setupHelpSearch, setupKeysSheet } from "./ui/helpPanel";
@@ -155,6 +156,8 @@ const effects = new Effects();
 scene.add(effects.group);
 const statusIcons = new StatusIcons();
 scene.add(statusIcons.group);
+const woundBars = new WoundBars();
+scene.add(woundBars.group);
 const solids = new SolidsView();
 scene.add(solids.group);
 const battleLog = new BattleLog();
@@ -231,6 +234,7 @@ controls.onSelectionChange = () => hud.renderSelection(bus.state, controls.selec
 hud.onDeclareMove = (unit, kind, fly) => {
   const s = bus.state;
   const cur = s.turnLog.moves[unit];
+  if (cur?.arrived) { toast("Acaba de llegar: este turno ya no mueve."); return; }
   if (cur?.kind === "avanzar" || formation(s, unit).some((u) => movedSoFar(s, u) > 0.01)) { toast("Esta unidad ya ha movido."); return; }
   bus.dispatch({ type: "declareMove", unit, kind, fly });
 };
@@ -794,6 +798,7 @@ function refresh(_s?: unknown, cmd?: Command | null) {
   pieces.hills = bus.state.terrain.filter((t) => t.kind === "colina");
   pieces.sync(bus.state);
   statusIcons.sync(bus.state);
+  woundBars.sync(bus.state);
   objectives.sync(bus.state);
   solids.sync(bus.state.terrain);
   applyAtmosphere(bus.state.rulesMode ? bus.state.conditions : undefined);
@@ -899,6 +904,8 @@ renderer.setAnimationLoop(() => {
   pieces.update(dt);
   statusIcons.enabled = settings.statusIcons && !replay.active;
   statusIcons.update(pieces, THREE.MathUtils.clamp(cam.zoom / 45, 0.7, 2.2));
+  woundBars.enabled = settings.woundBars;
+  woundBars.update(pieces, THREE.MathUtils.clamp(cam.zoom / 45, 0.7, 2.2));
   objectives.update(dt);
   effects.update(dt);
   solids.group.visible = (bus.state.rulesMode && pieces.dragging.size > 0) || !terrainPanel.hidden;

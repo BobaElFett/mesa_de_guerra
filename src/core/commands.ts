@@ -166,6 +166,7 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
     }
     case "declareMove": {
       if (!s.units.some((u) => u.id === cmd.unit)) break;
+      if (s.turnLog.moves[cmd.unit]?.arrived) break;                       // recién llegada: no mueve más
       if (s.rulesMode && cmd.kind === "retirarse") note(s, "mover", `${unitName(s, cmd.unit)} se retira del combate`);
       const move: { kind: MoveKind; advance?: number; fly?: boolean } = { kind: cmd.kind };
       if (cmd.fly && flies(s, cmd.unit)) {                                  // 11.ª: surca los cielos (−2")

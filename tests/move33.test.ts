@@ -169,3 +169,46 @@ test("partidas con reservas estratégicas por el borde: la IA las trae y la part
   const arrivals = bus.state.history!.filter((h) => /entra por el borde|teletransporta/.test(h.text));
   assert.ok(arrivals.length >= 1);
 });
+
+test("tras llegar, se pueden recolocar sus miniaturas mientras dure la fase, cumpliendo las condiciones", async () => {
+  const { adjustingArrival, checkArrivalAdjust } = await import("../src/rules/reserves");
+  const bus = game();
+  toRound(bus, 2);
+  const s0 = bus.state;
+  const ext = idOf(s0, "exterminadores");
+  for (const p of s0.pieces.filter((x) => x.faction === "swarm")) p.x = BOARD.w / 2 - 1, p.z = 0;
+  bus.dispatch({ type: "arrive", unit: ext, x: -10, z: 0 });
+  const s = bus.state;
+  assert.ok(adjustingArrival(s, ext));
+  const ms = s.pieces.filter((p) => p.unit === ext);
+  // Una en línea, más al oeste: vale (despliegue profundo); otra pegada al Enjambre: vuelve
+  const r = checkArrivalAdjust(s, ext, [{ id: ms[0].id, x: -20, z: 5 }, { id: ms[1].id, x: BOARD.w / 2 - 4, z: 0 }]);
+  assert.ok(r.moves.some((m) => m.id === ms[0].id && Math.hypot(m.x + 20, m.z - 5) < 0.5));
+  // La que se suelta pegada al enemigo va al sitio válido más cercano
+  const m1 = r.moves.find((m) => m.id === ms[1].id);
+  if (m1) for (const e of s.pieces.filter((p) => p.faction === "swarm")) assert.ok(gap({ x: m1.x, z: m1.z, r: 0.8 }, disc(e)) > 8 - 0.3);
+  else assert.deepEqual(r.rejected, [ms[1].id]);
+  // Ya no puede declarar otro movimiento; al pasar de fase, se acabó recolocar
+  bus.dispatch({ type: "declareMove", unit: ext, kind: "normal" });
+  assert.ok(bus.state.turnLog.moves[ext].arrived);
+  bus.dispatch({ type: "nextPhase" });
+  if (bus.state.reaction) bus.dispatch({ type: "nextPhase" });
+  assert.ok(!adjustingArrival(bus.state, ext));
+});
+
+test("vida de las miniaturas dañadas: solo las heridas y vivas, con su color", async () => {
+  const { woundedModels, woundColor } = await import("../src/view/woundBars");
+  const bus = game();
+  const s = cloneState(bus.state);
+  const tyr = s.pieces.find((p) => p.unit === idOf(s, "tirano"))!;
+  const leg = s.pieces.find((p) => p.faction === "legion")!;
+  assert.deepEqual(woundedModels(s), []);
+  tyr.damage = 7;
+  leg.damage = 1;
+  const w = woundedModels(s);
+  assert.equal(w.length, 2);
+  const t = w.find((x) => x.id === tyr.id)!;
+  assert.equal(t.left + 7, t.max);
+  assert.equal(woundColor(10, 10), "#6fdc7a");
+  assert.equal(woundColor(1, 10), "#ef5b4f");
+});

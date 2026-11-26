@@ -1,6 +1,6 @@
 import { previewAttacks, chance2d6, expectText } from "../rules/preview";
 import { outcome } from "../rules/missions";
-import { arrivalBlocked, ENEMY_ZONE_ROUND, groupDeepStrikes, reserveUnits, LAST_ARRIVAL_ROUND } from "../rules/reserves";
+import { adjustingArrival, arrivalBlocked, ENEMY_ZONE_ROUND, groupDeepStrikes, reserveUnits, LAST_ARRIVAL_ROUND } from "../rules/reserves";
 import { pieceWeaponIds, unitCost, abilityLabel } from "../rules/datasheets";
 import { isPsyker, powerOf, psychicBlocked } from "../rules/psychic";
 import { hasStrat, STRAT_IDS, StratId, STRATAGEMS, stratBlocked, stratCost } from "../rules/stratagems";
@@ -147,9 +147,11 @@ function phaseActions(s: GameState, uid: string, inFormation = false): string {
     const mv = s.turnLog.moves[uid];
     const used = movedSoFar(s, uid), max = allowance(s, uid, mv);
     const engagedNow = isEngaged(s, uid);
-    const fixed = mv?.kind === "avanzar" || used > 0.01;
+    const fixed = mv?.kind === "avanzar" || used > 0.01 || !!mv?.arrived;
     const label: Record<MoveKind, string> = { normal: "Mueve", avanzar: "Avanza", retirarse: "Se retira" };
-    html += mv
+    html += mv?.arrived
+      ? `<div>Acaba de llegar${adjustingArrival(s, uid) ? `. <span class="dim">Hasta acabar la fase puedes <b>recolocar sus miniaturas</b> arrastrándolas (siguen valiendo las condiciones de llegada).</span>` : "."}</div>`
+      : mv
       ? `<div>${label[mv.kind]}${mv.fly ? " volando" : ""}${mv.kind === "avanzar" ? ` (${allowance(s, uid, undefined)}" + ${mv.advance}"${mv.fly ? " − 2\"" : ""})` : ""}: <b>${fmtIn(used)}</b> de ${fmtIn(max)}</div>`
       : `<div class="dim">${engagedNow ? "Trabada: solo puede retirarse o quedarse quieta." : "Elige cómo mueve, o arrástrala para un movimiento normal."}</div>`;
     if (!fixed) {
