@@ -5,7 +5,7 @@ la **Legión Astral** (super soldados con servoarmadura) contra **El Enjambre** 
 Se juega como en una mesa de verdad (mover, medir y tirar dados) o con el **modo reglas**, que guía las fases y resuelve las tiradas.
 Three.js + TypeScript, compilado con esbuild a un único `dist/index.html`.
 
-Versión **0.51**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
+Versión **0.52**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
 
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor ni conexión.
@@ -23,7 +23,7 @@ Al abrirlo sale el menú:
 Cada bando tiene un ejército de **1.000 puntos** (*Incursión*, como en la 11.ª edición) o **500** (*Escaramuza*). La partida dura **5 rondas**; en cada una juegan los dos bandos su turno, con cinco fases:
 
 1. **Mando:** +1 punto de mando (PM) por bando para estratagemas; chequean moral las unidades a la mitad o menos y las desmoralizadas (2D6 contra su Liderazgo; 3D6 en sinapsis; si la superan, se recuperan).
-2. **Movimiento:** mover (hasta M), avanzar (+D6, sin disparar ni cargar después) o retirarse del combate (desmoralizada, con tiradas de peligro). Nadie acaba a 2" o menos de un enemigo si no es cargando. Desde la ronda 2 llegan las **reservas**, a más de 8" del enemigo.
+2. **Movimiento:** mover (hasta M), avanzar (+D6, sin disparar ni cargar después) o retirarse del combate (desmoralizada, con tiradas de peligro). Nadie acaba a 2" o menos de un enemigo si no es cargando. No se atraviesan miniaturas enemigas (los monstruos y vehículos, sí la infantería; la huida desesperada, todo). Las unidades con **Vuelo** pueden surcar los cielos: 2" menos, por encima de todo. Desde la ronda 2 llegan las **reservas**: por un borde de la mesa (a 6" o menos; hasta la ronda 3, fuera de la zona rival) o, con Despliegue profundo o Túneles, a cualquier punto; siempre a más de 8" del enemigo.
 3. **Disparo:** elige tu unidad y haz clic en un enemigo (cada uno lleva una etiqueta con las bajas esperadas). El **panel de ataque** muestra todas las armas con lo que necesitan para impactar, herir y salvar, los modificadores y las bajas esperadas; un botón dispara todas las marcadas. Impactar (HP), herir (Fuerza contra Resistencia), salvar (armadura o invulnerable) y daño. La **cobertura** empeora en 1 la HP del que dispara; la infantería dispara o sus armas de **corto alcance** o las demás. La escenografía ligera o densa tapa la visión, y la infantería **oculta** dentro de ella solo se ve a 15".
 4. **Carga:** a 12" o menos, 2D6 para llegar (el panel da la probabilidad).
 5. **Combate:** los dos jugadores se alternan eligiendo unidad, empezando por las que golpean primero (han cargado o tienen Golpea primero); una tira muestra el orden. Cada miniatura golpea con su mejor arma de combate y, además, con las de *Ataques extra*.
@@ -37,7 +37,7 @@ Cada bando tiene un ejército de **1.000 puntos** (*Incursión*, como en la 11.�
 ## Ejércitos
 Desde la versión 0.49 los perfiles, las armas y los puntos de cada unidad son los de su hoja **equivalente de la 11.ª edición de Warhammer 40.000** (sacados de la exportación de datos de Wahapedia del 23-11-2026). Los nombres y los textos de las habilidades son de *Mesa de Guerra*: cada habilidad está redactada con sus propias palabras, con el mismo efecto.
 
-Listas de **1.000 puntos** (*Incursión*, por defecto) o **500** (*Escaramuza*): como mucho **2 unidades con el mismo nombre** (4 de **línea de batalla**); algunas cuestan más a partir de la 3.ª igual. Al menos un personaje. Cada escuadra puede llevar **un líder y un personaje de apoyo** (Médico o Portaestandarte). El **equipo opcional** se elige con casillas en Ejércitos (casi todo es gratis, como en la 11.ª) y las unidades con Despliegue profundo o Túneles pueden empezar **en reserva** (hasta la mitad de los puntos).
+Listas de **1.000 puntos** (*Incursión*, por defecto) o **500** (*Escaramuza*): como mucho **2 unidades con el mismo nombre** (4 de **línea de batalla**); algunas cuestan más a partir de la 3.ª igual. Al menos un personaje. Cada escuadra puede llevar **un líder y un personaje de apoyo** (Médico o Portaestandarte). El **equipo opcional** se elige con casillas en Ejércitos (casi todo es gratis, como en la 11.ª) y cualquier unidad puede empezar **en reserva** (hasta la mitad de los puntos; los personajes, con su escuadra).
 
 **Reglas de ejército:** la Legión activa una **doctrina de combate** en cada mando (devastadora, de asalto, táctica y otra vez devastadora: Fuerza de tarea Gladius). El Enjambre tiene **sinapsis** (a 6" de una miniatura sináptica: moral con 3D6 y +1 F en combate), los **instintos de enjambre** (Sostenida 1 contra infantería, Flota de invasión) y, una vez por partida en la ronda 2, la **Sombra en la disformidad** (toda la Legión chequea moral).
 

@@ -17,6 +17,8 @@ export interface UnitMove {
   advance?: number;
   /** Acaba de llegar desde la reserva: ya no mueve este turno (#56). */
   arrived?: boolean;
+  /** 11.ª: «surca los cielos» (unidad con Vuelo): −2" al máximo, pasa por encima de todo. */
+  fly?: boolean;
 }
 
 /** Registro del turno en curso: qué hizo cada unidad y desde dónde empezó a mover cada miniatura. */
@@ -67,7 +69,7 @@ export function allowance(s: GameState, unitId: string, move: UnitMove | undefin
   const M = Math.min(...formation(s, unitId).map((id) => DATASHEETS[s.units.find((x) => x.id === id)!.datasheet].profile.M));
   if (!move) return M;
   if (move.arrived) return 0;
-  return move.kind === "avanzar" ? M + (move.advance ?? 0) : M;
+  return Math.max(0, (move.kind === "avanzar" ? M + (move.advance ?? 0) : M) - (move.fly ? FLY_PENALTY : 0));
 }
 
 /** Desde dónde mide cada miniatura: su origen de la fase o, si no hay, su sitio actual. */
@@ -105,28 +107,89 @@ export interface MoveCheck {
  *  - cada miniatura, como mucho a su asignación de su origen;
  *  - ninguna acaba a 2" o menos de un enemigo (si pasa, vuelve a donde estaba).
  */
-/** Vuelo (#104): la unidad pasa por encima de la escenografía sólida. */
+/** Vuelo (#104): la unidad puede surcar los cielos (todas sus miniaturas tienen Vuelo). */
 export function flies(s: GameState, unitId: string | undefined): boolean {
   const u = unitId ? s.units.find((x) => x.id === unitId) : undefined;
-  return !!u && DATASHEETS[u.datasheet].abilities.includes("vuelo");
+  return !!u && formation(s, u.id).every((id) => DATASHEETS[s.units.find((x) => x.id === id)!.datasheet].abilities.includes("vuelo"));
+}
+
+/** 11.ª: surcar los cielos resta 2" al movimiento. */
+export const FLY_PENALTY = 2;
+
+/** ¿Este movimiento va por el aire? (lo declaró al elegir cómo mueve) */
+export const airborne = (s: GameState, unitId: string) => !!s.turnLog.moves[unitId]?.fly;
+
+const bigType = (s: GameState, unitId?: string) => {
+  const u = unitId ? s.units.find((x) => x.id === unitId) : undefined;
+  const t = u ? DATASHEETS[u.datasheet].type : undefined;
+  return t === "monstruo" || t === "vehiculo";
+};
+
+/** Distancia de un punto a un segmento. */
+function segDist(px: number, pz: number, ax: number, az: number, bx: number, bz: number): number {
+  const vx = bx - ax, vz = bz - az, l2 = vx * vx + vz * vz;
+  const t = l2 < 1e-9 ? 0 : Math.max(0, Math.min(1, ((px - ax) * vx + (pz - az) * vz) / l2));
+  return Math.hypot(px - (ax + vx * t), pz - (az + vz * t));
+}
+
+/**
+ * Miniatura enemiga que la peana de `p` atravesaría yendo en línea recta a (x, z), o null (11.ª):
+ * no se pasa a través de enemigos; los monstruos y vehículos (al mover o avanzar) sí, salvo a
+ * través de otros monstruos y vehículos; la huida desesperada y el vuelo, a través de todo.
+ */
+export function crossesEnemy(s: GameState, p: Piece, x: number, z: number, move: UnitMove | undefined): Piece | null {
+  return blockersOnPath(s, p, x, z, move)[0] ?? null;
+}
+
+/** Enemigos que se interponen en el camino recto de `p` a (x, z), con dónde se toparía (0–1). */
+function blockersOnPath(s: GameState, p: Piece, x: number, z: number, move: UnitMove | undefined): (Piece & { at?: number })[] {
+  if (move?.fly) return [];
+  const u = s.units.find((q) => q.id === p.unit);
+  if (!u) return [];
+  if (move?.kind === "retirarse" && u.shocked) return [];                // huida desesperada
+  const big = bigType(s, p.unit) && move?.kind !== "retirarse";
+  const r = BASE_RADIUS[p.model];
+  const out: (Piece & { at: number })[] = [];
+  const vx = x - p.x, vz = z - p.z, vv = vx * vx + vz * vz;
+  for (const e of s.pieces) {
+    if (e.faction === p.faction || !e.unit) continue;
+    if (big && !bigType(s, e.unit)) continue;
+    const R = r + BASE_RADIUS[e.model] - 0.05;
+    // Las peanas se pisarían en algún punto del camino (sin contar donde ya estaba)
+    if (Math.hypot(e.x - p.x, e.z - p.z) < R) continue;
+    if (segDist(e.x, e.z, p.x, p.z, x, z) >= R) continue;
+    const wx = e.x - p.x, wz = e.z - p.z, b = vx * wx + vz * wz, c = wx * wx + wz * wz - R * R;
+    const at = vv < 1e-9 ? 0 : Math.max(0, (b - Math.sqrt(Math.max(0, b * b - vv * c))) / vv);
+    out.push({ ...e, at });
+  }
+  return out.sort((a, b) => a.at - b.at);
 }
 
 export function checkMove(s: GameState, unitId: string, moves: PieceMove[], move: UnitMove): MoveCheck {
+  move = move ?? { kind: "normal" };                // la sugerencia comprueba sin haberlo declarado
   const max = allowance(s, unitId, move);
   const enemies = enemyModels(s, unitId).map((e) => ({ x: e.x, z: e.z, r: BASE_RADIUS[e.model] + ENGAGEMENT }));
   const byId = new Map(s.pieces.map((p) => [p.id, p]));
   let clamped = false;
   const wanted: PieceMove[] = [];
   const through: string[] = [];
-  let wall: string | null = null;
+  let wall: string | null = null, stopped = 0;
   for (const m of moves) {
     const p = byId.get(m.id);
     if (!p) continue;
     const [cx, cz] = clampToAllowance(originOf(s, p), m.x, m.z, max);
     if (Math.hypot(cx - m.x, cz - m.z) > 0.01) clamped = true;
     // No se atraviesan contenedores ni búnker (#49): el camino desde donde está ahora
-    const t = flies(s, p.unit) ? null : crossesSolid(s.terrain, p.x, p.z, cx, cz, BASE_RADIUS[p.model]);
+    const t = move.fly ? null : crossesSolid(s.terrain, p.x, p.z, cx, cz, BASE_RADIUS[p.model]);
     if (t) { through.push(m.id); wall = TERRAIN[t.kind].name; continue; }
+    // Ni a través de miniaturas enemigas (11.ª): se para donde toparía con la primera
+    const hit = blockersOnPath(s, p, cx, cz, move)[0];
+    if (hit) {
+      const k = Math.max(0, (hit.at ?? 0) - 0.02);
+      wanted.push({ ...m, x: p.x + (cx - p.x) * k, z: p.z + (cz - p.z) * k });
+      stopped++;
+      continue;
+    }
     wanted.push({ ...m, x: cx, z: cz });
   }
   // Un solo paso de colocación con todas las condiciones: sin solapes, fuera del trabamiento
@@ -141,7 +204,10 @@ export function checkMove(s: GameState, unitId: string, moves: PieceMove[], move
   const out = placed.filter((m) => !rejected.includes(m.id));
   rejected.push(...through);
   let message: string | null = null;
-  if (through.length) message = `No se puede atravesar ${wall === "Búnker" ? "el búnker" : `los ${wall!.toLowerCase()}`}: rodéalo (arrastra en dos tramos). ${through.length === 1 ? "1 miniatura vuelve" : `${through.length} vuelven`} a su sitio.`;
+  const back = `${through.length === 1 ? "1 miniatura vuelve" : `${through.length} vuelven`} a su sitio.`;
+  const air = flies(s, unitId) ? " o vuela" : "";
+  if (through.length && wall) message = `No se puede atravesar ${wall === "Búnker" ? "el búnker" : `los ${wall.toLowerCase()}`}: rodéalo (arrastra en dos tramos)${air}. ${back}`;
+  else if (stopped) message = `No se puede pasar a través de miniaturas enemigas${bigType(s, unitId) ? " (los monstruos y vehículos solo a través de infantería)" : ""}: se para delante. Rodéalas${air}.`;
   else if (rejected.length) message = `No se puede acabar a 2" de un enemigo ni encima de otra miniatura (${rejected.length === 1 ? "1 miniatura vuelve" : `${rejected.length} vuelven`} a su sitio).`;
   else if (clamped) message = `Hasta ${fmt(max)} desde donde empezó la fase.`;
   return { moves: out, rejected, message };

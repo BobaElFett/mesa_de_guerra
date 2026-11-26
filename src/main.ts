@@ -51,7 +51,7 @@ import { CAMPAIGN, recordBattle } from "./rules/campaign";
 import { randomMap } from "./rules/maps";
 import { randomList } from "./rules/randomList";
 import { suggest } from "./ai/suggest";
-import { arrivalBlocked, arrivalPlacement } from "./rules/reserves";
+import { arrivalBlocked, arrivalPlacement, arrivalSpotError } from "./rules/reserves";
 import { Tutorial } from "./ui/tutorial";
 import { SettingsDialog, StartMenu } from "./ui/menu";
 import { validateList } from "./rules/armies";
@@ -228,11 +228,11 @@ const tables = new TablesDialog(bus);
 tables.onLoaded = () => { cam.reset(); tape.clear(); };
 controls.onDragInfo = (inches, x, y) => hud.showMeasure(inches, x, y);
 controls.onSelectionChange = () => hud.renderSelection(bus.state, controls.selected, coherencyWarnings());
-hud.onDeclareMove = (unit, kind) => {
+hud.onDeclareMove = (unit, kind, fly) => {
   const s = bus.state;
   const cur = s.turnLog.moves[unit];
   if (cur?.kind === "avanzar" || formation(s, unit).some((u) => movedSoFar(s, u) > 0.01)) { toast("Esta unidad ya ha movido."); return; }
-  bus.dispatch({ type: "declareMove", unit, kind });
+  bus.dispatch({ type: "declareMove", unit, kind, fly });
 };
 
 // Bandeja de dados: clic en un dado lo marca para repetir (antes que seleccionar o medir)
@@ -515,7 +515,11 @@ hud.onArrive = (unit) => {
 controls.interceptBoard = (x, z) => {
   if (!arriving) return false;
   const unit = arriving;
-  if (!arrivalPlacement(bus.state, unit, x, z)) { toast("No cabe ahí: tiene que quedar a más de 9\" de todo enemigo y fuera de la escenografía sólida."); return true; }
+  if (!arrivalPlacement(bus.state, unit, x, z)) {
+    const s = bus.state, r = BASE_RADIUS[(s.reserves ?? []).find((p) => p.unit === unit)?.model ?? "legionario"];
+    toast(`No cabe ahí. ${arrivalSpotError(s, unit, x, z, r) ?? "Tiene que quedar a más de 8\" de todo enemigo y fuera de la escenografía sólida."}`);
+    return true;
+  }
   stopArrival();
   bus.dispatch({ type: "arrive", unit, x, z });
   return true;

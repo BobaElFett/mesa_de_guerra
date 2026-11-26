@@ -5,9 +5,9 @@ import { pickDiscard, secondaryPositionScore } from "./secondaryAi";
 import { discardBlocked, SECONDARIES } from "../rules/secondaries";
 import { reactionOptions, ReactionOption } from "../rules/reactions";
 import { CommandBus, PieceMove } from "../core/commands";
-import { BASE_RADIUS, Faction, GameState, Piece, PLAYERS, TERRAIN, TerrainPiece } from "../core/state";
+import { BASE_RADIUS, BOARD, Faction, GameState, Piece, PLAYERS, TERRAIN, TerrainPiece } from "../core/state";
 import { DATASHEETS, hasAbility, WEAPONS } from "../rules/datasheets";
-import { allowance, checkMove, flies, isEngaged, movedSoFar, unitModels } from "../rules/movement";
+import { allowance, checkMove, crossesEnemy, flies, FLY_PENALTY, isEngaged, movedSoFar, unitModels } from "../rules/movement";
 import { heavyStill, shootingOptions } from "../rules/shooting";
 import { chargeOptions, fightOptions } from "../rules/melee";
 import { formation, formationModels, partnerOf, underCommand } from "../rules/leaders";
@@ -93,7 +93,9 @@ const translated = (models: Piece[], dx: number, dz: number) => models.map((p) =
 
 interface Plan { dx: number; dz: number; kind: "normal" | "avanzar" | "retirarse"; score: number; why: string;
   /** Rodeo en dos tramos (#87): primero hasta aquí (desplazamiento), luego al destino. */
-  via?: { dx: number; dz: number } }
+  via?: { dx: number; dz: number };
+  /** 11.ª: surca los cielos (−2"), por encima de miniaturas y escenografía. */
+  fly?: boolean }
 
 /**
  * Rodear escenografía sólida (#87): si el camino recto choca con una pieza, prueba a pasar por
@@ -131,15 +133,17 @@ function detours(s: GameState, models: Piece[], c: { x: number; z: number }, tx:
   return out;
 }
 
-/** ¿Pueden todas las miniaturas hacer este movimiento (o sus dos tramos) sin atravesar nada sólido? */
+/** ¿Pueden todas las miniaturas hacer este movimiento (o sus dos tramos) sin atravesar nada sólido ni enemigos? */
 function pathClear(s: GameState, models: Piece[], cnd: Plan): boolean {
-  if (models.length && models.every((p) => flies(s, p.unit))) return true;
+  if (cnd.fly) return true;
+  const mv = { kind: cnd.kind };
   return models.every((p) => {
     const r = BASE_RADIUS[p.model];
-    if (!cnd.via) return !crossesSolid(s.terrain, p.x, p.z, p.x + cnd.dx, p.z + cnd.dz, r);
+    if (!cnd.via) return !crossesSolid(s.terrain, p.x, p.z, p.x + cnd.dx, p.z + cnd.dz, r) && !crossesEnemy(s, p, p.x + cnd.dx, p.z + cnd.dz, mv);
     const mx = p.x + cnd.via.dx, mz = p.z + cnd.via.dz;
     return !crossesSolid(s.terrain, p.x, p.z, mx, mz, r) && !crossesSolid(s.terrain, mx, mz, p.x + cnd.dx, p.z + cnd.dz, r)
-      && !onForbiddenTerrain(s.terrain, mx, mz, r + 0.05);
+      && !onForbiddenTerrain(s.terrain, mx, mz, r + 0.05)
+      && !crossesEnemy(s, p, mx, mz, mv) && !crossesEnemy(s, { ...p, x: mx, z: mz }, p.x + cnd.dx, p.z + cnd.dz, mv);
   });
 }
 
@@ -375,7 +379,8 @@ function planMove(s: GameState, unitId: string, W: Weights, claimed: Map<string,
     if (role !== "melee" && theirs > ours * 1.2 && foes.length) {
       const fc = centroid(foes.flatMap((e) => s.pieces.filter((p) => p.unit === e.id)));
       const vx = c.x - fc.x, vz = c.z - fc.z, len = Math.hypot(vx, vz) || 1;
-      return { dx: (vx / len) * (max - 0.1), dz: (vz / len) * (max - 0.1), kind: "retirarse", score: 0, why: "se retira" };
+      const fly = flies(s, unitId), d = max - 0.1 - (fly ? FLY_PENALTY : 0);
+      return { dx: (vx / len) * d, dz: (vz / len) * d, kind: "retirarse", score: 0, why: fly ? "se retira volando" : "se retira", fly };
     }
     return { dx: 0, dz: 0, kind: "normal", score: 0, why: "sigue en combate" };
   }
@@ -391,17 +396,25 @@ function planMove(s: GameState, unitId: string, W: Weights, claimed: Map<string,
   for (const t of targets) {
     const vx = t.x - c.x, vz = t.z - c.z, len = Math.hypot(vx, vz);
     if (len < 0.3) continue;
-    for (const kind of canAdvance ? ["normal", "avanzar"] as const : ["normal"] as const) {
-      const lim = kind === "avanzar" ? max + 3 : max - 0.05;
+    for (const kind of canAdvance ? ["normal", "avanzar"] as const : ["normal"] as const) for (const fly of flies(s, unitId) ? [false, true] : [false]) {
+      const lim = (kind === "avanzar" ? max + 3 : max - 0.05) - (fly ? FLY_PENALTY : 0);
       // Hasta el destino (menos la distancia que quiere guardar), sin pasarse de lo que mueve
       const want = t.keep > 0 ? Math.max(0, len - t.keep - 1.5) : len;
       for (const frac of [1, 0.5]) {
         const d = Math.min(want * frac, lim);
         if (d < 0.3) continue;
         const ux = vx / len, uz = vz / len;
-        cands.push({ dx: ux * d, dz: uz * d, kind, score: 0, why: "" });
-        // Si el camino recto choca con escenografía sólida, prueba a rodear (#49, #87)
-        if (models.some((p) => !flies(s, p.unit) && crossesSolid(s.terrain, p.x, p.z, p.x + ux * d, p.z + uz * d, BASE_RADIUS[p.model]))) {
+        cands.push({ dx: ux * d, dz: uz * d, kind, score: 0, why: "", fly });
+        if (fly) continue;
+        // Si el camino recto choca con escenografía sólida o con enemigos, prueba a rodear (#49, #87)
+        const mv = { kind };
+        if (models.some((p) => crossesEnemy(s, p, p.x + ux * d, p.z + uz * d, mv))) {
+          for (const ang of [0.5, -0.5, 1, -1]) {
+            const c = Math.cos(ang), sn = Math.sin(ang);
+            cands.push({ dx: (ux * c - uz * sn) * d, dz: (ux * sn + uz * c) * d, kind, score: 0, why: "" });
+          }
+        }
+        if (models.some((p) => crossesSolid(s.terrain, p.x, p.z, p.x + ux * d, p.z + uz * d, BASE_RADIUS[p.model]))) {
           for (const ang of [0.6, -0.6, 1.1, -1.1]) {
             const c = Math.cos(ang), sn = Math.sin(ang);
             cands.push({ dx: (ux * c - uz * sn) * d, dz: (ux * sn + uz * c) * d, kind, score: 0, why: "" });
@@ -422,13 +435,16 @@ function planMove(s: GameState, unitId: string, W: Weights, claimed: Map<string,
   let best: Plan | null = null;
   for (const cnd of cands) {
     // Que la formación no se salga de la mesa
-    if (models.some((p) => Math.abs(p.x + cnd.dx) > 29.5 || Math.abs(p.z + cnd.dz) > 21.5)) continue;
-    // Ni atravesar contenedores, muros ni búnker (#49), tampoco en los rodeos (#87)
-    if (!pathClear(s, models, cnd)) continue;
+    const still = cnd.dx === 0 && cnd.dz === 0;                   // quedarse quieta siempre vale
+    if (!still && models.some((p) => Math.abs(p.x + cnd.dx) > BOARD.w / 2 - BASE_RADIUS[p.model] + 0.01 || Math.abs(p.z + cnd.dz) > BOARD.d / 2 - BASE_RADIUS[p.model] + 0.01)) continue;
+    // Ni atravesar contenedores, muros ni búnker (#49), tampoco en los rodeos (#87), ni enemigos
+    if (!still && !pathClear(s, models, cnd)) continue;
     const r = scorePosition(s, unitId, cnd.dx, cnd.dz, cnd.kind, W, claimed, assigned);
     let sc = r.score * jitter(s, W, `${unitId}|${cnd.dx.toFixed(1)}|${cnd.dz.toFixed(1)}|${cnd.kind}`);
     if (cnd.dx === 0 && cnd.dz === 0) sc += 0.5;                  // a igualdad, no moverse
     if (cnd.kind === "avanzar") sc -= 2;
+    if (cnd.fly) sc -= 0.3;                                       // a igualdad, sin volar
+    if (cnd.fly) r.why = `${r.why} · volando`;
     if (!best || sc > best.score) best = { ...cnd, score: sc, why: r.why };
   }
   return best!;
@@ -446,7 +462,7 @@ function moveStep(bus: CommandBus, W: Weights): boolean {
   const claimed = new Map<string, number>();
   const u = todo[0];
   const plan = planMove(s, u.id, W, claimed, W.assign ? assignObjectives(s, f).get(u.id) ?? null : null);
-  bus.dispatch({ type: "declareMove", unit: u.id, kind: plan.kind });
+  bus.dispatch({ type: "declareMove", unit: u.id, kind: plan.kind, fly: plan.fly });
   const verb = plan.kind === "avanzar" ? "avanza" : plan.kind === "retirarse" ? "se retira" : "mueve";
   lastActor = u.id;
   lastAction = plan.dx === 0 && plan.dz === 0 ? `${nameOf(s, u.id)} se queda (${plan.why})` : `${nameOf(s, u.id)} ${verb} (${plan.why})`;

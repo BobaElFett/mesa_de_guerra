@@ -2,6 +2,18 @@
 
 Lo nuevo de cada versión de *Mesa de Guerra*, de la más reciente a la primera.
 
+## 0.52 · fase 33, reservas, vuelo y oleadas de la 11.ª (#143–#146)
+- **Reservas estratégicas (#143):** cualquier unidad puede empezar en reserva (hasta la mitad de los puntos); los personajes van con la escuadra a la que se unen y llegan con ella.
+  - Desde la ronda 2 llegan **por un borde**: enteras a 6" o menos de él, a más de 8" de los enemigos y, hasta la ronda 3, fuera de la zona de despliegue rival. Las filas se colocan pegadas al borde.
+  - Con **Despliegue profundo** o **Túneles** en todas sus miniaturas siguen llegando a cualquier punto a más de 8".
+  - Si una llegada no vale, el aviso dice por qué. La IA elige también puntos del borde.
+- **Atravesar miniaturas (#144):** se pasa a través de las propias, no de las enemigas: la miniatura se para delante. Los monstruos y vehículos que mueven o avanzan pasan a través de la infantería enemiga (no de otros monstruos o vehículos), y la huida desesperada, a través de todo.
+- **Vuelo (#145):** las unidades con Vuelo eligen si **surcan los cielos** al mover, avanzar o retirarse: 2" menos, pero por encima de cualquier miniatura y de la escenografía sólida. Botones *Volar*, *Avanzar volando* y *Retirarse volando*; la IA vuela cuando le compensa.
+- **Movimiento de oleada (#146):** el motor ya sabe hacerlo (contra el enemigo más cercano, una vez por fase, nunca trabada ni desmoralizada), pero todavía ninguna regla lo da: llegará con las estratagemas de destacamento.
+- Reglas leídas de las reglas básicas de la 11.ª en Wahapedia (secciones 03, 13, 17, 20 y 21).
+- Equilibrio (120 partidas IA contra IA, 1.000 puntos al azar): Legión 62 % – Enjambre 38 % (antes 69–31). Ya no se cruza entre las filas enemigas y el Enjambre aprovecha mejor sus monstruos.
+- Pruebas nuevas en `tests/move33.test.ts`.
+
 ## 0.51 · fase 32, estratagemas básicas de la 11.ª (#140–#142)
 - **Estratagemas básicas (#140):** *Repetición de mando* (repite una carga fallida), *Desafío épico* (los ataques de combate de una unidad con personaje ganan Precisión), *Valor demente* (supera un chequeo de moral; una vez por partida), *Explosivos* (6D6 a 4+, heridas mortales, a 8"), *Impacto aplastante* (monstruos y vehículos que han cargado) y *Contraofensiva* (2 PM: tu unidad combate justo después de una enemiga).
   - Cada estratagema se usa **una vez por fase** por jugador, cada unidad recibe **una por fase** y las unidades desmoralizadas no reciben ninguna (salvo *Valor demente*).

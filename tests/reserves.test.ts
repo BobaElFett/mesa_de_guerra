@@ -21,10 +21,10 @@ function game(mission: "tomar" | "caza" = "tomar", seed = 41) {
   return bus;
 }
 
-test("listas: solo pueden ir a la reserva las que tienen la habilidad, y como mucho la mitad de los puntos", () => {
+test("listas (11.ª): cualquier unidad puede ir a la reserva, como mucho la mitad de los puntos", () => {
   assert.deepEqual(validateList(LEG, "legion"), []);
-  const bad: ArmyList = { units: [{ datasheet: "capitan", models: 1 }, { datasheet: "asalto", models: 5, reserve: true }] };
-  assert.ok(validateList(bad, "legion").some((e) => /no puede empezar en reserva/.test(e)));
+  const ok: ArmyList = { units: [{ datasheet: "capitan", models: 1 }, { datasheet: "asalto", models: 10 }, { datasheet: "asalto", models: 5, reserve: true }] };
+  assert.deepEqual(validateList(ok, "legion"), []);
   const much: ArmyList = { units: [{ datasheet: "capitan", models: 1 }, { datasheet: "exterminadores", models: 5, reserve: true }] };
   assert.ok(validateList(much, "legion").some((e) => /mitad/.test(e)));
 });

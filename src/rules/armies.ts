@@ -1,4 +1,4 @@
-import { canReserve, reserveErrors, sendToReserves } from "./reserves";
+import { entryInReserve, reserveErrors, sendToReserves } from "./reserves";
 import { onForbiddenTerrain } from "./geometry";
 import { resolveOverlaps } from "../core/placement";
 import { zoneBand } from "./deployment";
@@ -141,7 +141,7 @@ export function deployArmies(s: GameState, legion: ArmyList, swarm: ArmyList, mi
       unit.entry = b.i;
       if (b.attached) unit.attachedTo = unitIdOf.get(b.u.leads!);
       unitIdOf.set(b.i, unit.id);
-      if (b.u.reserve && canReserve(b.ds)) reserved.push(unit.id);
+      if (entryInReserve(list, b.i)) reserved.push(unit.id);
       s.units.push(unit);
       if (!b.attached) squadAt.set(b.i, { x, rowOffset, r: b.r, step: b.step, rows: Math.ceil(b.u.models / b.perRow), perRow: b.perRow, chars: 0 });
       for (let i = 0; i < b.u.models; i++) {

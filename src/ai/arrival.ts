@@ -2,7 +2,7 @@ import { reach } from "../rules/conditions";
 import type { CommandBus } from "../core/commands";
 import { BOARD, GameState, PLAYERS } from "../core/state";
 import { DATASHEETS, WEAPONS } from "../rules/datasheets";
-import { arrivalBlocked, arrivalPlacement, ARRIVE_GAP, reserveUnits } from "../rules/reserves";
+import { arrivalBlocked, arrivalPlacement, ARRIVE_GAP, groupDeepStrikes, nearEdge, reserveUnits } from "../rules/reserves";
 import { OBJECTIVE_RANGE, objectiveStatus } from "../rules/missions";
 import { attackValue, expectedAttack, meleeExpected, p2D6 } from "./evaluate";
 import { disc, gap } from "../rules/geometry";
@@ -15,7 +15,7 @@ function scorePoint(s: GameState, unitId: string, x: number, z: number, smart: b
   const u = s.units.find((q) => q.id === unitId)!;
   const ds = DATASHEETS[u.datasheet];
   const me = PLAYERS.indexOf(u.faction) as 0 | 1;
-  const n = (s.reserves ?? []).filter((p) => p.unit === unitId).length;
+  const n = (s.reserves ?? []).filter((p) => p.unit === unitId).length;   // la escuadra (sus personajes aparte)
   const here = { x, z, r: 2 };
   let sc = 0;
   for (const o of s.objectives ?? []) {
@@ -42,10 +42,12 @@ function scorePoint(s: GameState, unitId: string, x: number, z: number, smart: b
 export function bestArrival(s: GameState, unitId: string, smart: boolean): { x: number; z: number } | null {
   const u = s.units.find((q) => q.id === unitId)!;
   const enemies = s.pieces.filter((p) => p.faction !== u.faction);
+  const deep = groupDeepStrikes(s, unitId);
   const cands: { x: number; z: number; sc: number }[] = [];
-  for (let x = -BOARD.w / 2 + 3; x <= BOARD.w / 2 - 3; x += 2.5) {
-    for (let z = -BOARD.d / 2 + 3; z <= BOARD.d / 2 - 3; z += 2.5) {
+  for (let x = -BOARD.w / 2 + (deep ? 3 : 1.5); x <= BOARD.w / 2 - 1.5; x += 2.5) {
+    for (let z = -BOARD.d / 2 + (deep ? 3 : 1.5); z <= BOARD.d / 2 - 1.5; z += 2.5) {
       if (enemies.some((e) => Math.hypot(e.x - x, e.z - z) < ARRIVE_GAP + 2.5)) continue;
+      if (!deep && !nearEdge(x, z, 0.5)) continue;                       // reserva estratégica: por un borde
       cands.push({ x, z, sc: scorePoint(s, unitId, x, z, smart) });
     }
   }

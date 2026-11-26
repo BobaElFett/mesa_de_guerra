@@ -1,5 +1,5 @@
 import { randomList } from "../rules/randomList";
-import { canReserve } from "../rules/reserves";
+import { canReserve, deepStrikes, entryInReserve } from "../rules/reserves";
 import { mapFor } from "../rules/maps";
 import { MISSIONS, MissionId } from "../rules/missions";
 import { AiLevel, saveSettings, settings } from "../ai/settings";
@@ -235,7 +235,8 @@ export class ArmyDialog {
         const leads = ds.leads ? `<div class="lead-pick">${ds.support ? "Acompaña a" : "Lidera a"} <select data-leads="${f}|${i}"><option value="">— nadie —</option>`
           + squads.map(({ x, j }) => `<option value="${j}"${u.leads === j ? " selected" : ""}>${j + 1}. ${DATASHEETS[x.datasheet].name} (${x.models})</option>`).join("")
           + `</select></div>` : "";
-        return `<tr><td><span class="dim">${i + 1}.</span> ${ds.name}${ds.character ? ' <span class="dim">(personaje)</span>' : ""}${leads}${(canReserve(ds) ? `<label class="reserve-pick" title="Empieza fuera de la mesa y llega desde la ronda 2 a más de 8&quot; de los enemigos. Si al acabar la ronda 3 no ha llegado, se pierde."><input type="checkbox" data-reserve="${f}|${i}"${u.reserve ? " checked" : ""}> En reserva (llega desde la ronda 2)</label>` : "")}${(ds.options ?? []).map((o) => `<label class="reserve-pick"><input type="checkbox" data-option="${f}|${i}|${o.id}"${u.options?.includes(o.id) ? " checked" : ""}> ${o.name}${o.points ? ` <span class="dim">+${o.perModel ? o.points * u.models : o.points}</span>` : ""}</label>`).join("")}</td>`
+        return `<tr><td><span class="dim">${i + 1}.</span> ${ds.name}${ds.character ? ' <span class="dim">(personaje)</span>' : ""}${leads}${u.leads !== undefined ? (entryInReserve(list, i) ? `<div class="dim">En reserva con su escuadra</div>` : "")
+          : canReserve(ds) ? `<label class="reserve-pick" title="${deepStrikes(ds) ? "Despliegue profundo: llega desde la ronda 2 a cualquier punto a más de 8&quot; de los enemigos" : "Reserva estratégica: llega desde la ronda 2 por un borde de la mesa (a 6&quot; o menos), a más de 8&quot; de los enemigos y, hasta la ronda 3, fuera de la zona rival"}. Si al acabar la ronda 3 no ha llegado, se pierde. Sus personajes van con ella."><input type="checkbox" data-reserve="${f}|${i}"${u.reserve ? " checked" : ""}> En reserva${deepStrikes(ds) ? " (despliegue profundo)" : " (por un borde)"}</label>` : ""}${(ds.options ?? []).map((o) => `<label class="reserve-pick"><input type="checkbox" data-option="${f}|${i}|${o.id}"${u.options?.includes(o.id) ? " checked" : ""}> ${o.name}${o.points ? ` <span class="dim">+${o.perModel ? o.points * u.models : o.points}</span>` : ""}</label>`).join("")}</td>`
           + `<td>${ds.sizes.length > 1 ? `<select data-size="${f}|${i}">${sizes}</select>` : u.models}</td>`
           + `<td class="pts">${unitPoints(ds, u.models) === null ? "—" : entryPoints(list, i)}</td>`
           + `<td><button data-side="${f}" data-act="remove" data-i="${i}" title="Quitar">×</button></td></tr>`;

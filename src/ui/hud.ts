@@ -1,6 +1,6 @@
 import { previewAttacks, chance2d6, expectText } from "../rules/preview";
 import { outcome } from "../rules/missions";
-import { arrivalBlocked, reserveUnits, LAST_ARRIVAL_ROUND } from "../rules/reserves";
+import { arrivalBlocked, ENEMY_ZONE_ROUND, groupDeepStrikes, reserveUnits, LAST_ARRIVAL_ROUND } from "../rules/reserves";
 import { pieceWeaponIds, unitCost, abilityLabel } from "../rules/datasheets";
 import { isPsyker, powerOf, psychicBlocked } from "../rules/psychic";
 import { hasStrat, STRAT_IDS, StratId, STRATAGEMS, stratBlocked, stratCost } from "../rules/stratagems";
@@ -10,7 +10,7 @@ import { CommandBus } from "../core/commands";
 import { FACTIONS, GameState, PLAYERS, RollRecord, TERRAIN } from "../core/state";
 import { PHASES, PHASE_INFO, MAX_ROUNDS, Phase } from "../rules/turn";
 import { DATASHEETS } from "../rules/datasheets";
-import { allowance, isEngaged, movedSoFar, MoveKind } from "../rules/movement";
+import { allowance, flies, FLY_PENALTY, isEngaged, movedSoFar, MoveKind } from "../rules/movement";
 import { shootingOptions, shootSteps } from "../rules/shooting";
 import { chargeOptions, fightOptions, pendingChargers } from "../rules/melee";
 import { belowHalf, inSynapse } from "../rules/morale";
@@ -150,12 +150,14 @@ function phaseActions(s: GameState, uid: string, inFormation = false): string {
     const fixed = mv?.kind === "avanzar" || used > 0.01;
     const label: Record<MoveKind, string> = { normal: "Mueve", avanzar: "Avanza", retirarse: "Se retira" };
     html += mv
-      ? `<div>${label[mv.kind]}${mv.kind === "avanzar" ? ` (${allowance(s, uid, undefined)}" + ${mv.advance}")` : ""}: <b>${fmtIn(used)}</b> de ${fmtIn(max)}</div>`
+      ? `<div>${label[mv.kind]}${mv.fly ? " volando" : ""}${mv.kind === "avanzar" ? ` (${allowance(s, uid, undefined)}" + ${mv.advance}"${mv.fly ? " − 2\"" : ""})` : ""}: <b>${fmtIn(used)}</b> de ${fmtIn(max)}</div>`
       : `<div class="dim">${engagedNow ? "Trabada: solo puede retirarse o quedarse quieta." : "Elige cómo mueve, o arrástrala para un movimiento normal."}</div>`;
     if (!fixed) {
-      const b = (k: MoveKind, text: string, on: boolean) =>
-        `<button data-move="${k}" data-unit="${uid}"${on ? "" : " disabled"}${mv?.kind === k ? ' class="on"' : ""}>${text}</button>`;
-      html += `<div class="move-btns">${b("normal", `Mover ${allowance(s, uid, undefined)}"`, !engagedNow)}${b("avanzar", "Avanzar +D6", !engagedNow)}${b("retirarse", "Retirarse", engagedNow)}</div>`;
+      const b = (k: MoveKind, text: string, on: boolean, fly = false) =>
+        `<button data-move="${k}" data-unit="${uid}"${fly ? ' data-fly="1"' : ""}${on ? "" : " disabled"}${mv?.kind === k && !!mv.fly === fly ? ' class="on"' : ""}${fly ? ' title="Surca los cielos: 2&quot; menos, pero pasa por encima de miniaturas y escenografía"' : ""}>${text}</button>`;
+      const M = allowance(s, uid, undefined);
+      html += `<div class="move-btns">${b("normal", `Mover ${M}"`, !engagedNow)}${b("avanzar", "Avanzar +D6", !engagedNow)}${b("retirarse", "Retirarse", engagedNow)}</div>`;
+      if (flies(s, uid)) html += `<div class="move-btns">${b("normal", `Volar ${Math.max(0, M - FLY_PENALTY)}"`, !engagedNow, true)}${b("avanzar", "Avanzar volando", !engagedNow, true)}${b("retirarse", "Retirarse volando", engagedNow, true)}</div>`;
     }
     if (mv?.kind === "avanzar") html += `<div class="dim">Tras avanzar no dispara (salvo armas de Asalto) ni carga${ds.abilities.includes("rapidez") ? " (Rapidez: esta sí puede cargar)" : ""}.</div>`;
     if (mv?.kind === "retirarse") html += `<div class="dim">Tras retirarse no dispara ni carga este turno.</div>`;
@@ -263,7 +265,7 @@ export class Hud {
       const actor = d ? (d.unit ?? d.shoot?.split("|")[0] ?? d.charge?.split("|")[0] ?? d.fight?.split("|")[0] ?? d.strat?.split("|")[1]) : undefined;
       if (actor && !this.canAct(actor)) return;
       const b = (e.target as HTMLElement).closest("button[data-move]") as HTMLButtonElement | null;
-      if (b && !b.disabled) this.onDeclareMove(b.dataset.unit!, b.dataset.move as MoveKind);
+      if (b && !b.disabled) this.onDeclareMove(b.dataset.unit!, b.dataset.move as MoveKind, !!b.dataset.fly);
       if ((e.target as HTMLElement).closest("button[data-toggle=sheet]")) { toggleSheet(); this.onSheetToggle(); return; }
       const cx = (e.target as HTMLElement).closest("button[data-codex]") as HTMLButtonElement | null;
       if (cx) { this.onCodex(cx.dataset.codex!); return; }
@@ -385,7 +387,7 @@ export class Hud {
       const ready = mine.filter((u) => !arrivalBlocked(s, u.id));
       if (ready.length) {
         html = `<span>En reserva${s.turn === LAST_ARRIVAL_ROUND ? ` (<b class="warn">última ronda: si no llegan, se pierden</b>)` : ""}:</span> `
-          + ready.map((u) => `<button data-arrive="${u.id}" title="Elige en la mesa dónde llega: a más de 9&quot; de todo enemigo">Llegar: ${DATASHEETS[u.datasheet]?.name ?? u.datasheet}</button>`).join(" ");
+          + ready.map((u) => `<button data-arrive="${u.id}" title="Elige en la mesa dónde llega: a más de 8&quot; de todo enemigo${groupDeepStrikes(s, u.id) ? "" : ", entera a 6&quot; o menos de un borde" + (s.turn < ENEMY_ZONE_ROUND ? " y fuera de la zona rival" : "")}">Llegar: ${DATASHEETS[u.datasheet]?.name ?? u.datasheet}</button>`).join(" ");
       } else {
         html = `<span class="dim">En reserva: ${list.map(name).join(", ")}</span>`;
       }
@@ -405,7 +407,7 @@ export class Hud {
 
   /** Resumen de la selección, abajo a la izquierda. */
   /** El jugador elige cómo mueve una unidad (botones del panel de unidad). */
-  onDeclareMove: (unit: string, kind: MoveKind) => void = () => {};
+  onDeclareMove: (unit: string, kind: MoveKind, fly?: boolean) => void = () => {};
   /** El jugador dispara un arma de una unidad a una unidad enemiga. */
   onShoot: (unit: string, weapon: string, target: string) => void = () => {};
   onCharge: (unit: string, target: string) => void = () => {};

@@ -2,7 +2,7 @@ import { Faction } from "../core/state";
 import { nextRandom } from "../core/rng";
 import { ArmyEntry, ArmyList, listPoints, POINTS_LIMIT, unitLimit, validateList } from "./armies";
 import { DATASHEETS, Datasheet, DatasheetId } from "./datasheets";
-import { canReserve } from "./reserves";
+import { canReserve, deepStrikes } from "./reserves";
 
 // Listas al azar (#82): una lista válida de hasta 1.000 puntos (o los que se pidan), con un personaje (que lidera si
 // puede), equipo opcional y, a veces, reservas. Con semilla, para repetirla y para las pruebas.
@@ -49,7 +49,7 @@ export function randomList(faction: Faction, seed: number, limit = POINTS_LIMIT)
     });
     // Reservas (a veces), sin pasar de la mitad de los puntos
     for (const u of units) {
-      if (!canReserve(DATASHEETS[u.datasheet]) || rnd() < 0.5) continue;
+      if (u.leads !== undefined || !canReserve(DATASHEETS[u.datasheet]) || rnd() < (deepStrikes(DATASHEETS[u.datasheet]) ? 0.5 : 0.88)) continue;
       u.reserve = true;
       if (validateList({ units }, faction, limit).length) delete u.reserve;
     }

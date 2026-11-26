@@ -624,7 +624,7 @@ export const UNIT_ABILITY_TEXT: Record<UnitAbility, { name: string; text: string
   despliegueProfundo: { name: "Despliegue profundo", text: "Puede empezar en reserva y llegar en la fase de movimiento (desde la ronda 2) a cualquier punto a más de 8\" de los enemigos. Si al acabar la ronda 3 no ha llegado, se pierde." },
   tuneles: { name: "Túneles", text: "Puede empezar en reserva y salir de un túnel en la fase de movimiento (desde la ronda 2) a más de 8\" de los enemigos. Si al acabar la ronda 3 no ha llegado, se pierde." },
   infiltrador: { name: "Infiltrador", text: "Despliega en cualquier punto de su mitad de la mesa a más de 6\" de la línea central, no solo en su zona de despliegue." },
-  vuelo: { name: "Vuelo", text: "Al mover, avanzar, retirarse o cargar pasa por encima de la escenografía sólida (contenedores, búnker, barricadas); no puede acabar encima." },
+  vuelo: { name: "Vuelo", text: "Al mover, avanzar o retirarse puede surcar los cielos: mueve 2\" menos, pero pasa por encima de cualquier miniatura y de la escenografía sólida (contenedores, búnker, barricadas); no puede acabar encima." },
   impacto: { name: "Martillo de ira", text: "Al acabar una carga, tira un dado por cada miniatura trabada con la unidad cargada: cada 4+ le hace una herida mortal." },
   sanador: { name: "Botiquín", text: "En tu fase de mando, la escuadra a la que acompaña recupera D3+1 heridas: primero las de las miniaturas heridas y, con lo que sobre, vuelven miniaturas caídas." },
   estandarte: { name: "Honor de la compañía", text: "La escuadra a la que acompaña suma +1 al control de objetivos de cada miniatura." },

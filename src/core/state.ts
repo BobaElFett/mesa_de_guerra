@@ -152,6 +152,8 @@ export interface GameState {
   reaction?: { kind: "finMovimiento" | "inicioDisparo" | "finCarga"; player: 0 | 1 } | null;
   /** Estratagemas de una vez por partida ya usadas por cada jugador. */
   oncePerBattle?: [string[], string[]];
+  /** Movimientos de oleada hechos (ronda|jugador|fase|unidad): uno por fase. */
+  surged?: string[];
   /** El Enjambre ya ha desatado la Sombra en la disformidad. */
   shadowUsed?: boolean;
   /** Objetivos secundarios (#97). */

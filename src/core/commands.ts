@@ -13,6 +13,7 @@ import { GameState, BOARD, cloneState, createInitialState, TerrainKind, TerrainP
 import { rollDice } from "./rng";
 import { advancePhase, endTurn } from "../rules/turn";
 import type { MoveKind } from "../rules/movement";
+import { flies } from "../rules/movement";
 import { applyShootAll, applyShoot } from "../rules/shooting";
 import { applyCharge, applyFight } from "../rules/melee";
 import { deployArmies, ArmyList } from "../rules/armies";
@@ -53,7 +54,7 @@ export type Command =
   /** Fase de combate: la unidad se agrupa, golpea a la enemiga y consolida. */
   | { type: "fight"; unit: string; target: string }
   /** Fase de movimiento: la unidad elige mover, avanzar (tira 1D6) o retirarse. */
-  | { type: "declareMove"; unit: string; kind: MoveKind }
+  | { type: "declareMove"; unit: string; kind: MoveKind; fly?: boolean }
   /** Gastar puntos de mando (p. ej. 1 PM para repetir una tirada). */
   | { type: "spendCP"; player: 0 | 1; amount: number }
   /** Estratagema: gasta PM y da su efecto a una unidad del jugador activo. */
@@ -166,7 +167,11 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
     case "declareMove": {
       if (!s.units.some((u) => u.id === cmd.unit)) break;
       if (s.rulesMode && cmd.kind === "retirarse") note(s, "mover", `${unitName(s, cmd.unit)} se retira del combate`);
-      const move: { kind: MoveKind; advance?: number } = { kind: cmd.kind };
+      const move: { kind: MoveKind; advance?: number; fly?: boolean } = { kind: cmd.kind };
+      if (cmd.fly && flies(s, cmd.unit)) {                                  // 11.ª: surca los cielos (−2")
+        move.fly = true;
+        if (s.rulesMode) note(s, "mover", `${unitName(s, cmd.unit)} surca los cielos (−2")`);
+      }
       const turbo = cmd.kind === "avanzar" && (DATASHEETS[s.units.find((u) => u.id === cmd.unit)!.datasheet].abilities as string[]).includes("turbo");
       if (turbo) {
         move.advance = 6;

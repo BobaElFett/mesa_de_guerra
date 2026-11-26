@@ -47,7 +47,7 @@ test("la IA adelanta a sus francotiradores", () => {
   assert.ok(zs.length && Math.min(...zs) < 22 - 10);
 });
 
-test("las gárgolas vuelan por encima de un contenedor; las garras no", () => {
+test("las gárgolas vuelan por encima de un contenedor (si surcan los cielos); las garras no", () => {
   const bus = game();
   bus.dispatch({ type: "nextPhase" });   // mando de la Legión
   // Turno del Enjambre
@@ -63,7 +63,9 @@ test("las gárgolas vuelan por encima de un contenedor; las garras no", () => {
   bus.dispatch({ type: "addTerrain", kind: "cajas", x: c.x, z: c.z + 3, rot: 0 } as never);
   const t = bus.state;
   assert.equal(t.terrain.length, 2);
-  const okG = checkMove(t, garg.id, [{ id: g.id, x: g.x, z: g.z + 7 }], { kind: "normal" });
+  const okG = checkMove(t, garg.id, [{ id: g.id, x: g.x, z: g.z + 6 }], { kind: "normal", fly: true });
+  const walkG = checkMove(t, garg.id, [{ id: g.id, x: g.x, z: g.z + 6 }], { kind: "normal" });
+  assert.deepEqual(walkG.rejected, [g.id]);
   const okC = checkMove(t, claw.id, [{ id: c.id, x: c.x, z: c.z + 7 }], { kind: "normal" });
   assert.deepEqual(okG.rejected, []);
   assert.deepEqual(okC.rejected, [c.id]);
