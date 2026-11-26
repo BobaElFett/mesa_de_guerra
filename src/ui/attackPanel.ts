@@ -2,7 +2,6 @@ import type { CommandBus } from "../core/commands";
 import { GameState, PLAYERS } from "../core/state";
 import { DATASHEETS, pieceWeaponIds, Weapon, WEAPONS } from "../rules/datasheets";
 import { chargeOptions, fightOptions, fightSteps } from "../rules/melee";
-import { overwatchWeapons } from "../rules/reactions";
 import { chance2d6, previewAttacks, StepPreview } from "../rules/preview";
 import { shootingOptions, shootSteps } from "../rules/shooting";
 import { hasStrat, STRAT_IDS, StratId, STRATAGEMS, stratBlocked, stratCost } from "../rules/stratagems";
@@ -133,7 +132,7 @@ export class AttackPanel {
 
   /** Estratagemas de la fase que mejoran este ataque (sin objetivo): se activan aquí y el panel se rehace. */
   private stratRow(s: GameState, units: string[]): string {
-    const skip = new Set(["granadas", "oleada", "reagrupar", "impetu", "hambre", "avanceTactico"]);
+    const skip = new Set(["granadas", "oleada", "valor", "repeticion", "hambre", "avanceTactico", "fuegoDefensivo", "humo", "intervencion", "impacto", "contraofensiva"]);
     const bs: string[] = [];
     for (const u of units) {
       if (!this.canAct(u)) continue;
@@ -232,19 +231,18 @@ export class AttackPanel {
     const t = o.targets.find((x) => x.unit === this.target);
     const why = o.done ? "Ya ha cargado este turno." : o.blocked ?? (t ? t.blocked : "Demasiado lejos (más de 12\").");
     if (why || !t) return `<div class="dim ap-msg">${esc(why ?? "")}</div>`;
-    const imp = hasStrat(s, "impetu", head);
+    const imp = hasStrat(s, "repeticion", head);
     const need = t.need - (hasStrat(s, "hambre", head) ? 2 : 0);
     const p = chance2d6(need, imp);
     const fac = s.units.find((u) => u.id === head)!.faction;
-    let dmg = 0;
-    for (const { weapon, shooters } of overwatchWeapons(s, this.target, head)) dmg += expectedAttack(s, weapon, shooters.length, head, { onlySixes: true }).damage;
-    const enemyCp = s.cp[1 - PLAYERS.indexOf(fac)];
-    const boosts = ["impetu", "hambre"].filter((id) => !stratBlocked(s, id as never, head))
-      .map((id) => id === "impetu"
-        ? `<button data-act="impetu" data-id="impetu" data-unit="${head}">Ímpetu · 1 PM <span class="dim">(repetir: ${pct(chance2d6(need, true))})</span></button>`
+    const dmg = 0, enemyCp = 0;   // 11.ª: el fuego defensivo ya no responde a la carga
+    void fac;
+    const boosts = ["repeticion", "hambre"].filter((id) => !stratBlocked(s, id as never, head))
+      .map((id) => id === "repeticion"
+        ? `<button data-act="impetu" data-id="repeticion" data-unit="${head}">Repetición de mando · 1 PM <span class="dim">(repetir: ${pct(chance2d6(need, true))})</span></button>`
         : `<button data-act="impetu" data-id="hambre" data-unit="${head}">Hambre voraz · 1 PM <span class="dim">(+2: ${pct(chance2d6(need - 2, imp))})</span></button>`).join("");
     return `<div class="ap-charge">
-        <div>Distancia <b>${n1(t.distance)}"</b> · necesitas <b>${need}+</b> en 2D6${imp ? " (con Ímpetu: repite si falla)" : ""}${hasStrat(s, "hambre", head) ? " (con Hambre voraz)" : ""}</div>
+        <div>Distancia <b>${n1(t.distance)}"</b> · necesitas <b>${need}+</b> en 2D6${imp ? " (con Repetición de mando: repite si falla)" : ""}${hasStrat(s, "hambre", head) ? " (con Hambre voraz)" : ""}</div>
         <div class="ap-bar"><span style="width:${Math.round(p * 100)}%"></span></div>
         <div><b>${pct(p)}</b> de llegar</div>
         ${dmg > 0.05 && enemyCp > 0 ? `<div class="dim">Si te responde con fuego defensivo (1 PM, le quedan ${enemyCp}): ≈ ${n1(dmg)} heridas.</div>` : ""}

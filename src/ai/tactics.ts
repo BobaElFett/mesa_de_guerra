@@ -3,7 +3,7 @@ import { pieceWeaponIds } from "../rules/datasheets";
 import { arriveStep } from "./arrival";
 import { pickDiscard, secondaryPositionScore } from "./secondaryAi";
 import { discardBlocked, SECONDARIES } from "../rules/secondaries";
-import { overwatchBlocked, overwatchWeapons } from "../rules/reactions";
+import { reactionOptions, ReactionOption } from "../rules/reactions";
 import { CommandBus, PieceMove } from "../core/commands";
 import { BASE_RADIUS, Faction, GameState, Piece, PLAYERS, TERRAIN, TerrainPiece } from "../core/state";
 import { DATASHEETS, hasAbility, WEAPONS } from "../rules/datasheets";
@@ -489,7 +489,7 @@ function bestShots(s: GameState, f: Faction, W?: Weights): ShotPick[] {
         if (t.blocked) continue;
         const e = expectedAttack(s, w.weapon, t.attackers.length, t.unit, {
           distance: t.distance, stationary, cover: t.cover, rerollHitOnes: underCommand(s, u.id), rerollWoundOnes: !!u.veteran,
-          woundMod: hasStrat(s, "punteria", u.id) ? 1 : 0,
+          woundMod: 0,
         });
         out.push({ unit: u.id, weapon: w.weapon.id, target: t.unit, value: (attackValue(s, t.unit, e) + 0.01) * (W ? jitter(s, W, `${u.id}|${w.weapon.id}|${t.unit}`) : 1) });
       }
@@ -537,11 +537,6 @@ function shootStep(bus: CommandBus, W: Weights): boolean {
   const picks = bestShots(s, f, W);
   if (!picks.length) return false;
   const pick = picks[0];
-  // Puntería en la unidad que más va a hacer, si sobran PM
-  if (W.strats && !(s.turnLog.strats ?? []).some((x) => x.id === "punteria") && s.cp[s.active] > W.cpReserve && !stratBlocked(s, "punteria", pick.unit)) {
-    const total = picks.filter((p) => p.unit === pick.unit).reduce((n, p) => Math.max(n, p.value), 0);
-    if (total >= 25) { bus.dispatch({ type: "stratagem", id: "punteria", unit: pick.unit }); lastAction = `Estratagema Puntería en ${nameOf(s, pick.unit)}`; return true; }
-  }
   // Fuego sostenido (#123): en la unidad con más disparos, si sobran PM
   if (W.strats && f === "legion" && s.cp[s.active] > W.cpReserve + 1 && !stratBlocked(s, "fuegoSostenido", pick.unit)) {
     const total = picks.filter((p) => p.unit === pick.unit).reduce((n, p) => Math.max(n, p.value), 0);
@@ -585,7 +580,7 @@ function chargeStep(bus: CommandBus, W: Weights): boolean {
     for (const t of o.targets) {
       if (t.blocked) continue;
       let p = p2D6(t.need);
-      const impetu = W.strats && !stratBlocked(s, "impetu", u.id) && s.cp[s.active] > W.cpReserve;
+      const impetu = W.strats && !stratBlocked(s, "repeticion", u.id) && s.cp[s.active] > W.cpReserve;
       const pi = impetu ? 1 - (1 - p) * (1 - p) : p;
       const gain = formation(s, u.id).reduce((n, id) => n + attackValue(s, t.unit, meleeExpected(s, id, t.unit)), 0);
       const loss = meleeExpected(s, t.unit, u.id).damage * pointsPerWound(s, u.id) * 0.6;
@@ -598,14 +593,17 @@ function chargeStep(bus: CommandBus, W: Weights): boolean {
   }
   if (!best) return false;
   if (W.strats && p2D6(chargeOptions(s, best.unit).targets.find((x) => x.unit === best!.target)!.need) < 0.75
-    && !stratBlocked(s, "impetu", best.unit) && s.cp[s.active] > W.cpReserve && best.net > 20) {
+    && !stratBlocked(s, "repeticion", best.unit) && s.cp[s.active] > W.cpReserve && best.net > 20) {
     // Hambre voraz (#123) suma +2 y sale mejor que repetir cuando la carga es larga
     const need = chargeOptions(s, best.unit).targets.find((x) => x.unit === best!.target)!.need;
-    const id = f === "swarm" && need >= 8 && !stratBlocked(s, "hambre", best.unit) ? "hambre" : "impetu";
+    const id = f === "swarm" && need >= 8 && !stratBlocked(s, "hambre", best.unit) ? "hambre" : "repeticion";
     bus.dispatch({ type: "stratagem", id, unit: best.unit });
   }
   bus.dispatch({ type: "charge", unit: best.unit, target: best.target });
   const rec = bus.state.turnLog.charges?.[best.unit];
+  // Impacto aplastante (11.ª): el monstruo o vehículo que llega
+  if (rec?.success && W.strats && bus.state.cp[bus.state.active] > W.cpReserve && !stratBlocked(bus.state, "impacto", best.unit))
+    bus.dispatch({ type: "stratagem", id: "impacto", unit: best.unit });
   lastActor = best.unit;
   lastAction = `${nameOf(s, best.unit)} carga a ${nameOf(s, best.target)}${rec ? `: 2D6 = ${rec.roll} (necesita ${rec.need}) — ${rec.success ? "¡llega!" : "no llega"}` : ""}`;
   return true;
@@ -627,11 +625,14 @@ export function fightStep(bus: CommandBus, f: Faction, level: AiLevel = "normal"
   }
   if (!best) return false;
   const W = level === "facil" ? null : WEIGHTS[level];
-  if (W && W.strats && PLAYERS[s.active] === f && !stratBlocked(s, "furia", best.unit) && s.cp[s.active] > W.cpReserve && best.value >= 20) {
-    // El Enjambre, con muchas miniaturas, saca más de un ataque extra (Frenesí, #123)
-    const many = unitModels(s, best.unit).length >= 8 && !stratBlocked(s, "frenesi", best.unit);
-    bus.dispatch({ type: "stratagem", id: many ? "frenesi" : "furia", unit: best.unit });
+  // Frenesí (Enjambre, con muchas miniaturas) o Desafío épico (si hay un personaje enemigo trabado)
+  if (W && W.strats && s.cp[PLAYERS.indexOf(f)] > W.cpReserve && best.value >= 20) {
+    if (PLAYERS[s.active] === f && unitModels(s, best.unit).length >= 8 && !stratBlocked(s, "frenesi", best.unit))
+      bus.dispatch({ type: "stratagem", id: "frenesi", unit: best.unit });
+    else if (DATASHEETS[s.units.find((u) => u.id === best!.target)!.datasheet].character && !stratBlocked(s, "desafio", best.unit))
+      bus.dispatch({ type: "stratagem", id: "desafio", unit: best.unit });
   }
+
   bus.dispatch({ type: "fight", unit: best.unit, target: best.target });
   lastActor = best.unit;
   lastAction = `${nameOf(s, best.unit)} combate contra ${nameOf(s, best.target)}`;
@@ -656,32 +657,44 @@ function commandStep(bus: CommandBus, W: Weights): boolean {
       && u.startingModels - s.pieces.filter((p) => p.unit === u.id).length >= 3);
     if (g) { bus.dispatch({ type: "stratagem", id: "oleada", unit: g.id }); lastAction = `Oleada sin fin: vuelven Garras a ${nameOf(s, g.id)}`; return true; }
   }
-  if ((s.turnLog.strats ?? []).some((x) => x.id === "reagrupar")) return false;
-  const shocked = s.units.filter((u) => u.faction === mine(s) && u.shocked && alive(s, u.id))
+  // Valor demente (una vez por partida): la unidad desmoralizada que más vale
+  const shocked = s.units.filter((u) => u.faction === mine(s) && u.shocked && alive(s, u.id) && !stratBlocked(s, "valor", u.id))
     .sort((a, b) => unitCost(s, b.id) - unitCost(s, a.id));
-  if (!shocked.length || s.cp[s.active] <= W.cpReserve) return false;
-  bus.dispatch({ type: "stratagem", id: "reagrupar", unit: shocked[0].id });
-  lastAction = `Estratagema Reagrupar en ${nameOf(s, shocked[0].id)}`;
+  if (!shocked.length || s.cp[s.active] <= W.cpReserve || unitCost(s, shocked[0].id) < 120) return false;
+  bus.dispatch({ type: "stratagem", id: "valor", unit: shocked[0].id });
+  lastAction = `Estratagema Valor demente en ${nameOf(s, shocked[0].id)}`;
   return true;
 }
 
 // --- Fuego defensivo (#50) ------------------------------------------------------
 
-/** ¿Hace fuego defensivo la IA del defensor? Fácil y Normal nunca; Difícil si compensa. */
-export function aiWantsOverwatch(s: GameState, level: AiLevel): boolean {
-  const pc = s.pendingCharge;
-  if (!pc || level === "facil" || !WEIGHTS[level].strats) return false;
-  if (overwatchBlocked(s, pc.unit, pc.target)) return false;
-  let v = 0;
-  for (const { weapon, shooters } of overwatchWeapons(s, pc.target, pc.unit)) {
-    v += attackValue(s, pc.unit, expectedAttack(s, weapon, shooters.length, pc.unit, { onlySixes: true }));
+/**
+ * Ventana de reacción (11.ª): qué hace la IA del jugador que no juega. Fácil nunca usa
+ * estratagemas; Normal y Difícil, si compensa y le sobran PM.
+ */
+export function aiReactionChoice(s: GameState, level: AiLevel): ReactionOption | undefined {
+  const r = s.reaction;
+  if (!r || level === "facil" || !WEIGHTS[level].strats || s.cp[r.player] <= WEIGHTS[level].cpReserve) return undefined;
+  let best: { o: ReactionOption; v: number } | undefined;
+  for (const o of reactionOptions(s, r.kind, r.player)) {
+    let v = 0;
+    if (o.id === "fuegoDefensivo") {
+      const ds = DATASHEETS[s.units.find((u) => u.id === o.unit)!.datasheet];
+      const ws = new Map<string, number>();
+      for (const p of unitModels(s, o.unit)) for (const w of pieceWeaponIds(ds, p)) if (WEAPONS[w].range !== "CC") ws.set(w, (ws.get(w) ?? 0) + 1);
+      for (const [w, n] of ws) v += attackValue(s, o.target!, expectedAttack(s, WEAPONS[w], n, o.target!, { onlySixes: true }));
+    } else if (o.id === "humo") v = unitCost(s, o.unit) / 15;
+    else if (o.id === "intervencion") v = 12;
+    if (!best || v > best.v) best = { o, v };
   }
-  return v >= 6;
+  return best && best.v >= 6 ? best.o : undefined;
 }
 
-/** Si hay una carga en espera, decide el defensor (la IA de nivel `level`). */
+/** Si hay una ventana de reacción abierta, decide su jugador (la IA de nivel `level`). */
 export function aiReact(bus: CommandBus, level: AiLevel) {
-  if (bus.state.pendingCharge) bus.dispatch({ type: "reactCharge", fire: aiWantsOverwatch(bus.state, level) });
+  if (!bus.state.reaction) return;
+  const o = aiReactionChoice(bus.state, level);
+  bus.dispatch(o ? { type: "react", id: o.id, unit: o.unit, target: o.target } : { type: "react" });
 }
 
 // --- Entrada -------------------------------------------------------------------
@@ -693,7 +706,7 @@ export function aiReact(bus: CommandBus, level: AiLevel) {
  */
 export function aiStep(bus: CommandBus, level: AiLevel): boolean {
   const s = bus.state;
-  if (!s.rulesMode || s.gameOver || level === "facil" || s.pendingCharge) return false;
+  if (!s.rulesMode || s.gameOver || level === "facil" || (s.pendingCharge || s.reaction)) return false;
   const W = WEIGHTS[level];
   switch (s.phase) {
     case "mando": return commandStep(bus, W);
@@ -713,7 +726,8 @@ export function aiPlayPhase(bus: CommandBus, level: AiLevel, other: AiLevel = le
   const s = bus.state;
   if (!s.rulesMode || s.gameOver) return;
   setReactHook(opts.humanDefends ? () => {} : (b) => aiReact(b, other));
-  if (level === "facil" && s.phase !== "combate") { simplePhase(bus); return; }
+  const reactAfter = () => { for (let guard = 0; guard < 4 && bus.state.reaction && !opts.humanDefends; guard++) aiReact(bus, other); };
+  if (level === "facil" && s.phase !== "combate") { simplePhase(bus); reactAfter(); return; }
   if (s.phase === "combate") {
     const act = mine(s), opp: Faction = act === "legion" ? "swarm" : "legion";
     let side: Faction = opp;
@@ -725,9 +739,9 @@ export function aiPlayPhase(bus: CommandBus, level: AiLevel, other: AiLevel = le
     }
   } else {
     for (let guard = 0; guard < 200; guard++) {
-      if (bus.state.pendingCharge) { if (opts.humanDefends) return; aiReact(bus, other); continue; }
       if (!aiStep(bus, level)) break;
     }
   }
-  if (!bus.state.pendingCharge) bus.dispatch({ type: "nextPhase" });
+  bus.dispatch({ type: "nextPhase" });
+  reactAfter();   // ventanas de reacción del rival al pasar de fase (11.ª)
 }

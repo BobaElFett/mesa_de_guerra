@@ -74,7 +74,7 @@ export function applyCharge(s: GameState, unitId: string, targetId: string): Cha
   let roll = dice[0] + dice[1] + bonus;
   s.rolls.push({ player: s.active, turn: s.turn, sides: 6, results: dice });
   let success = roll >= t.distance - ENGAGEMENT;
-  if (!success && hasStrat(s, "impetu", unitId)) {          // Ímpetu: se repite la tirada fallada
+  if (!success && hasStrat(s, "repeticion", unitId)) {      // Repetición de mando: se repite la tirada fallada
     [dice, rng] = rollDice(s.rng, 2, 6);
     s.rng = rng;
     roll = dice[0] + dice[1] + bonus;
@@ -82,11 +82,17 @@ export function applyCharge(s: GameState, unitId: string, targetId: string): Cha
     success = roll >= t.distance - ENGAGEMENT;
   }
   const rec: ChargeRecord = { target: targetId, roll, need: t.need, success };
-  note(s, "carga", `${unitName(s, unitId)} carga a ${unitName(s, targetId)}: 2D6 = ${roll} (necesita ${t.need}) — ${success ? "llega" : "no llega"}${hasStrat(s, "impetu", unitId) ? " · con Ímpetu" : ""}`);
+  note(s, "carga", `${unitName(s, unitId)} carga a ${unitName(s, targetId)}: 2D6 = ${roll} (necesita ${t.need}) — ${success ? "llega" : "no llega"}${hasStrat(s, "repeticion", unitId) ? " · con Repetición de mando" : ""}`);
   s.turnLog.charges = { ...(s.turnLog.charges ?? {}) };
   for (const u of formation(s, unitId)) s.turnLog.charges[u] = rec;     // el líder carga con su escuadra
-  if (success) { advanceInto(s, unitId, targetId, roll, false, true); applyImpact(s, unitId, targetId); }
+  if (success) chargeInto(s, unitId, targetId, roll);
   return rec;
+}
+
+/** Movimiento de carga con éxito: la formación entra en contacto y resuelve el Martillo de ira. */
+export function chargeInto(s: GameState, unitId: string, targetId: string, roll: number) {
+  advanceInto(s, unitId, targetId, roll, false, true);
+  applyImpact(s, unitId, targetId);
 }
 
 /**
@@ -149,6 +155,8 @@ function canStillFight(s: GameState, unitId: string): boolean {
  * no le queda ninguna, elige el otro.
  */
 export function fightPicker(s: GameState): 0 | 1 | null {
+  const c = s.turnLog.counter;
+  if (c && canStillFight(s, c)) return PLAYERS.indexOf(s.units.find((u) => u.id === c)!.faction) as 0 | 1;   // Contraofensiva
   const p = (s.turnLog.fightPick ?? s.active) as 0 | 1, o = (1 - p) as 0 | 1;
   const of = (pl: 0 | 1, ff: boolean) => s.units.some((u) => u.faction === PLAYERS[pl] && canStillFight(s, u.id) && (!ff || fightsFirst(s, u.id)));
   if (of(p, true)) return p;
@@ -173,7 +181,10 @@ export function fightOptions(s: GameState, unitId: string): FightOptions {
   else {
     const pick = fightPicker(s);
     const first = pendingChargers(s);
-    if (pick !== null && PLAYERS[pick] !== unit.faction) blocked = "Le toca elegir al rival: se alternan.";
+    const c = s.turnLog.counter && canStillFight(s, s.turnLog.counter) ? s.turnLog.counter : null;
+    if (c && c !== unitId) blocked = "Contraofensiva: combate antes la unidad elegida.";
+    else if (c === unitId) blocked = undefined;
+    else if (pick !== null && PLAYERS[pick] !== unit.faction) blocked = "Le toca elegir al rival: se alternan.";
     else if (first.length && !first.includes(unitId)) blocked = "Primero combaten las unidades que golpean primero (han cargado o tienen Golpea primero).";
   }
   return { blocked, targets, fought };
@@ -278,5 +289,6 @@ export function applyFight(s: GameState, unitId: string, targetId: string): Atta
   consolidate(s, unitId);
   s.turnLog.fought = [...(s.turnLog.fought ?? []), unitId];
   s.turnLog.fightPick = (1 - PLAYERS.indexOf(me.faction)) as 0 | 1;   // ahora elige el otro
+  if (s.turnLog.counter === unitId) delete s.turnLog.counter;
   return entries;
 }

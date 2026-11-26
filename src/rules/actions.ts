@@ -55,7 +55,7 @@ export function actionsAgainst(s: GameState, actor: string[], target: string): B
         const why = w.fired ? "Ya ha disparado." : w.blocked ?? (t ? t.blocked : "Fuera de alcance o sin visión.");
         if (why || !t) { out.push({ label, detail: why ?? "", cmd: null, blocked: why ?? "", value: 0 }); continue; }
         const e = expectedAttack(s, w.weapon, t.attackers.length, target, {
-          distance: t.distance, stationary, cover: t.cover, rerollHitOnes: underCommand(s, u), woundMod: hasStrat(s, "punteria", u) ? 1 : 0,
+          distance: t.distance, stationary, cover: t.cover, rerollHitOnes: underCommand(s, u), woundMod: 0,
         });
         out.push({
           label, cmd: { type: "shoot", unit: u, weapon: w.weapon.id, target },
@@ -96,8 +96,8 @@ export function actionsAgainst(s: GameState, actor: string[], target: string): B
     if (why || !t) out.push({ label: `Cargar a ${tName}`, detail: why ?? "", cmd: null, blocked: why ?? "", value: 0 });
     else {
       const p = p2D6(t.need);
-      const imp = !stratBlocked(s, "impetu", head) ? ` · con Ímpetu (1 PM) ${pct(1 - (1 - p) * (1 - p))}` : hasStrat(s, "impetu", head) ? " · Ímpetu activa" : "";
-      const p2 = hasStrat(s, "impetu", head) ? 1 - (1 - p) * (1 - p) : p;
+      const imp = !stratBlocked(s, "repeticion", head) ? ` · con Repetición de mando (1 PM) ${pct(1 - (1 - p) * (1 - p))}` : hasStrat(s, "repeticion", head) ? " · Repetición de mando activa" : "";
+      const p2 = hasStrat(s, "repeticion", head) ? 1 - (1 - p) * (1 - p) : p;
       out.push({ label: `Cargar a ${tName}`, cmd: { type: "charge", unit: head, target }, detail: `a ${fmt(t.distance)}": 2D6 ≥ ${t.need} → ${pct(p2)}${imp}`, value: p2 * 100 });
     }
   } else if (s.phase === "combate") {
@@ -107,7 +107,7 @@ export function actionsAgainst(s: GameState, actor: string[], target: string): B
       const label = `Combatir${actor.length > 1 ? ` (${name(s, u)})` : ""}`;
       const why = o.blocked ?? (t ? undefined : "No está trabada con esa unidad.");
       if (why) { out.push({ label, detail: why, cmd: null, blocked: why, value: 0 }); continue; }
-      const e = meleeExpected(s, u, target, 0.9, hasStrat(s, "furia", u) ? 1 : 0);
+      const e = meleeExpected(s, u, target, 0.9, 0);
       out.push({ label, cmd: { type: "fight", unit: u, target }, detail: `~${fmt(e.damage)} heridas · ~${fmt(e.kills)} bajas`, value: attackValue(s, target, e) });
     }
   }

@@ -190,7 +190,7 @@ export function shootingOptions(s: GameState, unitId: string): ShootingOptions {
         }
         if (ok) t.attackers.push(id);
       }
-      t.cover = t.attackers.length > 0 && (!anyClear || eds.abilities.includes("sigilo"))
+      t.cover = t.attackers.length > 0 && (!anyClear || eds.abilities.includes("sigilo") || (s.turnLog.smoke ?? []).includes(e.id))
         && !hasAbility(weapon, "ignoraCobertura") && !ds.abilities.includes("opticas");
       // Disparo indirecto (11.ª): sin visión, el objetivo cuenta en cobertura y fallan los 1–5 sin
       // modificar (1–3 si la unidad no se ha movido y otra unidad propia lo ve)
@@ -318,6 +318,7 @@ export function attackInput(s: GameState, kind: AttackLogEntry["kind"], unitId: 
   gain(!extra.mortal && swarmingInstincts(s, unitId, targetId), { kind: "sostenida", x: 1 }, "Sostenida 1 (Instintos de enjambre)");
   const glory = melee && ads.abilities.includes("horaGloriosa") && !(attacker.spent ?? []).includes("horaGloriosa");
   gain(glory, { kind: "devastadora" }, "Devastadora (Hora gloriosa)");
+  gain(melee && hasStrat(s, "desafio", unitId), { kind: "precision" }, "Precisión (Desafío épico)");
   // Sinapsis (11.ª): +1 a la Fuerza en combate
   const synapse = melee && inSynapse(s, unitId);
   if (synapse) notes.push("+1 Fuerza (sinapsis)");
@@ -334,8 +335,7 @@ export function attackInput(s: GameState, kind: AttackLogEntry["kind"], unitId: 
   const bladeAtk = melee && ads.abilities.includes("guardiaHoja") && guarded[unitId] === undefined;
   const bladeDef = melee && tds.abilities.includes("guardiaHoja") && !(s.turnLog.fought ?? []).includes(targetId)
     && (guarded[targetId] === undefined || guarded[targetId] === unitId);
-  const hitMod = add(kind === "combate" && hasStrat(s, "furia", unitId), 1, "+1 impactar (Furia)")
-    + add(storm !== 0, storm, `${storm > 0 ? "+" : "−"}1 impactar (${s.conditions === "tormenta" ? "tormenta" : "noche"})`)
+  const hitMod = add(storm !== 0, storm, `${storm > 0 ? "+" : "−"}1 impactar (${s.conditions === "tormenta" ? "tormenta" : "noche"})`)
     + add(!!extra.penalty, -1, "−1 impactar (disparo trabado)")
     + add(ranged && ads.abilities.includes("disciplina") && (nearObj(unitId) || nearObj(targetId)), 1, "+1 impactar (Disciplina bólter)")
     + add(melee && charged && hammer && ads.abilities.includes("aceleron"), 1, "+1 impactar (Asalto a todo gas)")
@@ -343,7 +343,7 @@ export function attackInput(s: GameState, kind: AttackLogEntry["kind"], unitId: 
     + add(bladeDef, -1, "−1 impactar (Guardia de la hoja del objetivo)")
     + add(damaged, -1, "−1 impactar (dañado)");
   if (hasAbility(weapon, "pesada") && extra.stationary) notes.push("+1 impactar (Pesada: no ha movido más de 3\")");
-  const woundMod = add(kind === "disparo" && !extra.overwatch && hasStrat(s, "punteria", unitId), 1, "+1 herir (Puntería)");
+  const woundMod = 0;
   if (extra.indirect) notes.push(`sin visión (Indirecto): fallan los ${extra.failBelow === 4 ? "1–3" : "1–5"} y no se repite`);
   const apMod = add(ranged && ads.abilities.includes("destructor") && tds.type === "infanteria", 1, "+1 penetración (Destructor)")
     + add(!extra.mortal && ads.abilities.includes("furiaPrimera") && dist <= FURY_RANGE + 1e-6, 1, "+1 penetración (Furia de la Primera, a 9\")");

@@ -2,7 +2,8 @@ import { aiDeploy } from "./deploy";
 import { CommandBus } from "../core/commands";
 import { Faction, GameState, PLAYERS } from "../core/state";
 import { fightPicker } from "../rules/melee";
-import { aiLastAction, aiLastActor, aiPlayPhase, aiStep, aiWantsOverwatch, canFight, fightStep } from "./tactics";
+import { aiLastAction, aiLastActor, aiPlayPhase, aiReactionChoice, aiStep, canFight, fightStep } from "./tactics";
+import { STRATAGEMS } from "../rules/stratagems";
 import { AI_LEVEL_NAME, runtime, settings } from "./settings";
 
 // Jugar contra la IA (#38): cuando le toca al bando de la IA, juega sus fases paso a paso,
@@ -90,15 +91,15 @@ export class AiController {
     if (this.busy()) { this.wait = Math.max(this.wait, 250); return; }
     if (this.wait > 0) { this.wait -= dt * 1000; return; }
 
-    // Carga en espera de fuego defensivo: decide la IA si defiende ella; si no, espera al jugador
-    const pc = s.pendingCharge;
-    if (pc) {
-      if (runtime.spectate || PLAYERS[pc.defender] === side) {
-        const fire = aiWantsOverwatch(s, settings.aiLevel);
-        this.bus.dispatch({ type: "reactCharge", fire });
-        if (fire) this.onAction("Fuego defensivo contra la carga");
+    // Ventana de reacción (11.ª): decide la IA si es ella la que no juega; si no, espera al jugador
+    const r = s.reaction;
+    if (r) {
+      if (runtime.spectate || PLAYERS[r.player] === side) {
+        const o = aiReactionChoice(s, settings.aiLevel);
+        this.bus.dispatch(o ? { type: "react", id: o.id, unit: o.unit, target: o.target } : { type: "react" });
+        if (o) this.onAction(`${STRATAGEMS[o.id].name} en el turno del rival`);
         this.wait = STEP_MS;
-      } else this.onStatus("Te cargan: ¿fuego defensivo?");
+      } else this.onStatus("Te toca reaccionar en el turno de la IA");
       return;
     }
 

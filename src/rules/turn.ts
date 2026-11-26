@@ -4,6 +4,7 @@ import type { GameState } from "../core/state";
 import { runMoraleTests } from "./morale";
 import { scoreObjectives, updateSecured } from "./missions";
 import { forceDomes, selectDoctrine, shadowInTheWarp } from "./eleventh";
+import { openReaction } from "./reactions";
 import { drawSecondaries, scoreSecondaries } from "./secondaries";
 import { healLedSquads, repairVehicles } from "./special";
 
@@ -48,11 +49,15 @@ export function advancePhase(s: GameState) {
   if (s.gameOver) return;
   if (s.phase === "despliegue") { startBattle(s); return; }
   const i = PHASES.indexOf(s.phase);
+  // Ventanas de reacción del rival (11.ª): al acabar el movimiento y la carga, la partida espera
+  if (s.phase === "movimiento" && openReaction(s, "finMovimiento")) return;
+  if (s.phase === "carga" && openReaction(s, "finCarga")) return;
   if (s.rulesMode) updateSecured(s, s.phase === "movimiento");   // Alzar el estandarte, al acabar el movimiento
   if (i < PHASES.length - 1) {
     s.phase = PHASES[i + 1];
     if (s.phase === "movimiento") enterMovement(s);
-    if (s.phase === "combate") s.turnLog.fought = [];
+    if (s.phase === "combate") { s.turnLog.fought = []; delete s.turnLog.fightPick; delete s.turnLog.counter; }
+    if (s.phase === "disparo") openReaction(s, "inicioDisparo");   // Cortina de humo
     return;
   }
   // Fin del turno del jugador activo: puntúa la misión y las órdenes cumplidas

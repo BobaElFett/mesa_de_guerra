@@ -148,6 +148,10 @@ export interface GameState {
   hiveWillRound?: number;
   /** Doctrina de combate activa de la Legión (11.ª, Fuerza de tarea Gladius). */
   doctrine?: "devastador" | "tactica" | "asalto" | null;
+  /** Ventana de reacción abierta en el turno del rival (11.ª): quién decide y en qué momento. */
+  reaction?: { kind: "finMovimiento" | "inicioDisparo" | "finCarga"; player: 0 | 1 } | null;
+  /** Estratagemas de una vez por partida ya usadas por cada jugador. */
+  oncePerBattle?: [string[], string[]];
   /** El Enjambre ya ha desatado la Sombra en la disformidad. */
   shadowUsed?: boolean;
   /** Objetivos secundarios (#97). */

@@ -115,6 +115,8 @@ export interface Datasheet {
   battleline?: boolean;
   /** Personaje de apoyo: va con una escuadra aunque ya lleve líder. */
   support?: boolean;
+  /** Palabras clave que usan las estratagemas (11.ª). */
+  keywords?: ("explosivos" | "humo" | "andador")[];
   /** Dañado X: con X heridas o menos, −1 para impactar. */
   damaged?: number;
   /** Muerte explosiva X: al caer, con un 6, X heridas mortales a cada unidad a 6". */
@@ -283,7 +285,7 @@ export const WEAPONS: Record<string, Weapon> = Object.fromEntries([
 export const DATASHEETS: Record<DatasheetId, Datasheet> = {
   // ===================================== LEGIÓN ASTRAL =====================================
   capitan: {
-    id: "capitan", name: "Capitán", faction: "legion", character: true, type: "infanteria",
+    id: "capitan", keywords: ["explosivos"], name: "Capitán", faction: "legion", character: true, type: "infanteria",
     profile: { M: 6, T: 5, Sv: 3, Inv: 4, W: 5, Ld: 6, OC: 1 },
     sizes: [{ models: 1, points: 90 }], weapons: ["pistolaPesadaMaestra", "bolterMaestro", "armaEnergiaMaestra"],
     abilities: ["horaGloriosa"], model: "capitan", leads: ["asalto", "fuegoPesado", "guardiaHonor"],
@@ -293,7 +295,7 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
     ],
   },
   tanque: {
-    id: "tanque", name: "Tanque Martillo", faction: "legion", big: true, type: "vehiculo", damaged: 4, deadlyDemise: "D3",
+    id: "tanque", keywords: ["humo"], name: "Tanque Martillo", faction: "legion", big: true, type: "vehiculo", damaged: 4, deadlyDemise: "D3",
     profile: { M: 10, T: 10, Sv: 3, W: 11, Ld: 6, OC: 3 },
     sizes: [{ models: 1, points: 140, points3: 150 }], weapons: ["autocanonTanque", "canonesLaserTanque", "orugas"],
     abilities: ["destructor"], model: "tanque",
@@ -303,7 +305,7 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
     ],
   },
   guardiaHonor: {
-    id: "guardiaHonor", name: "Guardia de Honor", faction: "legion", type: "infanteria",
+    id: "guardiaHonor", keywords: ["explosivos"], name: "Guardia de Honor", faction: "legion", type: "infanteria",
     profile: { M: 6, T: 5, Sv: 3, Inv: 4, W: 3, Ld: 6, OC: 1 },
     sizes: [{ models: 3, points: 90, points3: 110 }, { models: 6, points: 180, points3: 200 }], weapons: ["pistolaPesada", "espadaMaestra"],
     abilities: ["guardiaHoja"], model: "guardia",
@@ -313,13 +315,13 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
     ],
   },
   ingeniero: {
-    id: "ingeniero", name: "Ingeniero de Combate", faction: "legion", character: true, type: "infanteria",
+    id: "ingeniero", keywords: ["explosivos"], name: "Ingeniero de Combate", faction: "legion", character: true, type: "infanteria",
     profile: { M: 6, T: 5, Sv: 2, W: 4, Ld: 6, OC: 1 },
     sizes: [{ models: 1, points: 55 }], weapons: ["bolterForja", "pistolaGrav", "hachaServobrazo"],
     abilities: ["reparar"], model: "ingeniero", leads: ["asalto", "fuegoPesado"],
   },
   portaestandarte: {
-    id: "portaestandarte", name: "Portaestandarte", faction: "legion", character: true, support: true, type: "infanteria",
+    id: "portaestandarte", keywords: ["explosivos"], name: "Portaestandarte", faction: "legion", character: true, support: true, type: "infanteria",
     profile: { M: 6, T: 5, Sv: 3, W: 4, Ld: 6, OC: 2 },
     sizes: [{ models: 1, points: 40 }], weapons: ["pistolaBolter", "rifleBolter", "punosCeramita4"],
     abilities: ["estandarte", "alzarEstandarte"], model: "estandarte", leads: ["asalto", "fuegoPesado"],
@@ -328,7 +330,7 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
     ],
   },
   saltadores: {
-    id: "saltadores", name: "Saltadores de Asalto", faction: "legion", type: "infanteria",
+    id: "saltadores", keywords: ["explosivos"], name: "Saltadores de Asalto", faction: "legion", type: "infanteria",
     profile: { M: 12, T: 5, Sv: 3, W: 2, Ld: 6, OC: 1 },
     sizes: [{ models: 5, points: 95, points3: 105 }, { models: 10, points: 190, points3: 200 }], weapons: ["pistolaPesada", "espadaSierra"],
     abilities: ["vuelo", "despliegueProfundo", "impacto"], model: "saltador",
@@ -347,7 +349,7 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
     abilities: ["sanador"], model: "medico", leads: ["asalto", "fuegoPesado", "guardiaHonor"],
   },
   francotiradores: {
-    id: "francotiradores", name: "Francotiradores", faction: "legion", type: "infanteria",
+    id: "francotiradores", keywords: ["explosivos", "humo"], name: "Francotiradores", faction: "legion", type: "infanteria",
     profile: { M: 8, T: 4, Sv: 3, W: 2, Ld: 6, OC: 1 },
     sizes: [{ models: 3, points: 85 }], weapons: ["pistolaBolter", "rifleFrancotirador", "punosCeramita"],
     abilities: ["infiltrador", "sigilo", "camaleon", "opticas"], model: "francotirador",
@@ -356,7 +358,7 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
     ],
   },
   asalto: {
-    id: "asalto", name: "Escuadra de Asalto Táctico", faction: "legion", type: "infanteria", battleline: true,
+    id: "asalto", keywords: ["explosivos"], name: "Escuadra de Asalto Táctico", faction: "legion", type: "infanteria", battleline: true,
     profile: { M: 6, T: 5, Sv: 3, W: 2, Ld: 6, OC: 2 },
     sizes: [{ models: 5, points: 85 }, { models: 10, points: 170 }],
     weapons: ["pistolaBolter", "rifleBolter", "punos"],
@@ -372,7 +374,7 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
     ],
   },
   fuegoPesado: {
-    id: "fuegoPesado", name: "Escuadra de Fuego Pesado", faction: "legion", type: "infanteria",
+    id: "fuegoPesado", keywords: ["explosivos"], name: "Escuadra de Fuego Pesado", faction: "legion", type: "infanteria",
     profile: { M: 6, T: 5, Sv: 3, W: 2, Ld: 6, OC: 1 },
     sizes: [{ models: 5, points: 140, points3: 150 }], weapons: ["pistolaBolter", "lanzaderaCastellana", "cohetesFrag", "punosCeramita"],
     abilities: ["opticas"], model: "pesado",
@@ -382,7 +384,7 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
     ],
   },
   andador: {
-    id: "andador", name: "Andador de Combate", faction: "legion", big: true, type: "vehiculo", deadlyDemise: 1,
+    id: "andador", keywords: ["humo", "andador"], name: "Andador de Combate", faction: "legion", big: true, type: "vehiculo", deadlyDemise: 1,
     profile: { M: 6, T: 9, Sv: 2, W: 8, Ld: 6, OC: 3 },
     sizes: [{ models: 1, points: 135 }], weapons: ["canonAsalto", "bolterTormenta", "punoAndador"],
     abilities: ["sabiduria"], model: "andador",
@@ -404,13 +406,13 @@ export const DATASHEETS: Record<DatasheetId, Datasheet> = {
     ],
   },
   psiquico: {
-    id: "psiquico", name: "Psíquico de la Legión", faction: "legion", character: true, type: "infanteria",
+    id: "psiquico", keywords: ["explosivos"], name: "Psíquico de la Legión", faction: "legion", character: true, type: "infanteria",
     profile: { M: 6, T: 5, Sv: 3, W: 4, Ld: 6, OC: 1 },
     sizes: [{ models: 1, points: 75 }], weapons: ["pistolaBolter", "golpeMental", "armaPsiquica"],
     abilities: ["cupula"], model: "psiquico", leads: ["asalto", "fuegoPesado"],
   },
   motoristas: {
-    id: "motoristas", name: "Motoristas de Asalto", faction: "legion", type: "montada",
+    id: "motoristas", keywords: ["explosivos"], name: "Motoristas de Asalto", faction: "legion", type: "montada",
     profile: { M: 12, T: 6, Sv: 3, W: 4, Ld: 6, OC: 2 },
     sizes: [{ models: 3, points: 80 }, { models: 6, points: 160 }], weapons: ["pistolaPesada", "rifleGemelo", "espadaSierra"],
     abilities: ["aceleron"], model: "moto",

@@ -9,7 +9,7 @@ import { CommandBus } from "./core/commands";
 import { freshSeed } from "./core/rng";
 import { readTable, writeTable } from "./core/save";
 import { BASE_RADIUS, GameState } from "./core/state";
-import { hasStrat } from "./rules/stratagems";
+import { hasStrat, STRATAGEMS } from "./rules/stratagems";
 import { TableCamera } from "./camera/tableCamera";
 import { Table } from "./world/table";
 import { PiecesView } from "./view/piecesView";
@@ -24,7 +24,7 @@ import { CircleSet } from "./view/rangeRings";
 import { allowance, originOf, movedSoFar } from "./rules/movement";
 import { toast } from "./ui/tablesDialog";
 import { ShotPlayer } from "./view/shotPlayer";
-import { DATASHEETS } from "./rules/datasheets";
+import { DATASHEETS, pieceWeaponIds, WEAPONS } from "./rules/datasheets";
 import { aiPlayPhase, aiStep, canFight, fightStep } from "./ai/tactics";
 import { stateHash } from "./net/protocol";
 import { chargeOptions, fightOptions, fightSteps, pendingChargers } from "./rules/melee";
@@ -58,7 +58,7 @@ import { validateList } from "./rules/armies";
 import { BattleLog } from "./ui/battleLog";
 import { sfx } from "./audio/sfx";
 import { saveSettings } from "./ai/settings";
-import { overwatchWeapons } from "./rules/reactions";
+import { reactionOptions, ReactionOption, WINDOW_NAME, WINDOW_STRATS } from "./rules/reactions";
 import { expectedAttack } from "./ai/evaluate";
 import { actionsAgainst, pendingText, pendingUnits, selectedFormation, validTargets } from "./rules/actions";
 import { ChatPanel } from "./ui/chat";
@@ -547,7 +547,7 @@ function buildTargetLabels(s: GameState, a: string[] | null, targets: string[]) 
       text = expectText(pv.kills, pv.damage, W(t));
     } else if (s.phase === "carga") {
       const o = chargeOptions(s, a[0]).targets.find((x) => x.unit === t);
-      if (o) text = `${o.need}+ · ${Math.round(chance2d6(o.need - (hasStrat(s, "hambre", a[0]) ? 2 : 0), hasStrat(s, "impetu", a[0])) * 100)} %`;
+      if (o) text = `${o.need}+ · ${Math.round(chance2d6(o.need - (hasStrat(s, "hambre", a[0]) ? 2 : 0), hasStrat(s, "repeticion", a[0])) * 100)} %`;
     } else if (s.phase === "combate") {
       const u = a.find((x) => fightOptions(s, x).targets.some((y) => y.unit === t));
       if (u) { const { state, steps } = fightSteps(s, u, t); const pv = previewAttacks(state, steps, 100); text = expectText(pv.kills, pv.damage, W(t)); }
@@ -613,29 +613,44 @@ window.addEventListener("keydown", (e) => {
   cam.panTo(ms.reduce((n, p) => n + p.x, 0) / ms.length, ms.reduce((n, p) => n + p.z, 0) / ms.length, 40);
 });
 let confirmAdvance = 0;
-/** Fuego defensivo (#50): si cargan a una unidad de un bando que manda este jugador, pregunta. */
+/** Ventanas de reacción (11.ª): si el que no juega es un bando que manda este jugador, pregunta. */
 function updateReaction() {
   const el = document.getElementById("react")!;
   const s = bus.state;
-  const pc = s.pendingCharge;
-  const show = !!pc && controllable(PLAYERS[pc.defender]);
+  const r = s.reaction;
+  const show = !!r && controllable(PLAYERS[r.player]);
   el.hidden = !show;
-  if (!show || !pc) return;
+  if (!show || !r) return;
   const key = `${bus.length}`;
   if (el.dataset.key === key) return;
   el.dataset.key = key;
   const nm = (u: string) => DATASHEETS[s.units.find((x) => x.id === u)!.datasheet].name;
-  let dmg = 0;
-  for (const { weapon, shooters } of overwatchWeapons(s, pc.target, pc.unit)) dmg += expectedAttack(s, weapon, shooters.length, pc.unit, { onlySixes: true }).damage;
-  el.innerHTML = `<h3>¡Te cargan!</h3>
-    <div><b>${nm(pc.unit)}</b> declara una carga contra tu <b>${nm(pc.target)}</b>.</div>
-    <div style="margin-top:4px">¿Fuego defensivo? Disparas con todo lo que llegue, pero solo impactan los 6 (Torrente impacta igual). Cuesta 1 PM (te quedan ${s.cp[pc.defender]}).
-    <span class="dim">Daño esperado: ~${dmg.toLocaleString("es-ES", { maximumFractionDigits: 1 })} heridas.</span></div>
-    <div class="row"><button data-fire="0">No</button><button data-fire="1" class="primary">Fuego defensivo · 1 PM</button></div>`;
+  const dmg = (o: ReactionOption) => {
+    if (o.id !== "fuegoDefensivo") return 0;
+    const ds = DATASHEETS[s.units.find((u) => u.id === o.unit)!.datasheet];
+    const ws = new Map<string, number>();
+    for (const p of s.pieces.filter((x) => x.unit === o.unit)) for (const w of pieceWeaponIds(ds, p)) if (WEAPONS[w].range !== "CC") ws.set(w, (ws.get(w) ?? 0) + 1);
+    let d = 0;
+    for (const [w, n] of ws) d += expectedAttack(s, WEAPONS[w], n, o.target!, { onlySixes: true }).damage;
+    return d;
+  };
+  // La que más daño hace, primero (es el botón principal)
+  const opts = reactionOptions(s, r.kind, r.player).map((o) => ({ o, d: dmg(o) })).sort((a, b) => b.d - a.d).map((x) => x.o);
+  const value = (o: ReactionOption) => o.id !== "fuegoDefensivo" ? ""
+    : ` <span class="dim">(≈ ${dmg(o).toLocaleString("es-ES", { maximumFractionDigits: 1 })} heridas)</span>`;
+  const label = (o: ReactionOption) => `${STRATAGEMS[o.id].name}: ${nm(o.unit)}${o.target ? ` → ${nm(o.target)}` : ""} · ${STRATAGEMS[o.id].cost} PM${value(o)}`;
+  el.innerHTML = `<h3>${WINDOW_NAME[r.kind]}</h3>
+    <div>Puedes usar una estratagema en su turno (te quedan ${s.cp[r.player]} PM).</div>
+    <div class="dim" style="margin-top:4px">${STRATAGEMS[WINDOW_STRATS[r.kind][0]].text}</div>
+    <div class="row" style="flex-wrap:wrap">${opts.slice(0, 6).map((o, i) => `<button data-react="${i}" class="${i ? "" : "primary"}">${label(o)}</button>`).join("")}<button data-react="-1">No hacer nada</button></div>`;
+  (el as HTMLElement & { opts?: ReactionOption[] }).opts = opts;
 }
 document.getElementById("react")!.addEventListener("click", (e) => {
-  const b = (e.target as HTMLElement).closest("button[data-fire]") as HTMLButtonElement | null;
-  if (b) bus.dispatch({ type: "reactCharge", fire: b.dataset.fire === "1" });
+  const b = (e.target as HTMLElement).closest("button[data-react]") as HTMLButtonElement | null;
+  if (!b) return;
+  const i = Number(b.dataset.react);
+  const o = (document.getElementById("react") as HTMLElement & { opts?: ReactionOption[] }).opts?.[i];
+  bus.dispatch(o ? { type: "react", id: o.id, unit: o.unit, target: o.target } : { type: "react" });
 });
 hud.guideText = () => {
   const s = bus.state;

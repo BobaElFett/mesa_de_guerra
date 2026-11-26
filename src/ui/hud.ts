@@ -188,7 +188,7 @@ function phaseActions(s: GameState, uid: string, inFormation = false): string {
       if (o.blocked) html += `<div class="dim">${o.blocked}</div>`;
       else if (!o.targets.length) html += `<div class="dim">No hay enemigos.</div>`;
       else for (const t of o.targets) {
-        const p = chance2d6(t.need - (hasStrat(s, "hambre", uid) ? 2 : 0), hasStrat(s, "impetu", uid));
+        const p = chance2d6(t.need - (hasStrat(s, "hambre", uid) ? 2 : 0), hasStrat(s, "repeticion", uid));
         html += `<div class="shoot-row"><button data-aim="${t.unit}" data-target="${t.unit}"${t.blocked ? " disabled" : ""}>${t.name}</button> <span class="dim">${fmtIn(t.distance)}${t.blocked ? ` · ${t.blocked}` : ` · ${t.need}+ en 2D6 · ${Math.round(p * 100)} %`}</span></div>`;
       }
     }
@@ -218,8 +218,12 @@ function phaseActions(s: GameState, uid: string, inFormation = false): string {
 /** Estratagemas de la fase en curso para esta unidad (solo en el turno de su bando). */
 function stratButtons(s: GameState, uid: string): string {
   const unit = s.units.find((u) => u.id === uid)!;
-  if (s.gameOver || unit.faction !== PLAYERS[s.active]) return "";
-  const list = STRAT_IDS.filter((id) => STRATAGEMS[id].phase === s.phase && (!STRATAGEMS[id].faction || STRATAGEMS[id].faction === unit.faction));
+  if (s.gameOver) return "";
+  const mine = unit.faction === PLAYERS[s.active];
+  // 11.ª: en el turno del rival solo las de «rival» o «ambos» (las de ventana van en su diálogo)
+  const list = STRAT_IDS.filter((id) => STRATAGEMS[id].phase === s.phase && !STRATAGEMS[id].window
+    && (STRATAGEMS[id].turn === "ambos" || (STRATAGEMS[id].turn === "propio") === mine)
+    && (!STRATAGEMS[id].faction || STRATAGEMS[id].faction === unit.faction));
   if (!list.length) return "";
   return `<div class="strats">` + list.map((id) => {
     const st = STRATAGEMS[id];

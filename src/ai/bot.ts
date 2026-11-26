@@ -86,7 +86,7 @@ function shootPhase(bus: CommandBus) {
 }
 
 /** Quién decide el fuego defensivo cuando el bot carga (por defecto: no se hace). */
-let reactHook: (bus: CommandBus) => void = (bus) => { if (bus.state.pendingCharge) bus.dispatch({ type: "reactCharge", fire: false }); };
+let reactHook: (bus: CommandBus) => void = (bus) => { if (bus.state.reaction) bus.dispatch({ type: "react" }); };
 export function setReactHook(fn: (bus: CommandBus) => void) { reactHook = fn; }
 
 function chargePhase(bus: CommandBus) {

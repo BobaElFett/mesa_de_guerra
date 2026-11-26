@@ -12,7 +12,8 @@ function game(mission: MissionId = "tomar") {
   bus.dispatch({ type: "nextPhase" });   // despliegue → mando
   return bus;
 }
-const toEndOfTurn = (bus: CommandBus) => { for (let i = 0; i < 5; i++) bus.dispatch({ type: "nextPhase" }); };
+// Hasta el turno siguiente (las ventanas de reacción de la 11.ª pueden pedir algún paso de más)
+const toEndOfTurn = (bus: CommandBus) => { const a = bus.state.active; for (let i = 0; i < 12 && bus.state.active === a && !bus.state.gameOver; i++) bus.dispatch({ type: "nextPhase" }); };
 
 test("cada misión coloca sus objetivos y pone los PV a cero", () => {
   for (const id of Object.keys(MISSIONS) as MissionId[]) {
@@ -74,17 +75,17 @@ test("Caza de presas: PV por unidad destruida", () => {
   assert.equal(outcome(bus.state).winner, null);
 });
 
-test("estratagemas: PM, fase, una vez por turno", () => {
+test("estratagemas: PM, fase, una vez por fase", () => {
   const bus = game();
   const asalto = bus.state.units.find((u) => u.datasheet === "asalto")!.id;
   bus.dispatch({ type: "nextPhase" });                 // movimiento
-  assert.match(stratBlocked(bus.state, "punteria", asalto)!, /fase/);
+  assert.match(stratBlocked(bus.state, "fuegoSostenido", asalto)!, /fase/);
   bus.dispatch({ type: "nextPhase" });                 // disparo
-  assert.equal(stratBlocked(bus.state, "punteria", asalto), null);
+  assert.equal(stratBlocked(bus.state, "fuegoSostenido", asalto), null);
   const cp = bus.state.cp[0];
-  bus.dispatch({ type: "stratagem", id: "punteria", unit: asalto });
+  bus.dispatch({ type: "stratagem", id: "fuegoSostenido", unit: asalto });
   assert.equal(bus.state.cp[0], cp - 1);
-  assert.match(stratBlocked(bus.state, "punteria", asalto)!, /Ya usada/);
+  assert.match(stratBlocked(bus.state, "fuegoSostenido", asalto)!, /Ya usada/);
   const swarmUnit = bus.state.units.find((u) => u.faction === "swarm")!.id;
-  assert.match(stratBlocked(bus.state, "punteria", swarmUnit)!, /tu turno/);
+  assert.match(stratBlocked(bus.state, "fuegoSostenido", swarmUnit)!, /tu turno/);
 });

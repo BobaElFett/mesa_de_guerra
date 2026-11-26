@@ -30,10 +30,15 @@ export interface TurnLog {
   /** Unidades que ya han combatido en esta fase de combate. */
   fought?: string[];
   /** Estratagemas usadas este turno. */
-  strats?: { id: string; unit: string }[];
+  strats?: { id: string; unit: string; phase?: string }[];
   /** Psíquicos que ya han usado su poder (#78), con la tirada. */
   psychic?: { unit: string; roll: [number, number]; target: string }[];
   /** Combate (11.ª): jugador al que le toca elegir la siguiente unidad que combate. */
+  counter?: string;
+  /** Ventanas de reacción ya cerradas este turno. */
+  reacted?: string[];
+  /** Cortina de humo: unidades en cobertura contra todo esta fase. */
+  smoke?: string[];
   fightPick?: number;
   /** Guardia de la hoja (11.ª): unidad → la unidad enemiga contra la que ya la ha usado para defenderse. */
   guarded?: Record<string, string>;

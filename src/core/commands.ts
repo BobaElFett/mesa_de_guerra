@@ -5,7 +5,7 @@ import { syncRelic } from "../rules/relic";
 import { applyPsychic } from "../rules/psychic";
 import { DATASHEETS } from "../rules/datasheets";
 import { note, unitName } from "../rules/history";
-import { declareCharge, resolveReaction } from "../rules/reactions";
+import { declareCharge, resolveReactionWindow } from "../rules/reactions";
 import { applyStratagem, StratId } from "../rules/stratagems";
 import type { MissionId } from "../rules/missions";
 import { formation } from "../rules/leaders";
@@ -62,7 +62,9 @@ export type Command =
   /** Una unidad en reserva llega a la mesa con centro en (x, z) (#56). */
   | { type: "arrive"; unit: string; x: number; z: number }
   /** El defensor de una carga en espera decide si hace fuego defensivo (#50). */
-  | { type: "reactCharge"; fire: boolean };
+  | { type: "reactCharge"; fire: boolean }
+  /** Ventana de reacción (11.ª): usar una estratagema (o nada) en el turno del rival. */
+  | { type: "react"; id?: StratId; unit?: string; target?: string };
 
 export interface PieceMove { id: string; x: number; z: number; rot?: number }
 
@@ -72,6 +74,10 @@ const MAX_ROLLS = 30;
 export function applyCommand(state: GameState, cmd: Command): GameState {
   // Con una carga en espera de la decisión del defensor, solo vale esa decisión (y dados sueltos)
   if (state.pendingCharge && cmd.type !== "reactCharge" && cmd.type !== "roll" && cmd.type !== "reroll") return state;
+  // Ventana de reacción abierta: «Siguiente fase» equivale a no reaccionar (en partidas en red, solo
+  // la puede pasar quien decide, ver protocol.ts); lo demás espera
+  if (state.reaction && cmd.type === "nextPhase") cmd = { type: "react" };
+  if (state.reaction && cmd.type !== "react" && cmd.type !== "roll" && cmd.type !== "reroll") return state;
   const s = cloneState(state);
   switch (cmd.type) {
     case "move": {
@@ -193,7 +199,12 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
       break;
     }
     case "reactCharge": {
-      resolveReaction(s, cmd.fire);
+      s.pendingCharge = null;   // partidas antiguas: el fuego defensivo ya no va con la carga
+      break;
+    }
+    case "react": {
+      const kind = resolveReactionWindow(s, cmd.id && cmd.unit ? { id: cmd.id, unit: cmd.unit, target: cmd.target } : undefined);
+      if (kind === "finMovimiento" || kind === "finCarga") advancePhase(s);   // sigue el paso de fase que esperaba
       break;
     }
     case "fight": {

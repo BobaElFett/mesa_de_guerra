@@ -2,6 +2,19 @@
 
 Lo nuevo de cada versión de *Mesa de Guerra*, de la más reciente a la primera.
 
+## 0.51 · fase 32, estratagemas básicas de la 11.ª (#140–#142)
+- **Estratagemas básicas (#140):** *Repetición de mando* (repite una carga fallida), *Desafío épico* (los ataques de combate de una unidad con personaje ganan Precisión), *Valor demente* (supera un chequeo de moral; una vez por partida), *Explosivos* (6D6 a 4+, heridas mortales, a 8"), *Impacto aplastante* (monstruos y vehículos que han cargado) y *Contraofensiva* (2 PM: tu unidad combate justo después de una enemiga).
+  - Cada estratagema se usa **una vez por fase** por jugador, cada unidad recibe **una por fase** y las unidades desmoralizadas no reciben ninguna (salvo *Valor demente*).
+  - Desaparecen *Puntería*, *Furia* y *Reagrupar*. Las estratagemas de bando (*Fuego sostenido*, *Avance táctico*, *Frenesí*, *Hambre voraz*, *Oleada sin fin*) siguen de forma provisional hasta las de destacamento.
+- **Ventanas de reacción en el turno del rival (#141):**
+  - Al acabar su **movimiento**: *Fuego defensivo* contra una unidad visible a 24" (solo impacta con 6). Ya no se hace al declarar la carga.
+  - Al empezar su **disparo**: *Cortina de humo* (Tanque, Andador y Francotiradores quedan en cobertura).
+  - Al acabar su **carga**: *Intervención heroica*, una unidad a 12" o menos carga contra una que acaba de cargar.
+  - La partida espera a que el otro jugador decida. *Siguiente fase* equivale a no reaccionar.
+- **IA, red e interfaz (#142):** la IA elige sus reacciones; el diálogo pone primero la opción con más daño esperado; en línea solo decide el jugador de la ventana. Tutorial y ayuda al día.
+- Equilibrio (120 partidas IA contra IA, 1.000 puntos al azar): Legión 69 % – Enjambre 31 %, casi igual que en la 0.50.
+- Pruebas nuevas en `tests/strats11.test.ts`; `tests/reactions.test.ts` reescrito para las ventanas.
+
 ## 0.50 · fase 31, reglas básicas de la 11.ª I (#137–#139)
 - **Distancias y moral (#137):**
   - Se está **trabado a 2"** (antes 1"). La carga basta con quedar a 2" y golpean todas las miniaturas trabadas (ya no hay «segunda fila»).

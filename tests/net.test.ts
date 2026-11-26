@@ -83,7 +83,7 @@ test("partida entera: la Legión en un navegador, el Enjambre en otro, acaban ig
     const s = hb.state;
     const busOf = (i: 0 | 1) => (i === 0 ? hb : gb);
     if (s.phase === "despliegue") { hb.dispatch({ type: "nextPhase" }); continue; }
-    if (s.pendingCharge) { aiReact(busOf(s.pendingCharge.defender), "dificil"); continue; }
+    if (s.reaction) { aiReact(busOf(s.reaction.player), "dificil"); continue; }
     if (s.phase === "combate") {
       // Cada navegador combate con lo suyo: el bot del activo hace la fase entera, los dos bandos;
       // aquí lo repartimos: el activo juega su fase y sus combates; los del otro se mandan desde el otro bus

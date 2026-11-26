@@ -67,7 +67,9 @@ function cmdPermission(s: GameState, c: Command, host: boolean, side: Faction): 
     case "moveMany": return ownPieces(c.moves.map((m) => m.id)) ? null : "Esas miniaturas son del rival.";
     case "removePieces": return ownPieces(c.ids) ? null : "Esas miniaturas son del rival.";
     case "addTerrain": case "removeTerrain": return host ? null : "La escenografía la coloca el anfitrión.";
-    case "declareMove": case "shoot": case "charge": case "stratagem":
+    case "stratagem":   // 11.ª: algunas se usan en el turno del rival (las reglas lo comprueban)
+      return sideOfUnit(s, c.unit) === side ? null : "Esa unidad es del rival.";
+    case "declareMove": case "shoot": case "charge":
       if (sideOfUnit(s, c.unit) !== side) return "Esa unidad es del rival.";
       return active === side ? null : "No es tu turno.";
     case "fight": return sideOfUnit(s, c.unit) === side ? null : "Esa unidad es del rival.";
@@ -75,10 +77,12 @@ function cmdPermission(s: GameState, c: Command, host: boolean, side: Faction): 
       if (sideOfUnit(s, c.unit) !== side) return "Esa unidad es del rival.";
       return PLAYERS[s.active] === side ? null : "No es tu turno.";
     case "nextPhase": case "endTurn":
+      if (s.reaction) return PLAYERS[s.reaction.player] === side ? null : "Espera: el rival decide si reacciona.";
       if (s.phase === "despliegue") return null;
       return active === side ? null : "No es tu turno.";
     case "spendCP": return PLAYERS[c.player] === side ? null : "Esos PM son del rival.";
     case "reactCharge": return s.pendingCharge && PLAYERS[s.pendingCharge.defender] === side ? null : "No te toca decidir.";
+    case "react": return s.reaction && PLAYERS[s.reaction.player] === side ? null : "No te toca decidir.";
     default: return null;                              // tiradas de dados sueltas, etc.
   }
 }

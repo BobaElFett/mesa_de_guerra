@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { CommandBus } from "../src/core/commands";
 import { TEST_LEGION, TEST_SWARM } from "../src/rules/armies";
-import { overwatchBlocked } from "../src/rules/reactions";
+import { reactionOptions } from "../src/rules/reactions";
 import { crossesSolid, onForbiddenTerrain } from "../src/rules/geometry";
 import { checkMove } from "../src/rules/movement";
 
@@ -24,36 +24,48 @@ function chargeSetup(cpSwarm = 1) {
   return { bus, asl, esc };
 }
 
-test("fuego defensivo: la carga espera; disparar gasta 1 PM, impacta con 6 y luego se tira la carga", () => {
-  const { bus, asl, esc } = chargeSetup();
-  assert.equal(bus.state.phase, "carga");
-  assert.equal(overwatchBlocked(bus.state, asl, esc), null);
-  bus.dispatch({ type: "charge", unit: asl, target: esc });
-  assert.deepEqual(bus.state.pendingCharge, { unit: asl, target: esc, defender: 1 });
-  // Mientras tanto no se puede hacer otra cosa
-  const n = bus.state.combatLog.length;
-  bus.dispatch({ type: "nextPhase" });
-  assert.equal(bus.state.phase, "carga");
-  const cp = bus.state.cp[1];
-  bus.dispatch({ type: "reactCharge", fire: true });
-  assert.equal(bus.state.pendingCharge, null);
+test("11.ª: al acabar el movimiento del rival se abre la ventana de Fuego defensivo; la partida espera", () => {
+  const bus = new CommandBus(21);
+  for (const t of bus.state.terrain.map((x) => x.id)) bus.dispatch({ type: "removeTerrain", ids: [t] });
+  bus.dispatch({ type: "setArmies", legion: TEST_LEGION, swarm: TEST_SWARM });
+  bus.dispatch({ type: "setRulesMode", on: true });
+  bus.dispatch({ type: "nextPhase" });                         // mando
+  bus.dispatch({ type: "nextPhase" });                         // movimiento
+  const s = bus.state;
+  const asl = s.units.find((u) => u.datasheet === "asalto" && !s.units.some((x) => x.attachedTo === u.id))!.id;
+  const esc = s.units.find((u) => u.datasheet === "escupidores")!.id;
+  const ez = Math.max(...s.pieces.filter((p) => p.unit === esc).map((p) => p.z));
+  const ex = s.pieces.find((p) => p.unit === esc)!.x;
+  bus.dispatch({ type: "moveMany", moves: s.pieces.filter((p) => p.unit === asl).map((p, i) => ({ id: p.id, x: ex + i * 1.4, z: ez + 10 })) });
+  bus.dispatch({ type: "nextPhase" });                         // fin del movimiento: ventana
+  assert.equal(bus.state.phase, "movimiento");
+  assert.deepEqual(bus.state.reaction, { kind: "finMovimiento", player: 1 });
+  const opts = reactionOptions(bus.state, "finMovimiento", 1);
+  assert.ok(opts.some((o) => o.unit === esc && o.target === asl));
+  bus.dispatch({ type: "shoot", unit: asl, weapon: "rifleBolter", target: esc });   // mientras, no se puede hacer otra cosa
+  assert.equal(bus.state.phase, "movimiento");
+  const cp = bus.state.cp[1], n = bus.state.combatLog.length;
+  bus.dispatch({ type: "react", id: "fuegoDefensivo", unit: esc, target: asl });
+  assert.equal(bus.state.reaction, null);
   assert.equal(bus.state.cp[1], cp - 1);
-  const e = bus.state.combatLog.slice(n);
-  assert.ok(e.length >= 1);
-  assert.ok(e.every((x) => x.overwatch && x.hitOn === 6 && x.result.hitRolls.every((r) => (r === 6) === undefined || true)));
-  // Solo impactan los 6 (con Sostenida, cada 6 puede dar algún impacto más)
-  assert.ok(e.every((x) => x.hitOn === null || (x.result.hits >= x.result.hitRolls.filter((r) => r === 6).length && x.result.hits <= 2 * x.result.hitRolls.filter((r) => r === 6).length)));
-  if (bus.state.pieces.some((p) => p.unit === asl)) assert.ok(bus.state.turnLog.charges?.[asl]);
-  // Una vez por turno
-  assert.match(overwatchBlocked(bus.state, asl, esc) ?? "", /Ya se ha usado|Trabada|Sin PM/);
+  assert.equal(bus.state.phase, "disparo");                    // sigue el paso de fase
+  const shots = bus.state.combatLog.slice(n);
+  assert.ok(shots.length >= 1 && shots.every((e) => e.overwatch && e.target === asl));
+  assert.ok(shots.every((e) => e.result.hits === e.result.hitRolls.filter((r) => r === 6).length || e.hitOn === null));
+  // «Siguiente fase» con la ventana abierta = no reaccionar
+  bus.dispatch({ type: "nextPhase" }); bus.dispatch({ type: "nextPhase" });   // carga → fin de la carga (sin intervención posible) → combate
 });
 
-test("sin PM no hay espera: la carga se resuelve en el acto", () => {
-  const { bus, asl, esc } = chargeSetup(0);
-  assert.equal(bus.state.cp[1], 0);
-  bus.dispatch({ type: "charge", unit: asl, target: esc });
-  assert.ok(!bus.state.pendingCharge);
-  assert.ok(bus.state.turnLog.charges?.[asl]);
+test("sin PM o sin nada que hacer, no hay ventana", () => {
+  const bus = new CommandBus(21);
+  bus.dispatch({ type: "setArmies", legion: TEST_LEGION, swarm: TEST_SWARM });
+  bus.dispatch({ type: "setRulesMode", on: true });
+  bus.dispatch({ type: "nextPhase" });
+  bus.dispatch({ type: "spendCP", player: 1, amount: bus.state.cp[1] });
+  bus.dispatch({ type: "nextPhase" });
+  bus.dispatch({ type: "nextPhase" });
+  assert.equal(bus.state.reaction ?? null, null);
+  assert.equal(bus.state.phase, "disparo");
 });
 
 test("escenografía: no se acaba en un búnker ni se atraviesa", () => {

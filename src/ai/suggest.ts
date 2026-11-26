@@ -20,7 +20,7 @@ const ACTS = new Set<Command["type"]>(["moveMany", "shoot", "charge", "fight", "
 export function suggest(bus: CommandBus, side?: Faction): Suggestion {
   const s = bus.state;
   if (!s.rulesMode || s.gameOver) return { text: "No hay partida en curso.", unit: null, cmds: [] };
-  if (s.pendingCharge) return { text: "Primero, decide si haces fuego defensivo contra la carga.", unit: null, cmds: [] };
+  if (s.reaction) return { text: "Primero, decide si usas una estratagema en el turno del rival.", unit: null, cmds: [] };
   if (s.phase === "despliegue") return { text: "Coloca tus unidades en tu zona (o déjalas como están) y pulsa «Empezar partida».", unit: null, cmds: [] };
   const scratch = new CommandBus(bus.seed);
   scratch.state = s;

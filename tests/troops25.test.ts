@@ -59,6 +59,8 @@ test("Alzar el estandarte: el objetivo queda asegurado al acabar el movimiento h
   bus.dispatch({ type: "moveMany", moves: s0.pieces.filter((p) => p.faction === "swarm").map((p, i) => ({ id: p.id, x: -28 + (i % 10) * 1.3, z: -20 + Math.floor(i / 10) * 1.3 })) });
   bus.dispatch({ type: "moveMany", moves: ms.map((p, i) => ({ id: p.id, x: o.x - 2 + (i % 4) * 1.3, z: o.z + Math.floor(i / 4) * 1.3 })) });
   bus.dispatch({ type: "nextPhase" });   // disparo: al acabar el movimiento queda asegurado
+  if (bus.state.reaction) bus.dispatch({ type: "nextPhase" });   // el Enjambre no hace Fuego defensivo
+  assert.equal(bus.state.phase, "disparo");
   assert.equal(bus.state.objectives![0].secured, 0);
   // Se van: sigue siendo de la Legión
   bus.dispatch({ type: "moveMany", moves: ms.map((p, i) => ({ id: p.id, x: 20 + (i % 4) * 1.3, z: 14 + Math.floor(i / 4) * 1.3 })) });
