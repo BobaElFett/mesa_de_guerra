@@ -1,3 +1,5 @@
+import { rollDice } from "../core/rng";
+import { onUnitDestroyed } from "./primaries";
 import { ledBy } from "./leaders";
 import { unitCost } from "./datasheets";
 import { note } from "./history";
@@ -11,7 +13,7 @@ import { gap } from "./geometry";
 //  - Se puntúa al final del turno de cada jugador desde la ronda 2, según la misión.
 //  - Tras la ronda 5 gana quien tenga más PV.
 
-export type MissionId = "tomar" | "corazon" | "caza" | "reliquia" | "asalto" | "serpiente";
+export type MissionId = "disposicion" | "tomar" | "corazon" | "caza" | "reliquia" | "asalto" | "serpiente";
 
 export const OBJECTIVE_RADIUS = 0.79;   // marcador de 40 mm
 export const OBJECTIVE_RANGE = 3;
@@ -30,6 +32,15 @@ export interface Objective {
   carrier?: string | null;
   /** Asegurado por este jugador (Alzar el estandarte, 11.ª). */
   secured?: 0 | 1;
+  /**
+   * 11.ª: quién lo controla, decidido al acabar cada fase y cada turno (null = nadie). Sin
+   * decidir aún (al empezar la batalla) no es de nadie.
+   */
+  ctrl?: 0 | 1 | null;
+  /** Papel en las misiones de la 11.ª: el objetivo de casa de un jugador, central o de expansión. */
+  role?: "central" | "expansion" | "home";
+  /** De quién es el objetivo de casa. */
+  home?: 0 | 1;
 }
 
 export interface VpEntry {
@@ -46,6 +57,9 @@ export interface KillEntry {
   unit: string;
   /** Jugador activo cuando cayó (para saber si fue en el turno de quien la destruyó). */
   during?: 0 | 1;
+  /** Unidad que la destruyó (si fue una unidad) y si estaba a alcance de un objetivo. */
+  killer?: string;
+  killerOnObjective?: boolean;
 }
 
 export interface Mission {
@@ -53,13 +67,13 @@ export interface Mission {
   name: string;
   summary: string;
   /** Objetivos (la mitad; el resto es su simétrico respecto al centro, salvo los del centro). */
-  objectives: { x: number; z: number; vp: number; name: string; relic?: boolean }[];
+  objectives: { x: number; z: number; vp: number; name: string; relic?: boolean; role?: Objective["role"]; home?: 0 | 1 }[];
   /** Tope de PV por objetivos en cada turno. */
   capPerTurn: number;
   /** PV por bajas: 1 por cada `per` puntos de miniaturas enemigas eliminadas (cada una vale lo que cuesta su unidad entre sus miniaturas). */
   killVp?: { per: number };
-  /** Cuándo puntúan los objetivos: al empezar tu turno (tras la moral) o al acabarlo. */
-  scoreAt: "inicio" | "final";
+  /** Cuándo puntúan los objetivos: al empezar tu turno (tras la moral), al acabarlo, o según la misión primaria (11.ª). */
+  scoreAt: "inicio" | "final" | "primaria";
   /**
    * Misión asimétrica (#90): un bando defiende (lo decide la semilla de la partida). Los
    * objetivos están escritos para un defensor en la mitad del Enjambre (z < 0) y se reflejan si
@@ -73,6 +87,17 @@ export interface Mission {
 export const FIRST_SCORING_ROUND = 2;
 
 export const MISSIONS: Record<MissionId, Mission> = {
+  disposicion: {
+    id: "disposicion", name: "Disposición de fuerzas (11.ª)",
+    summary: "Como en la 11.ª: cada bando elige en secreto una disposición de fuerzas y la de su rival le dice su misión primaria. Un objetivo de casa en cada zona de despliegue, dos de expansión en los flancos y uno central (dos, separados 12\", con un 6 en un D6). El control se decide al acabar cada fase y cada turno. Misión primaria: hasta 45 PV, 15 por ronda.",
+    objectives: [
+      { x: 0, z: 0, vp: 5, name: "Centro", role: "central" },
+      { x: -20, z: 5, vp: 5, name: "Flanco oeste", role: "expansion" }, { x: 20, z: -5, vp: 5, name: "Flanco este", role: "expansion" },
+      { x: -10, z: 16, vp: 5, name: "Casa Legión", role: "home", home: 0 }, { x: 10, z: -16, vp: 5, name: "Casa Enjambre", role: "home", home: 1 },
+    ],
+    // vp: lo que vale cada objetivo para la IA (los PV los da la misión primaria)
+    capPerTurn: 15, scoreAt: "primaria",
+  },
   tomar: {
     id: "tomar", name: "Toma y mantén",
     summary: "Cinco objetivos: uno en cada zona de despliegue, dos en los flancos y el búnker del centro. Al empezar tu turno (desde la ronda 2): 5 PV por cada objetivo que controles, hasta 15. Hay que aguantarlos durante el turno rival.",
@@ -133,6 +158,7 @@ export const MISSIONS: Record<MissionId, Mission> = {
   },
 };
 
+/** Misión por defecto del motor (las pruebas); la interfaz propone la de la 11.ª (ver settings). */
 export const DEFAULT_MISSION: MissionId = "tomar";
 
 /** Coloca los objetivos de la misión y pone los PV a cero (muta `s`). */
@@ -140,11 +166,21 @@ export function setupMission(s: GameState, id: MissionId) {
   const m = MISSIONS[id] ?? MISSIONS[DEFAULT_MISSION];
   s.mission = m.id;
   s.objectives = m.objectives.map((o, i) => ({ id: `O${i + 1}`, ...o, ...(o.relic ? { carrier: null } : {}) }));
+  if (m.scoreAt === "primaria") {
+    // Con un 6 en un D6, dos objetivos centrales a 6" a cada lado del centro
+    const [[d], rng] = rollDice(s.rng, 1, 6);
+    s.rng = rng;
+    if (d === 6) s.objectives = [
+      { id: "O1", x: -6, z: 0, vp: 5, name: "Centro oeste", role: "central" }, { id: "O6", x: 6, z: 0, vp: 5, name: "Centro este", role: "central" },
+      ...s.objectives.filter((o) => o.role !== "central"),
+    ];
+  }
   if (m.asym) {
     // Quién defiende: lo dice la semilla (así es igual en los dos ordenadores y al repetir)
     s.defender = ((s.rng >>> 3) & 1) as 0 | 1;
     if (s.defender === 0) s.objectives = s.objectives.map((o) => ({ ...o, x: -o.x, z: -o.z }));
   } else delete s.defender;
+  delete s.dispositions; delete s.primaries; delete s.primaryState; delete s.turnStart;
   s.vp = [0, 0];
   s.vpLog = [];
   s.kills = [];
@@ -197,13 +233,39 @@ export function updateSecured(s: GameState, raise: boolean) {
       && s.pieces.some((p) => p.unit === u.id && gap({ x: p.x, z: p.z, r: BASE_RADIUS[p.model] }, marker) <= OBJECTIVE_RANGE + 1e-6));
     if (banner && st.holder === s.active && o.secured !== s.active) {
       o.secured = s.active;
+      o.ctrl = s.active;
       note(s, "pv", `${o.name} queda asegurado (Alzar el estandarte)`, s.active);
     }
   }
 }
 
+/**
+ * 11.ª (14): al acabar cada fase y cada turno, lo primero, se decide quién controla cada objetivo:
+ * el que suma más CO a alcance; con empate, nadie (salvo que esté asegurado). Un objetivo
+ * asegurado sigue siendo de quien lo aseguró hasta que, al acabar una fase, el rival suma más CO.
+ * Entre una comprobación y otra el control no cambia. Muta `s`.
+ */
+export function determineControl(s: GameState) {
+  if (!s.rulesMode) return;
+  for (const o of s.objectives ?? []) {
+    if (o.relic) continue;
+    const { oc } = objectiveStatus(s, o);
+    if (o.secured !== undefined && oc[1 - o.secured] > oc[o.secured]) delete o.secured;
+    const before = o.ctrl ?? null;
+    o.ctrl = oc[0] > oc[1] ? 0 : oc[1] > oc[0] ? 1 : (o.secured ?? null);
+    if (o.ctrl !== before && o.ctrl !== null) note(s, "pv", `${PLAYERS[o.ctrl] === "legion" ? "La Legión" : "El Enjambre"} toma ${o.name}`, o.ctrl);
+    else if (o.ctrl !== before) note(s, "pv", `${o.name} queda sin control`);
+  }
+}
+
+/** Quién controla el objetivo: con reglas, lo decidido al acabar la última fase; en mesa libre, ahora. */
+export function controller(s: GameState, o: Objective): 0 | 1 | null {
+  if (o.relic || !s.rulesMode) return objectiveStatus(s, o).holder;
+  return o.ctrl ?? null;
+}
+
 export function controlledBy(s: GameState, player: 0 | 1): Objective[] {
-  return (s.objectives ?? []).filter((o) => objectiveStatus(s, o).holder === player);
+  return (s.objectives ?? []).filter((o) => controller(s, o) === player);
 }
 
 export function addVp(s: GameState, player: 0 | 1, vp: number, why: string) {
@@ -233,12 +295,15 @@ export function scoreObjectives(s: GameState, when: "inicio" | "final") {
  * Tras un ataque: `slain` miniaturas de `unitId` eliminadas por el jugador `by`. Apunta la unidad
  * si ha quedado destruida y, si la misión da PV por bajas, suma los que tocan (muta `s`).
  */
-export function recordCasualties(s: GameState, by: 0 | 1, unitId: string, slain: number) {
+export function recordCasualties(s: GameState, by: 0 | 1, unitId: string, slain: number, killer?: string | null) {
   const u = s.units.find((x) => x.id === unitId);
   if (!u || slain <= 0) return;
   const ds = DATASHEETS[u.datasheet];
   if (!s.pieces.some((p) => p.unit === unitId) && !(s.kills ?? []).some((k) => k.unit === unitId)) {
-    s.kills = [...(s.kills ?? []), { turn: s.turn, by, unit: unitId, during: s.active }];
+    const k: KillEntry = { turn: s.turn, by, unit: unitId, during: s.active };
+    if (killer && s.units.find((x) => x.id === killer)?.faction !== u.faction) { k.killer = killer; k.killerOnObjective = objectiveInRange(s, killer); }
+    s.kills = [...(s.kills ?? []), k];
+    onUnitDestroyed(s, k);
   }
   const m = s.mission ? MISSIONS[s.mission] : null;
   // Cabeza de la serpiente (#106): PV por cada personaje destruido

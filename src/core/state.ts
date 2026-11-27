@@ -4,6 +4,7 @@ import type { TurnLog } from "../rules/movement";
 import type { AttackLogEntry } from "../rules/shooting";
 import type { MoraleEntry } from "../rules/morale";
 import type { KillEntry, MissionId, Objective, VpEntry } from "../rules/missions";
+import type { ForceDisposition, PrimaryId, PrimaryState } from "../rules/primaries";
 
 // Estado de la partida: todo lo que hay en la mesa, serializable a JSON.
 // La vista Three.js solo lo lee; nada lo cambia salvo applyCommand (commands.ts).
@@ -154,6 +155,12 @@ export interface GameState {
   oncePerBattle?: [string[], string[]];
   /** Movimientos de oleada hechos (ronda|jugador|fase|unidad): uno por fase. */
   surged?: string[];
+  /** 11.ª: disposición de fuerzas de cada jugador y su misión primaria. */
+  dispositions?: [ForceDisposition, ForceDisposition];
+  primaries?: [PrimaryId, PrimaryId];
+  primaryState?: PrimaryState;
+  /** Foto al empezar el turno: quién controlaba cada objetivo y qué unidades estaban en uno. */
+  turnStart?: { ctrl: Record<string, 0 | 1 | null>; onObjective: string[] };
   /** El Enjambre ya ha desatado la Sombra en la disformidad. */
   shadowUsed?: boolean;
   /** Objetivos secundarios (#97). */

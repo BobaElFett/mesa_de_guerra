@@ -1,3 +1,4 @@
+import { FD_INFO, ForceDisposition, READY_DISPOSITIONS } from "../rules/primaries";
 import { MISSIONS, MissionId } from "../rules/missions";
 import type { Faction } from "../core/state";
 import { AiLevel, saveSettings, settings } from "../ai/settings";
@@ -8,7 +9,7 @@ import { modal } from "./modal";
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 
-export interface QuickGame { side: Faction | "mirar"; level: AiLevel; mission: MissionId; map: "aleatorio" | "ejemplo" | "urbano" | "llanura" | "bosque"; lists: "prueba" | "mias" | "azar"; conditions?: "" | "noche" | "tormenta"; size?: 500 | 1000; secondaries?: boolean }
+export interface QuickGame { side: Faction | "mirar"; level: AiLevel; mission: MissionId; disposition?: ForceDisposition | "azar"; map: "aleatorio" | "ejemplo" | "urbano" | "llanura" | "bosque"; lists: "prueba" | "mias" | "azar"; conditions?: "" | "noche" | "tormenta"; size?: 500 | 1000; secondaries?: boolean }
 
 export class StartMenu {
   onContinue: () => void = () => {};
@@ -27,7 +28,12 @@ export class StartMenu {
 
   constructor() {
     $("q-mission").innerHTML = Object.values(MISSIONS).map((m) => `<option value="${m.id}">${m.name}</option>`).join("");
-    const desc = () => { $("q-desc").textContent = MISSIONS[$<HTMLSelectElement>("q-mission").value as MissionId].summary; };
+    $("q-fd").innerHTML = `<option value="azar">Al azar</option>` + READY_DISPOSITIONS.map((f) => `<option value="${f}">${FD_INFO[f].name}</option>`).join("");
+    const desc = () => {
+      const id = $<HTMLSelectElement>("q-mission").value as MissionId;
+      $("q-desc").textContent = MISSIONS[id].summary;
+      $("q-fd-row").hidden = id !== "disposicion";
+    };
     $("q-mission").addEventListener("change", desc);
     $("menu-open").addEventListener("click", () => this.show());
     $("menu").addEventListener("click", (e) => {
@@ -50,6 +56,7 @@ export class StartMenu {
           side: $<HTMLSelectElement>("q-side").value as QuickGame["side"],
           level: $<HTMLSelectElement>("q-level").value as AiLevel,
           mission: $<HTMLSelectElement>("q-mission").value as MissionId,
+          disposition: $<HTMLSelectElement>("q-fd").value as ForceDisposition | "azar",
           map: $<HTMLSelectElement>("q-map").value as QuickGame["map"],
           lists: $<HTMLSelectElement>("q-lists").value as QuickGame["lists"],
           conditions: $<HTMLSelectElement>("q-cond").value as QuickGame["conditions"],
@@ -67,7 +74,7 @@ export class StartMenu {
       const q = JSON.parse(localStorage.getItem("mesa-de-guerra.rapida") ?? "null") as QuickGame | null;
       if (q) {
         $<HTMLSelectElement>("q-side").value = q.side; $<HTMLSelectElement>("q-level").value = q.level;
-        $<HTMLSelectElement>("q-mission").value = q.mission; $<HTMLSelectElement>("q-map").value = q.map; $<HTMLSelectElement>("q-lists").value = q.lists; $<HTMLSelectElement>("q-cond").value = q.conditions ?? ""; $<HTMLSelectElement>("q-size").value = String(q.size ?? 1000); $<HTMLInputElement>("q-sec").checked = q.secondaries ?? true;
+        $<HTMLSelectElement>("q-mission").value = q.disposition === undefined ? "disposicion" : q.mission; $<HTMLSelectElement>("q-fd").value = q.disposition ?? "azar"; $<HTMLSelectElement>("q-map").value = q.map; $<HTMLSelectElement>("q-lists").value = q.lists; $<HTMLSelectElement>("q-cond").value = q.conditions ?? ""; $<HTMLSelectElement>("q-size").value = String(q.size ?? 1000); $<HTMLInputElement>("q-sec").checked = q.secondaries ?? true;
       } else $<HTMLSelectElement>("q-level").value = "normal";
     } catch { /* nada */ }
     desc();

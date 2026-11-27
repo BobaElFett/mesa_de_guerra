@@ -2,7 +2,8 @@ import { LAST_ARRIVAL_ROUND, loseLateReserves } from "./reserves";
 import { note } from "./history";
 import type { GameState } from "../core/state";
 import { runMoraleTests } from "./morale";
-import { scoreObjectives, updateSecured } from "./missions";
+import { determineControl, scoreObjectives, updateSecured } from "./missions";
+import { primaryEndBattle, primaryEndCommand, primaryEndTurn, primaryStartTurn } from "./primaries";
 import { forceDomes, selectDoctrine, shadowInTheWarp } from "./eleventh";
 import { openReaction } from "./reactions";
 import { drawSecondaries, scoreSecondaries } from "./secondaries";
@@ -29,6 +30,7 @@ export const PHASE_INFO: Record<Phase, { name: string; hint: string }> = {
 function enterCommand(s: GameState) {
   s.cp = [s.cp[0] + 1, s.cp[1] + 1];
   s.turnLog = { moves: {}, origins: {} };
+  primaryStartTurn(s);
   if (s.rulesMode) note(s, "turno", `Ronda ${s.turn}: turno ${s.active === 0 ? "de la Legión Astral" : "del Enjambre"} (PM ${s.cp[s.active]})`);
   if (s.rulesMode) { healLedSquads(s); repairVehicles(s); }
   if (s.rulesMode) runMoraleTests(s);
@@ -49,11 +51,14 @@ export function advancePhase(s: GameState) {
   if (s.gameOver) return;
   if (s.phase === "despliegue") { startBattle(s); return; }
   const i = PHASES.indexOf(s.phase);
+  // 11.ª: al acabar cada fase (y cada turno), lo primero es decidir quién controla cada objetivo
+  determineControl(s);
   // Ventanas de reacción del rival (11.ª): al acabar el movimiento y la carga, la partida espera
   if (s.phase === "movimiento" && openReaction(s, "finMovimiento")) return;
   if (s.phase === "carga" && openReaction(s, "finCarga")) return;
   if (s.rulesMode) updateSecured(s, s.phase === "movimiento");   // Alzar el estandarte, al acabar el movimiento
   if (i < PHASES.length - 1) {
+    if (s.phase === "mando") primaryEndCommand(s);
     s.phase = PHASES[i + 1];
     if (s.phase === "movimiento") enterMovement(s);
     if (s.phase === "combate") { s.turnLog.fought = []; delete s.turnLog.fightPick; delete s.turnLog.counter; }
@@ -62,9 +67,10 @@ export function advancePhase(s: GameState) {
   }
   // Fin del turno del jugador activo: puntúa la misión y las órdenes cumplidas
   scoreObjectives(s, "final");
+  primaryEndTurn(s);
   scoreSecondaries(s);
   if (s.active === 1 && s.turn === LAST_ARRIVAL_ROUND) loseLateReserves(s);
-  if (s.active === 1 && s.turn >= MAX_ROUNDS) { s.gameOver = true; return; }
+  if (s.active === 1 && s.turn >= MAX_ROUNDS) { primaryEndBattle(s); s.gameOver = true; return; }
   endTurn(s);
 }
 
@@ -75,6 +81,7 @@ function startBattle(s: GameState) {
   s.active = 0;
   s.phase = "mando";
   s.turnLog = { moves: {}, origins: {} };
+  primaryStartTurn(s);
   drawSecondaries(s);
   if (s.rulesMode) selectDoctrine(s);
 }

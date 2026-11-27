@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { CommandBus } from "../src/core/commands";
 import { TEST_LEGION, TEST_SWARM } from "../src/rules/armies";
-import { scoreObjectives } from "../src/rules/missions";
+import { determineControl, scoreObjectives } from "../src/rules/missions";
 import { cloneState } from "../src/core/state";
 
 function setup(seed: number) {
@@ -35,6 +35,7 @@ test("Asalto: el atacante gana 4 PV por objetivo y el defensor 1 (hasta 3)", () 
     // Pone una miniatura del que controla en cada uno de los n primeros objetivos (y quita las demás)
     const mine = s.pieces.filter((p) => p.faction === f);
     s.pieces = s.objectives!.slice(0, n).map((o, i) => ({ ...mine[i], x: o.x, z: o.z }));
+    determineControl(s);                                  // 11.ª: el control se decide al acabar la fase
     scoreObjectives(s, "final");
     return s.vp[who];
   };

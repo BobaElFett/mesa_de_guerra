@@ -43,7 +43,7 @@ export function mortalWounds(s: GameState, unitId: string, n: number, why: strin
   }
   recordDamage(s, by && s.units.find((x) => x.id === by)?.faction !== u.faction ? by : null, unitId, n - left, slain.length);
   note(s, "baja", `${unitName(s, unitId)} sufre ${n} herida${n === 1 ? "" : "s"} mortal${n === 1 ? "" : "es"} (${why})${slain.length ? `: ${slain.length} baja${slain.length === 1 ? "" : "s"}` : ""}`);
-  if (slain.length) recordCasualties(s, (1 - PLAYERS.indexOf(u.faction)) as 0 | 1, unitId, slain.length);
+  if (slain.length) recordCasualties(s, (1 - PLAYERS.indexOf(u.faction)) as 0 | 1, unitId, slain.length, by);
   for (const p of slain) deadlyDemise(s, unitId, p, depth + 1);
   return slain;
 }

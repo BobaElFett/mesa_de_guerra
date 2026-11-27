@@ -405,7 +405,7 @@ export function performAttack(s: GameState, kind: AttackLogEntry["kind"], unitId
   recordDamage(s, unitId, targetId, before - after, slain.size);
   const fallen = s.pieces.filter((p) => slain.has(p.id));
   s.pieces = s.pieces.filter((p) => !slain.has(p.id));
-  if (slain.size) recordCasualties(s, PLAYERS.indexOf(attacker.faction) as 0 | 1, targetId, slain.size);
+  if (slain.size) recordCasualties(s, PLAYERS.indexOf(attacker.faction) as 0 | 1, targetId, slain.size, unitId);
   // Guardia de la hoja: el objetivo la usa para defenderse de la primera unidad que lo ataca
   if (kind === "combate" && !extra.mortal && tds.abilities.includes("guardiaHoja") && !(s.turnLog.fought ?? []).includes(targetId)
     && s.turnLog.guarded?.[targetId] === undefined) s.turnLog.guarded = { ...(s.turnLog.guarded ?? {}), [targetId]: unitId };

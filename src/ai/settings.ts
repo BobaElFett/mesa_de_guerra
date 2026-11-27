@@ -1,3 +1,4 @@
+import type { ForceDisposition } from "../rules/primaries";
 import type { Faction } from "../core/state";
 import type { MissionId } from "../rules/missions";
 
@@ -6,7 +7,7 @@ import type { MissionId } from "../rules/missions";
 
 export type AiLevel = "facil" | "normal" | "dificil";
 export interface GameSettings {
-  aiSide: Faction | null; aiLevel: AiLevel; mission: MissionId; map: "actual" | "ejemplo" | "aleatorio" | "urbano" | "llanura" | "bosque"; diceSpeed: "normal" | "rapido" | "instante";
+  aiSide: Faction | null; aiLevel: AiLevel; mission: MissionId; dispositions: [ForceDisposition | "azar", ForceDisposition | "azar"]; map: "actual" | "ejemplo" | "aleatorio" | "urbano" | "llanura" | "bosque"; diceSpeed: "normal" | "rapido" | "instante";
   /** Ajustes (#55) */
   volume: number; followAi: boolean; guideRings: boolean; confirmAdvance: boolean; hoverTips: boolean; showMenu: boolean; animations: boolean; statusIcons: boolean; woundBars: boolean; secondaries: boolean; turnRecap: boolean;
   /** Gráficos (#58): alta = sombras suaves y pantalla nítida; rapida = sin sombras y a 1×. */
@@ -27,7 +28,7 @@ export interface GameSettings {
 }
 
 const KEY = "mesa-de-guerra.ajustes";
-const DEFAULTS: GameSettings = { aiSide: "swarm", aiLevel: "normal", mission: "tomar", map: "actual", diceSpeed: "normal",
+const DEFAULTS: GameSettings = { aiSide: "swarm", aiLevel: "normal", mission: "disposicion", dispositions: ["azar", "azar"], map: "actual", diceSpeed: "normal",
   volume: 0.55, followAi: true, guideRings: true, confirmAdvance: true, hoverTips: true, showMenu: true, animations: true, statusIcons: true, woundBars: true, secondaries: true, turnRecap: true, graphics: "alta", conditions: "", uiScale: 1, palette: "normal", legionScheme: "azul", swarmScheme: "morado", ambient: 0.35, gameSize: 1000 };
 
 export const AI_LEVEL_NAME: Record<AiLevel, string> = { facil: "Fácil", normal: "Normal", dificil: "Difícil" };
@@ -35,7 +36,8 @@ export const AI_LEVEL_NAME: Record<AiLevel, string> = { facil: "Fácil", normal:
 export const settings: GameSettings = (() => {
   try {
     const d = JSON.parse(localStorage.getItem(KEY) ?? "null");
-    if (d && typeof d === "object") return { ...DEFAULTS, ...d };
+    // Fase 34: quien tenía ajustes de antes pasa a la misión de la 11.ª
+    if (d && typeof d === "object") return { ...DEFAULTS, ...d, ...(d.dispositions ? {} : { mission: "disposicion" }) };
   } catch { /* nada */ }
   return { ...DEFAULTS };
 })();

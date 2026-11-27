@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { FACTIONS, GameState, PLAYERS } from "../core/state";
-import { OBJECTIVE_RADIUS, OBJECTIVE_RANGE, objectiveStatus } from "../rules/missions";
+import { controller, OBJECTIVE_RADIUS, OBJECTIVE_RANGE } from "../rules/missions";
 import { insideTerrain } from "../rules/geometry";
 import { box, build, place } from "../models/lowpoly";
 
@@ -65,7 +65,7 @@ export class ObjectivesView {
         e.ring.position.z = e.disc.position.z = o.z;
         e.key = key;
       }
-      const { holder } = objectiveStatus(s, o);
+      const holder = controller(s, o);                    // 11.ª: el control decidido al acabar la última fase
       const color = holder === null ? (e.relic ? RELIC : NEUTRAL) : FACTIONS[PLAYERS[holder]].color;
       const cm = e.crystal.material as THREE.MeshStandardMaterial;
       cm.color.set(color); cm.emissive.set(color);

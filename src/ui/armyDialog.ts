@@ -2,6 +2,7 @@ import { randomList } from "../rules/randomList";
 import { canReserve, deepStrikes, entryInReserve } from "../rules/reserves";
 import { mapFor } from "../rules/maps";
 import { MISSIONS, MissionId } from "../rules/missions";
+import { FD_INFO, ForceDisposition, READY_DISPOSITIONS } from "../rules/primaries";
 import { AiLevel, saveSettings, settings } from "../ai/settings";
 import { CommandBus } from "../core/commands";
 import { Faction, FACTIONS } from "../core/state";
@@ -66,11 +67,19 @@ export class ArmyDialog {
     $<HTMLSelectElement>("cond-pick").value = settings.conditions;
     $<HTMLInputElement>("sec-pick").checked = settings.secondaries;
     $<HTMLSelectElement>("size-pick").value = String(settings.gameSize);
-    const desc = () => { $("mission-desc").textContent = MISSIONS[settings.mission].summary; };
+    const fdOpts = `<option value="azar">Al azar</option>` + READY_DISPOSITIONS.map((f) => `<option value="${f}">${FD_INFO[f].name}</option>`).join("");
+    $("fd-legion").innerHTML = fdOpts; $("fd-swarm").innerHTML = fdOpts;
+    $<HTMLSelectElement>("fd-legion").value = settings.dispositions[0];
+    $<HTMLSelectElement>("fd-swarm").value = settings.dispositions[1];
+    const desc = () => {
+      $("mission-desc").textContent = MISSIONS[settings.mission].summary;
+      for (const el of document.querySelectorAll<HTMLElement>(".fd-pick")) el.hidden = settings.mission !== "disposicion";
+    };
     desc();
     $("armies-setup").addEventListener("change", (e) => {
       e.stopPropagation();
       settings.mission = pick.value as MissionId;
+      settings.dispositions = [$<HTMLSelectElement>("fd-legion").value as ForceDisposition | "azar", $<HTMLSelectElement>("fd-swarm").value as ForceDisposition | "azar"];
       settings.aiSide = ($<HTMLSelectElement>("ai-side").value || null) as Faction | null;
       settings.aiLevel = $<HTMLSelectElement>("ai-level").value as AiLevel;
       settings.map = $<HTMLSelectElement>("map-pick").value as typeof settings.map;
@@ -133,7 +142,7 @@ export class ArmyDialog {
     const errs = SIDES.flatMap((f) => validateList(this.lists[f], f, settings.gameSize));
     if (errs.length) { this.notify("Corrige las listas antes de desplegar."); return; }
     applyMap(this.bus);
-    this.bus.dispatch({ type: "setArmies", legion: clone(this.lists.legion), swarm: clone(this.lists.swarm), mission: settings.mission, secondaries: settings.secondaries, ...(settings.conditions ? { conditions: settings.conditions } : {}) });
+    this.bus.dispatch({ type: "setArmies", legion: clone(this.lists.legion), swarm: clone(this.lists.swarm), mission: settings.mission, dispositions: settings.dispositions.map((f) => (f === "azar" ? null : f)) as [ForceDisposition | null, ForceDisposition | null], secondaries: settings.secondaries, ...(settings.conditions ? { conditions: settings.conditions } : {}) });
     if (!this.bus.state.rulesMode) this.bus.dispatch({ type: "setRulesMode", on: true });
     this.hide();
     this.notify(`Ejércitos desplegados: ${listPoints(this.lists.legion)} y ${listPoints(this.lists.swarm)} puntos`);

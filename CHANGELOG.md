@@ -2,6 +2,15 @@
 
 Lo nuevo de cada versión de *Mesa de Guerra*, de la más reciente a la primera.
 
+## 0.53 · fase 34, control de objetivos y misiones primarias de la 11.ª (#149–#151)
+- **Control al acabar cada fase y cada turno (#149):** lo primero al acabar cada fase es decidir quién controla cada objetivo, el que sume más CO a 3" (con empate, nadie), y no cambia hasta la siguiente comprobación. Al empezar la batalla no es de nadie. Un objetivo asegurado sigue siendo de quien lo aseguró, aunque no quede nadie, hasta que el rival sume más al acabar una fase. Los marcadores y el panel enseñan ese control; los números del panel, el CO de este momento.
+- **Disposición de fuerzas (#150):** nueva misión por defecto, *Disposición de fuerzas (11.ª)*. Cada bando elige disposición en Ejércitos o en la partida rápida (o al azar); en su carta, la disposición del rival le da su primaria. Objetivos: uno de casa en cada zona, dos de expansión y uno central (dos, a 6" del centro, con un 6). Por ahora *Tomar y mantener* y *Purgar al enemigo*; *Sabotaje*, *Reconocimiento* y *Objetivos prioritarios* necesitan acciones y marcadores de operación y llegarán en la siguiente fase.
+- **Diez misiones primarias (#151):** *Dominio del campo*, *Objeto inamovible*, *Adquisición decidida*, *Purgar y asegurar*, *Dominio ineludible*, *Fuerza imparable*, *Picadora de carne*, *Castigo* (condena hasta 3 unidades al empezar tu turno), *Consagrar* (las unidades que destruyen otra consagran objetivos) e *Ira del destructor*. Puntúan al acabar tu mando desde la ronda 2 (en la 5, al acabar el turno), al acabar tu turno y al acabar la batalla, con topes de 45 PV y 15 por ronda. El panel enseña la primaria de cada bando, sus PV, las unidades condenadas y los objetivos consagrados.
+- Quien tenía ajustes guardados pasa a la misión de la 11.ª; las misiones clásicas siguen en la lista.
+- Reglas leídas en Wahapedia: reglas básicas (sección 14) y mazo de misiones 2026-27. El orden de los símbolos en cada carta se ha deducido del orden del texto.
+- Equilibrio con disposiciones (120 partidas IA contra IA): Legión 69 % – Enjambre 29 % (2 empates).
+- Pruebas nuevas en `tests/primaries.test.ts`.
+
 ## 0.52.1 · llegadas al detalle y vida a la vista (#147–#148)
 - **Colocar la llegada al detalle (#147):** tras llegar desde la reserva (con Despliegue profundo, Túneles o por un borde), hasta acabar esa fase de movimiento se pueden arrastrar sus miniaturas una a una a donde quieras. Cada una tiene que seguir cumpliendo las condiciones de llegada; si no, va al sitio válido más cercano o vuelve. La ficha lo recuerda y ya no deja declarar otro movimiento para la unidad recién llegada.
 - **Vida de las miniaturas dañadas (#148):** encima de cada miniatura que ha perdido heridas flota una barra con las que le quedan («3/8»), un tramo por herida, en verde, ámbar o rojo. Se apaga en Ajustes. Los iconos de estado suben un poco para no taparla.

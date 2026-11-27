@@ -399,7 +399,7 @@
 <div id="help" class="panel">
   <h1 class="title">Mesa de Guerra</h1>
   <button id="help-toggle" title="Ocultar la ayuda (F1; vuelve con el botón Ayuda)">Ocultar</button>
-  <div class="sub">Reservas y vuelo de la 11.ª (v0.52.1)</div>
+  <div class="sub">Misiones primarias de la 11.ª (v0.53)</div>
   <input id="help-search" type="search" placeholder="Buscar en la ayuda (p. ej. reserva, deshacer)…" autocomplete="off">
   <div id="help-none" class="dim" hidden>Nada con esas palabras.</div>
   <button id="tutorial-start" class="primary" style="width:100%;margin:4px 0 6px">Tutorial: tres lecciones guiadas</button>
@@ -427,7 +427,8 @@
   <details class="hsec"><summary>Partida</summary>
   <ul>
     <li><b>Ejércitos</b> (en <b>Más ▾</b>): listas, misión, rival (IA o dos jugadores) y dificultad</li>
-    <li>Objetivos: los controla quien sume más CO a 3"; los PV, arriba a la derecha</li>
+    <li>Objetivos (11.ª): al acabar <b>cada fase y cada turno</b> se decide quién los controla, el que sume más CO a 3" (con empate, nadie). Entre una comprobación y otra el control no cambia. Un objetivo asegurado (🔒) sigue siendo tuyo aunque te vayas, hasta que el rival sume más al acabar una fase. En el panel, el punto de color es quién lo controla y los números, el CO a 3" en este momento</li>
+    <li><b>Disposición de fuerzas (11.ª)</b>, la misión por defecto: cada bando elige una disposición (<i>Tomar y mantener</i> o <i>Purgar al enemigo</i>; las otras tres llegarán con las acciones) y la del rival decide su <b>misión primaria</b> (Dominio del campo, Adquisición decidida, Fuerza imparable, Castigo…). Puntúan al acabar tu mando (desde la ronda 2; en la 5, al acabar el turno), al acabar tu turno y al acabar la batalla: hasta 45 PV, 15 por ronda. Objetivo de casa: el de tu zona; con un 6 en un D6 hay dos centrales</li>
     <li><b>Estratagemas (11.ª):</b> botones en la ficha de la unidad. Cada una solo una vez por fase, y una unidad solo recibe una estratagema por fase. Básicas: <i>Repetición de mando</i> (repite una carga fallida), <i>Desafío épico</i> (los ataques de un personaje ganan Precisión), <i>Valor demente</i> (supera un chequeo de moral, una vez por partida), <i>Explosivos</i> (unidades con granadas: 6D6, cada 4+ una herida mortal), <i>Impacto aplastante</i> (vehículos y monstruos que cargan), <i>Contraofensiva</i> (2 PM: combate el siguiente tras un combate rival)</li>
     <li><b>Reacciones en el turno rival:</b> al acabar su movimiento se puede hacer <i>Fuego defensivo</i> (dispara a una unidad que acaba de llegar; solo impacta a 6), al empezar su disparo <i>Cortina de humo</i> (una unidad con humo queda en cobertura toda la fase) y al acabar su carga <i>Intervención heroica</i> (una unidad a 12" o menos carga contra una que acaba de cargar). La partida espera a que decidas; <b>Siguiente fase</b> es no reaccionar</li>
     <li><b>Estratagemas de bando</b> (provisionales hasta las de destacamento): Legión, <i>Fuego sostenido</i> (Sostenida 1) y <i>Avance táctico</i> (disparar tras avanzar); Enjambre, <i>Frenesí</i> (+1 ataque en combate), <i>Hambre voraz</i> (+2 a la carga) y <i>Oleada sin fin</i></li>
@@ -567,6 +568,8 @@
     <div class="setup-row" id="armies-setup">
       <label>Tamaño <select id="size-pick"><option value="1000">Incursión (1.000)</option><option value="500">Escaramuza (500)</option></select></label>
       <label>Misión <select id="mission-pick"></select></label>
+      <label class="fd-pick" title="La disposición de fuerzas de cada bando: la del rival decide tu misión primaria">Disposición Legión <select id="fd-legion"></select></label>
+      <label class="fd-pick">Disposición Enjambre <select id="fd-swarm"></select></label>
       <label title="Cada bando roba 2 órdenes por turno que dan PV extra"><input type="checkbox" id="sec-pick"> Órdenes secundarias</label>
       <label>Condiciones <select id="cond-pick"><option value="">Normales</option><option value="noche">Noche (visión 24")</option><option value="tormenta">Tormenta (−1 a impactar a más de 12")</option></select></label>
       <label>Mapa <select id="map-pick"><option value="actual">La mesa actual</option><option value="ejemplo">Mapa de ejemplo</option><option value="aleatorio">Aleatorio (simétrico)</option><option value="urbano">Ruinas urbanas (densa)</option><option value="llanura">Llanura (abierta)</option><option value="bosque">Bosque</option></select></label>
@@ -623,6 +626,7 @@
         <label>IA <select id="q-level"><option value="facil">Fácil</option><option value="normal">Normal</option><option value="dificil">Difícil</option></select></label>
         <label>Tamaño <select id="q-size"><option value="1000">Incursión (1.000)</option><option value="500">Escaramuza (500)</option></select></label>
         <label>Misión <select id="q-mission"></select></label>
+        <label id="q-fd-row" title="Tu disposición de fuerzas; la de la IA es al azar. La del rival decide tu misión primaria">Tu disposición <select id="q-fd"></select></label>
         <label title="Cada bando roba 2 órdenes por turno (matar un personaje, dominar el centro…) que dan PV extra"><input type="checkbox" id="q-sec" checked> Órdenes secundarias</label>
         <label>Condiciones <select id="q-cond"><option value="">Normales</option><option value="noche">Noche (visión 24")</option><option value="tormenta">Tormenta (−1 a impactar a más de 12")</option></select></label>
         <label>Mapa <select id="q-map"><option value="aleatorio">Aleatorio (simétrico)</option><option value="ejemplo">Mapa de ejemplo</option><option value="urbano">Ruinas urbanas (densa)</option><option value="llanura">Llanura (abierta)</option><option value="bosque">Bosque</option></select></label>

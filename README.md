@@ -5,7 +5,7 @@ la **Legión Astral** (super soldados con servoarmadura) contra **El Enjambre** 
 Se juega como en una mesa de verdad (mover, medir y tirar dados) o con el **modo reglas**, que guía las fases y resuelve las tiradas.
 Three.js + TypeScript, compilado con esbuild a un único `dist/index.html`.
 
-Versión **0.52.1**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
+Versión **0.53**. Lo nuevo de cada versión está en [CHANGELOG.md](CHANGELOG.md); el plan, en el documento *Mesa de Guerra — Roadmap y plan de desarrollo*.
 
 ## Jugar
 Abre `dist/index.html` con doble clic (Chrome, Edge o Firefox). No hace falta servidor ni conexión.
@@ -30,7 +30,7 @@ Cada bando tiene un ejército de **1.000 puntos** (*Incursión*, como en la 11.�
 
 **Estratagemas (11.ª):** cada una cuesta PM y se usa una vez por fase; una unidad solo recibe una por fase. Las básicas: *Repetición de mando*, *Desafío épico*, *Valor demente*, *Explosivos*, *Impacto aplastante* y *Contraofensiva*. En el turno del rival se abren **ventanas de reacción**: al acabar su movimiento, *Fuego defensivo* (impacta a 6); al empezar su disparo, *Cortina de humo*; al acabar su carga, *Intervención heroica*. La partida espera a que decidas.
 
-**Misiones:** *Toma y mantén*, *Corazón del frente*, *Caza de presas* (PV por puntos destruidos), *Reliquia* (se recoge y se lleva), *Asalto* (asimétrica: uno ataca y otro defiende) y *Cabeza de la serpiente* (PV por cada personaje enemigo destruido). Gana quien tenga más PV tras la ronda 5.
+**Misiones:** por defecto, **Disposición de fuerzas** como en la 11.ª: cada bando elige una disposición (*Tomar y mantener* o *Purgar al enemigo*, por ahora) y la del rival le da su misión primaria (*Dominio del campo*, *Objeto inamovible*, *Adquisición decidida*, *Purgar y asegurar*, *Dominio ineludible*, *Fuerza imparable*, *Picadora de carne*, *Castigo*, *Consagrar* o *Ira del destructor*), hasta 45 PV y 15 por ronda. El control de los objetivos se decide al acabar cada fase y cada turno. Siguen las misiones clásicas: *Toma y mantén*, *Corazón del frente*, *Caza de presas* (PV por puntos destruidos), *Reliquia* (se recoge y se lleva), *Asalto* (asimétrica: uno ataca y otro defiende) y *Cabeza de la serpiente* (PV por cada personaje enemigo destruido). Gana quien tenga más PV tras la ronda 5.
 **Mapas:** de ejemplo, aleatorio, *Ruinas urbanas*, *Llanura* y *Bosque* (los bosques se atraviesan, dan cobertura y tapan la visión si se cruzan más de 3"), todos simétricos.
 **Condiciones:** *Noche* (nada dispara a más de 24") y *Tormenta* (−1 a impactar a más de 12").
 

@@ -1,4 +1,5 @@
 import { StatusIcons } from "./view/statusIcons";
+import type { ForceDisposition } from "./rules/primaries";
 import { WoundBars } from "./view/woundBars";
 import { createRoom } from "./app/room";
 import { TurnRecapBox } from "./ui/turnRecap";
@@ -1012,7 +1013,9 @@ menu.onQuick = (q) => {
   }
   applyMap(bus);
   settings.conditions = q.conditions ?? ""; saveSettings();
-  bus.dispatch({ type: "setArmies", legion: lists.legion, swarm: lists.swarm, mission: q.mission, secondaries: q.secondaries ?? true, ...(q.conditions ? { conditions: q.conditions } : {}) });
+  const myFd = q.disposition && q.disposition !== "azar" ? q.disposition : null;
+  const fds: [ForceDisposition | null, ForceDisposition | null] = q.side === "legion" ? [myFd, null] : q.side === "swarm" ? [null, myFd] : [null, null];
+  bus.dispatch({ type: "setArmies", legion: lists.legion, swarm: lists.swarm, mission: q.mission, dispositions: fds, secondaries: q.secondaries ?? true, ...(q.conditions ? { conditions: q.conditions } : {}) });
   if (!bus.state.rulesMode) bus.dispatch({ type: "setRulesMode", on: true });
   ai.paused = false;
   controls.selected.clear(); controls.onSelectionChange();

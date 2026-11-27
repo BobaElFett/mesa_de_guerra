@@ -8,6 +8,7 @@ import { note, unitName } from "../rules/history";
 import { declareCharge, resolveReactionWindow } from "../rules/reactions";
 import { applyStratagem, StratId } from "../rules/stratagems";
 import type { MissionId } from "../rules/missions";
+import { ForceDisposition, setupDispositions } from "../rules/primaries";
 import { formation } from "../rules/leaders";
 import { GameState, BOARD, cloneState, createInitialState, TerrainKind, TerrainPiece, TERRAIN } from "./state";
 import { rollDice } from "./rng";
@@ -34,7 +35,7 @@ export type Command =
   /** Sustituye la escenografía por un mapa entero (#51). */
   | { type: "setTerrain"; pieces: TerrainPiece[] }
   /** Sustituye los ejércitos por dos listas desplegadas en sus zonas. */
-  | { type: "setArmies"; legion: ArmyList; swarm: ArmyList; mission?: MissionId; conditions?: "noche" | "tormenta"; campaign?: number; secondaries?: boolean }
+  | { type: "setArmies"; legion: ArmyList; swarm: ArmyList; mission?: MissionId; dispositions?: [ForceDisposition | null, ForceDisposition | null]; conditions?: "noche" | "tormenta"; campaign?: number; secondaries?: boolean }
   /** Objetivos secundarios (#97): descartar una orden de la mano por 1 PM. */
   | { type: "discardSecondary"; id: SecondaryId }
   /** Mesa libre: retirar miniaturas a mano (bajas, recolocar…). */
@@ -129,6 +130,7 @@ export function applyCommand(state: GameState, cmd: Command): GameState {
     }
     case "setArmies": {
       deployArmies(s, cmd.legion, cmd.swarm, cmd.mission);
+      if (s.mission === "disposicion") setupDispositions(s, cmd.dispositions);
       if (cmd.conditions) s.conditions = cmd.conditions; else delete s.conditions;
       if (cmd.campaign) s.campaignBattle = cmd.campaign; else delete s.campaignBattle;
       setupSecondaries(s, !!cmd.secondaries);

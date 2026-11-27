@@ -1,6 +1,8 @@
 import { CONDITIONS } from "../rules/conditions";
 import { FACTIONS, GameState, PLAYERS } from "../core/state";
-import { FIRST_SCORING_ROUND, MISSIONS, objectiveStatus } from "../rules/missions";
+import { controller, FIRST_SCORING_ROUND, MISSIONS, objectiveStatus } from "../rules/missions";
+import { FD_INFO, PRIMARIES, PRIMARY_CAP, PRIMARY_ROUND_CAP, usesPrimaries } from "../rules/primaries";
+import { DATASHEETS } from "../rules/datasheets";
 import { MAX_ROUNDS } from "../rules/turn";
 import { discardBlocked, SECONDARIES, SECONDARY_CAP, SecondaryId, secondaryVp } from "../rules/secondaries";
 
@@ -45,16 +47,31 @@ export class MissionPanel {
     if (!m) return;
     const vp = s.vp ?? [0, 0];
     const C = (i: 0 | 1) => FACTIONS[PLAYERS[i]].color;
+    const prim = usesPrimaries(s);
+    const roleTag = (o: (typeof s.objectives & object)[number]) => o.role === "home" ? `casa ${o.home === 0 ? "Legión" : "Enjambre"}` : o.role === "central" ? "central" : o.role === "expansion" ? "expansión" : "";
     const rows = (s.objectives ?? []).map((o) => {
       const st = objectiveStatus(s, o);
-      const color = st.holder === null ? "transparent" : C(st.holder);
-      return `<li><span class="dot" style="background:${color}"></span><b>${o.name}</b> <span class="dim">${m.asym ? `${m.asym.attacker} / ${m.asym.defender} PV` : `${o.vp} PV`}</span>`
-        + `<span class="oc" title="CO a 3&quot;: Legión · Enjambre"><span style="color:${C(0)}">${st.oc[0]}</span> · <span style="color:${C(1)}">${st.oc[1]}</span></span></li>`;
+      const h = controller(s, o);
+      const color = h === null ? "transparent" : C(h);
+      const tag = prim ? roleTag(o) : m.asym ? `${m.asym.attacker} / ${m.asym.defender} PV` : `${o.vp} PV`;
+      const sec = o.secured !== undefined ? ` <span class="dim" title="Asegurado: sigue siendo suyo hasta que el rival sume más CO al acabar una fase">🔒</span>` : "";
+      const blessed = prim ? ([0, 1] as const).filter((p) => (s.primaryState?.consecrated?.[p] ?? []).includes(o.id)).map((p) => ` <span style="color:${C(p)}" title="Consagrado">✦</span>`).join("") : "";
+      return `<li title="El control se decide al acabar cada fase y cada turno; el punto es quién lo controla ahora, los números el CO a 3&quot; en este momento"><span class="dot" style="background:${color}"></span><b>${o.name}</b>${sec}${blessed} <span class="dim">${tag}</span>`
+        + `<span class="oc" title="CO a 3&quot; ahora: Legión · Enjambre"><span style="color:${C(0)}">${st.oc[0]}</span> · <span style="color:${C(1)}">${st.oc[1]}</span></span></li>`;
     }).join("");
     let proj = "";
-    if (s.rulesMode && !s.gameOver && s.phase !== "despliegue") {
+    if (prim) {
+      const side = (p: 0 | 1) => {
+        const pm = PRIMARIES[s.primaries![p]];
+        const cond = (s.primaryState?.condemned?.[p] ?? []).filter((id) => s.pieces.some((q) => q.unit === id));
+        return `<div class="m-prim" title="${pm.text}"><span style="color:${C(p)}">${FACTIONS[PLAYERS[p]].name}</span>: <b>${pm.name}</b> <span class="dim">(${FD_INFO[s.dispositions![p]].name}) · ${s.primaryState?.total[p] ?? 0}/${PRIMARY_CAP} PV</span>`
+          + `${this.canAct(p) ? `<div class="sec-text">${pm.text}</div>` : ""}`
+          + `${cond.length ? `<div class="dim">Condenadas: ${cond.map((id) => DATASHEETS[s.units.find((u) => u.id === id)!.datasheet].name).join(", ")}</div>` : ""}</div>`;
+      };
+      proj = `<div class="m-proj">${side(0)}${side(1)}<div class="dim">Primaria: hasta ${PRIMARY_CAP} PV, ${PRIMARY_ROUND_CAP} por ronda.</div></div>`;
+    } else if (s.rulesMode && !s.gameOver && s.phase !== "despliegue") {
       const worth = (pl: 0 | 1) => {
-        const held = (s.objectives ?? []).filter((o) => objectiveStatus(s, o).holder === pl);
+        const held = (s.objectives ?? []).filter((o) => controller(s, o) === pl);
         if (m.asym) { const def = s.defender === pl; return Math.min(def ? m.asym.defenderCap : m.capPerTurn, held.length * (def ? m.asym.defender : m.asym.attacker)); }
         return Math.min(m.capPerTurn, held.reduce((n, o) => n + o.vp, 0));
       };
